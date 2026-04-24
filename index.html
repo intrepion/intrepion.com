@@ -293,6 +293,146 @@
         grid-template-columns: repeat(4, minmax(0, 1fr));
       }
 
+      .specimen {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow);
+        margin-top: 30px;
+      }
+
+      .specimen-header {
+        align-items: start;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 18px;
+        justify-content: space-between;
+        padding: 22px;
+      }
+
+      .specimen-header h3 {
+        font-size: 24px;
+        margin: 0 0 8px;
+      }
+
+      .specimen-header p {
+        color: var(--muted);
+        margin: 0;
+        max-width: 680px;
+      }
+
+      .specimen-badge {
+        border: 1px solid var(--line);
+        color: var(--green);
+        font-size: 12px;
+        font-weight: 850;
+        padding: 7px 10px;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .roadmap-table {
+        display: grid;
+      }
+
+      .roadmap-row {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 110px minmax(0, 1.2fr) minmax(210px, 0.8fr) minmax(170px, 0.6fr);
+        padding: 18px 22px;
+      }
+
+      .roadmap-row + .roadmap-row {
+        border-top: 1px solid var(--line);
+      }
+
+      .roadmap-row.header {
+        background: #f2eee4;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+
+      .roadmap-row h4 {
+        font-size: 17px;
+        margin: 0 0 6px;
+      }
+
+      .roadmap-row p {
+        color: var(--muted);
+        margin: 0;
+      }
+
+      .status-list {
+        display: grid;
+        gap: 8px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .status-list li {
+        align-items: start;
+        color: var(--muted);
+        display: grid;
+        font-size: 14px;
+        gap: 8px;
+        grid-template-columns: 20px 1fr;
+      }
+
+      .status-mark {
+        display: inline-flex;
+        font-weight: 850;
+        justify-content: center;
+        line-height: 1.25;
+      }
+
+      .status-mark.included {
+        color: var(--green);
+      }
+
+      .status-mark.missing {
+        color: var(--rose);
+      }
+
+      .status-mark.pending {
+        color: var(--gold);
+      }
+
+      .status-mark.unknown {
+        color: var(--blue);
+      }
+
+      .meta-stack {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .pill {
+        border: 1px solid var(--line);
+        color: var(--muted);
+        display: inline-flex;
+        font-size: 12px;
+        font-weight: 750;
+        line-height: 1;
+        padding: 7px 9px;
+      }
+
+      .pill.available {
+        border-color: rgba(36, 90, 67, 0.35);
+        color: var(--green);
+      }
+
+      .pill.planned {
+        border-color: rgba(173, 122, 34, 0.38);
+        color: var(--gold);
+      }
+
+      .pill.future {
+        border-color: rgba(83, 96, 87, 0.28);
+      }
+
       .feature,
       .flow-step,
       .plan,
@@ -384,6 +524,10 @@
         border-color: rgba(255, 255, 255, 0.18);
       }
 
+      .differentiator .specimen {
+        color: var(--ink);
+      }
+
       footer {
         color: var(--muted);
         font-size: 14px;
@@ -398,6 +542,14 @@
         .flow-grid,
         .example-grid {
           grid-template-columns: 1fr;
+        }
+
+        .roadmap-row {
+          grid-template-columns: 1fr;
+        }
+
+        .roadmap-row.header {
+          display: none;
         }
 
         .plan-grid {
@@ -431,6 +583,10 @@
           align-items: flex-start;
           flex-direction: column;
           gap: 6px;
+        }
+
+        .specimen-header {
+          flex-direction: column;
         }
 
         .plan-grid {
@@ -560,6 +716,85 @@
               <h3>Assist carefully</h3>
               <p>Turn repeatable tutorial steps into reviewed services only after the safety, credential, and confirmation rules are clear.</p>
             </article>
+          </div>
+          <div class="specimen" aria-label="Intrepion roadmap specimen">
+            <div class="specimen-header">
+              <div>
+                <h3>intrepion.com roadmap specimen</h3>
+                <p>
+                  A roadmap item is more than a task. It carries the horizon, intended outcome, tutorial availability, plan relevance, and service maturity.
+                </p>
+              </div>
+              <span class="specimen-badge">Public preview</span>
+            </div>
+            <div class="roadmap-table">
+              <div class="roadmap-row header">
+                <span>Horizon</span>
+                <span>Roadmap item</span>
+                <span>Included / missing</span>
+                <span>Service path</span>
+              </div>
+              <div class="roadmap-row">
+                <div class="horizon">1 hour</div>
+                <div>
+                  <h4>Publish the differentiated homepage</h4>
+                  <p>Show that Intrepion is for turning unclear launch goals into guided roadmaps, not for tracking generic tasks.</p>
+                </div>
+                <ul class="status-list">
+                  <li><span class="status-mark included">✓</span><span>Included: public homepage and roadmap preview.</span></li>
+                  <li><span class="status-mark included">✓</span><span>Included: Free users can read the public example.</span></li>
+                  <li><span class="status-mark missing">X</span><span>Missing: editable roadmap accounts.</span></li>
+                </ul>
+                <div class="meta-stack">
+                  <span class="pill future">Manual for now</span>
+                </div>
+              </div>
+              <div class="roadmap-row">
+                <div class="horizon">1 day</div>
+                <div>
+                  <h4>Model projects, roadmaps, plans, and tutorials</h4>
+                  <p>Define the core product objects before choosing a full application stack or building private account flows.</p>
+                </div>
+                <ul class="status-list">
+                  <li><span class="status-mark pending">!</span><span>Pending: tutorial for modeling the first app objects.</span></li>
+                  <li><span class="status-mark included">✓</span><span>Included: Plus and Pro should be able to request it.</span></li>
+                  <li><span class="status-mark unknown">?</span><span>Unclear: first app stack has not been chosen.</span></li>
+                </ul>
+                <div class="meta-stack">
+                  <span class="pill future">No service yet</span>
+                </div>
+              </div>
+              <div class="roadmap-row">
+                <div class="horizon">1 week</div>
+                <div>
+                  <h4>Design safe integration services</h4>
+                  <p>Map how Namecheap, Neon, Google Cloud, and GitHub steps could become reviewed assistance without hiding risk.</p>
+                </div>
+                <ul class="status-list">
+                  <li><span class="status-mark pending">!</span><span>Pending: Namecheap, Neon, Google Cloud, and GitHub tutorials.</span></li>
+                  <li><span class="status-mark included">✓</span><span>Included: Pro and Business are eligible for assistance.</span></li>
+                  <li><span class="status-mark missing">X</span><span>Missing: credential storage and audit logs.</span></li>
+                </ul>
+                <div class="meta-stack">
+                  <span class="pill planned">Service planned</span>
+                </div>
+              </div>
+              <div class="roadmap-row">
+                <div class="horizon">1 month</div>
+                <div>
+                  <h4>Add teams, AI support, and admin review</h4>
+                  <p>Let AI draft tutorials and service ideas only when admins can review, revise, and publish them deliberately.</p>
+                </div>
+                <ul class="status-list">
+                  <li><span class="status-mark pending">!</span><span>Pending: AI-generated tutorial drafts.</span></li>
+                  <li><span class="status-mark included">✓</span><span>Included: Business and Enterprise roadmap depth.</span></li>
+                  <li><span class="status-mark missing">X</span><span>Missing: admin review and publishing workflow.</span></li>
+                </ul>
+                <div class="meta-stack">
+                  <span class="pill planned">Reviewed only</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
