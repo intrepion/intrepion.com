@@ -3,16 +3,16 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Intrepion | Dynamic Roadmaps For Ambitious Projects</title>
+    <title>Intrepion | Guided Roadmaps For Launching Real Projects</title>
     <meta
       name="description"
-      content="Intrepion helps creators, founders, and small teams turn ambitious goals into dynamic roadmaps across 1 hour, 1 day, 1 week, 1 month, 1 year, and 1 decade."
+      content="Intrepion turns ambitious goals into guided six-horizon roadmaps with tutorials, requestable missing guidance, and reviewed automation paths."
     >
     <meta name="robots" content="index,follow">
-    <meta property="og:title" content="Intrepion | Dynamic Roadmaps For Ambitious Projects">
+    <meta property="og:title" content="Intrepion | Guided Roadmaps For Launching Real Projects">
     <meta
       property="og:description"
-      content="Turn big goals into living roadmaps that connect what matters now with what can compound over a decade."
+      content="Move from a messy ambition to a concrete roadmap across 1 hour, 1 day, 1 week, 1 month, 1 year, and 1 decade."
     >
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://intrepion.com/">
@@ -54,10 +54,6 @@
       .site-header {
         border-bottom: 1px solid var(--line);
         background: rgba(247, 244, 237, 0.94);
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        backdrop-filter: blur(14px);
       }
 
       .nav {
@@ -291,7 +287,14 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
+      .flow-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
       .feature,
+      .flow-step,
       .plan,
       .example {
         background: var(--panel);
@@ -300,10 +303,19 @@
       }
 
       .feature h3,
+      .flow-step h3,
       .plan h3,
       .example h3 {
         font-size: 20px;
         margin: 0 0 10px;
+      }
+
+      .step-label {
+        color: var(--gold);
+        font-size: 12px;
+        font-weight: 850;
+        margin-bottom: 10px;
+        text-transform: uppercase;
       }
 
       .example-grid {
@@ -357,6 +369,21 @@
         color: #fff;
       }
 
+      .differentiator {
+        background: var(--green-dark);
+        color: #fff;
+      }
+
+      .differentiator .section-heading p,
+      .differentiator .flow-step p {
+        color: rgba(255, 255, 255, 0.78);
+      }
+
+      .differentiator .flow-step {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.18);
+      }
+
       footer {
         color: var(--muted);
         font-size: 14px;
@@ -368,6 +395,7 @@
       @media (max-width: 920px) {
         .hero-grid,
         .feature-grid,
+        .flow-grid,
         .example-grid {
           grid-template-columns: 1fr;
         }
@@ -419,7 +447,7 @@
           <span>Intrepion</span>
         </a>
         <div class="nav-links">
-          <a href="#roadmap">Roadmap</a>
+          <a href="#method">Method</a>
           <a href="#examples">Examples</a>
           <a href="#plans">Plans</a>
           <a class="button secondary" href="mailto:hello@intrepion.com?subject=Intrepion%20early%20access">Request access</a>
@@ -431,16 +459,16 @@
       <section class="hero">
         <div class="hero-grid">
           <div>
-            <p class="eyebrow">Dynamic roadmaps for ambitious projects</p>
-            <h1>Turn big goals into living roadmaps.</h1>
+            <p class="eyebrow">Guided roadmaps for launching real projects</p>
+            <h1>Turn a messy ambition into the next right move.</h1>
             <p class="hero-copy">
-              Intrepion helps creators, founders, and small teams separate what matters in the next hour from what can compound over a decade.
+              Intrepion helps creators, founders, and small teams turn unclear goals into six-horizon roadmaps, then connect each step to tutorials, requests, and eventually reviewed automation.
             </p>
             <div class="hero-actions">
               <a class="button primary" href="mailto:hello@intrepion.com?subject=Intrepion%20early%20access">Request early access</a>
               <a class="button secondary" href="#roadmap">View the Intrepion roadmap</a>
             </div>
-            <p class="proof-line">The first roadmap Intrepion manages is its own.</p>
+            <p class="proof-line">The first proof is Intrepion's own roadmap, built in public.</p>
           </div>
 
           <aside class="roadmap-preview" aria-label="Intrepion roadmap preview">
@@ -451,15 +479,15 @@
             <div class="timeline">
               <div class="timeline-item">
                 <span class="horizon">1 hour</span>
-                <strong>Publish the promise and product rules.</strong>
+                <strong>Clarify the promise and publish the first roadmap.</strong>
               </div>
               <div class="timeline-item">
                 <span class="horizon">1 day</span>
-                <strong>Scaffold users, projects, roadmaps, and tutorials.</strong>
+                <strong>Model users, projects, roadmaps, plans, and tutorials.</strong>
               </div>
               <div class="timeline-item">
                 <span class="horizon">1 week</span>
-                <strong>Connect tutorials to service integrations.</strong>
+                <strong>Connect tutorials to safe service-integration plans.</strong>
               </div>
               <div class="timeline-item">
                 <span class="horizon">1 month</span>
@@ -478,26 +506,59 @@
         </div>
       </section>
 
-      <section class="section" id="roadmap">
+      <section class="section" id="method">
         <div class="section-inner">
           <div class="section-heading">
-            <h2>A roadmap should change as the project becomes real.</h2>
+            <h2>Not another issue tracker.</h2>
             <p>
-              Long-term architecture matters, but the next useful move matters more. Intrepion keeps both visible.
+              Linear helps teams execute known software work. Intrepion is for the earlier, messier moment: you have a domain, a goal, and a dozen possible directions, but need a sequence you can actually follow.
             </p>
           </div>
           <div class="feature-grid">
             <article class="feature">
-              <h3>Six fixed horizons</h3>
-              <p>Plan across 1 hour, 1 day, 1 week, 1 month, 1 year, and 1 decade without pretending every decision belongs in the same bucket.</p>
+              <h3>Time-horizon discipline</h3>
+              <p>Every roadmap uses 1 hour, 1 day, 1 week, 1 month, 1 year, and 1 decade so immediate progress and long-term compounding stay connected.</p>
             </article>
             <article class="feature">
-              <h3>Tutorial-aware planning</h3>
-              <p>Roadmaps can point users to tutorials for the choices they make, or mark missing tutorials as planned and requestable.</p>
+              <h3>Tutorial-aware steps</h3>
+              <p>Roadmap items can point to guidance for the choices users make, or mark missing tutorials as planned and requestable by eligible members.</p>
             </article>
             <article class="feature">
-              <h3>Automation later</h3>
-              <p>Services will eventually help users perform tutorial steps through APIs, with explicit credential control and admin-reviewed workflows.</p>
+              <h3>Automation with review</h3>
+              <p>Repeated tutorial work can become services later, but credential access, sensitive actions, and AI-generated workflows require explicit review.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section differentiator" id="roadmap">
+        <div class="section-inner">
+          <div class="section-heading">
+            <h2>From intention to sequence to execution.</h2>
+            <p>
+              The product center is not task management. It is helping someone move from "I want to launch this" to a visible path of next actions, guidance, and future assistance.
+            </p>
+          </div>
+          <div class="flow-grid">
+            <article class="flow-step">
+              <div class="step-label">1. Goal</div>
+              <h3>Name the project</h3>
+              <p>Start with a real ambition: a business, portfolio, product, service, or site that needs a concrete launch path.</p>
+            </article>
+            <article class="flow-step">
+              <div class="step-label">2. Roadmap</div>
+              <h3>Split the horizons</h3>
+              <p>Separate the next hour from the next decade so strategy does not crowd out the move that can happen today.</p>
+            </article>
+            <article class="flow-step">
+              <div class="step-label">3. Tutorial</div>
+              <h3>Attach guidance</h3>
+              <p>Show available tutorials for roadmap choices, and make missing guidance visible instead of silently leaving users stuck.</p>
+            </article>
+            <article class="flow-step">
+              <div class="step-label">4. Service</div>
+              <h3>Assist carefully</h3>
+              <p>Turn repeatable tutorial steps into reviewed services only after the safety, credential, and confirmation rules are clear.</p>
             </article>
           </div>
         </div>
@@ -506,23 +567,23 @@
       <section class="section" id="examples">
         <div class="section-inner">
           <div class="section-heading">
-            <h2>Starting with real projects.</h2>
+            <h2>The first examples are the wedge.</h2>
             <p>
-              The first examples are intentionally concrete: this business, Oliver's portfolio, and Karinna's art portfolio.
+              Intrepion starts with three owned domains because they expose the same pattern future customers will bring: a real goal, an unclear sequence, and a need to keep learning, building, and launching connected.
             </p>
           </div>
           <div class="example-grid">
             <article class="example">
               <h3>intrepion.com</h3>
-              <p>A roadmap for building the roadmap-management business in public, from domain and landing page to automation and AI support.</p>
+              <p>The business roadmap: prove the public promise, document the product rules, then grow into accounts, tutorials, services, and reviewed AI support.</p>
             </article>
             <article class="example">
               <h3>oliverforral.com</h3>
-              <p>A portfolio roadmap for turning work history, projects, writing, and services into a durable professional presence.</p>
+              <p>The founder portfolio roadmap: turn work history, projects, writing, and services into a durable professional presence.</p>
             </article>
             <article class="example">
               <h3>karinnaaf.art</h3>
-              <p>An artist portfolio roadmap for presenting work, publishing updates, and creating a clear path for collectors or collaborators.</p>
+              <p>The artist portfolio roadmap: present work, publish updates, and create a clear path for collectors, collaborators, and future launches.</p>
             </article>
           </div>
         </div>
