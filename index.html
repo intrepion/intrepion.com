@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Intrepion | Dynamic Roadmaps For Ambitious Projects</title>
+    <meta
+      name="description"
+      content="Intrepion helps creators, founders, and small teams turn ambitious goals into dynamic roadmaps across 1 hour, 1 day, 1 week, 1 month, 1 year, and 1 decade."
+    >
+    <meta name="robots" content="index,follow">
+    <meta property="og:title" content="Intrepion | Dynamic Roadmaps For Ambitious Projects">
+    <meta
+      property="og:description"
+      content="Turn big goals into living roadmaps that connect what matters now with what can compound over a decade."
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://intrepion.com/">
+    <meta name="twitter:card" content="summary_large_image">
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17211c;
+        --muted: #536057;
+        --paper: #f7f4ed;
+        --panel: #ffffff;
+        --line: #d8d2c5;
+        --green: #245a43;
+        --green-dark: #143829;
+        --blue: #255b78;
+        --gold: #ad7a22;
+        --rose: #9b4b54;
+        --shadow: 0 18px 60px rgba(23, 33, 28, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .site-header {
+        border-bottom: 1px solid var(--line);
+        background: rgba(247, 244, 237, 0.94);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        backdrop-filter: blur(14px);
+      }
+
+      .nav {
+        align-items: center;
+        display: flex;
+        gap: 24px;
+        justify-content: space-between;
+        margin: 0 auto;
+        max-width: 1160px;
+        padding: 18px 24px;
+      }
+
+      .brand {
+        align-items: center;
+        display: inline-flex;
+        font-size: 18px;
+        font-weight: 800;
+        gap: 10px;
+        text-decoration: none;
+      }
+
+      .brand-mark {
+        align-items: center;
+        background: var(--green);
+        color: #fff;
+        display: inline-flex;
+        font-size: 14px;
+        height: 32px;
+        justify-content: center;
+        width: 32px;
+      }
+
+      .nav-links {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        justify-content: flex-end;
+      }
+
+      .nav-links a {
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 650;
+        text-decoration: none;
+      }
+
+      .button {
+        align-items: center;
+        border: 1px solid var(--green);
+        display: inline-flex;
+        font-size: 15px;
+        font-weight: 750;
+        justify-content: center;
+        min-height: 44px;
+        padding: 10px 16px;
+        text-decoration: none;
+      }
+
+      .button.primary {
+        background: var(--green);
+        color: #fff;
+      }
+
+      .button.secondary {
+        background: transparent;
+        color: var(--green-dark);
+      }
+
+      main {
+        overflow: hidden;
+      }
+
+      .hero {
+        margin: 0 auto;
+        max-width: 1160px;
+        padding: 72px 24px 52px;
+      }
+
+      .hero-grid {
+        align-items: center;
+        display: grid;
+        gap: 44px;
+        grid-template-columns: minmax(0, 1fr) minmax(360px, 0.85fr);
+      }
+
+      .eyebrow {
+        color: var(--gold);
+        font-size: 13px;
+        font-weight: 850;
+        letter-spacing: 0;
+        margin: 0 0 14px;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        font-size: clamp(44px, 7vw, 76px);
+        line-height: 0.95;
+        letter-spacing: 0;
+        margin: 0;
+        max-width: 780px;
+      }
+
+      .hero-copy {
+        color: var(--muted);
+        font-size: 20px;
+        margin: 24px 0 0;
+        max-width: 670px;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 32px;
+      }
+
+      .proof-line {
+        color: var(--muted);
+        font-size: 14px;
+        margin-top: 18px;
+      }
+
+      .roadmap-preview {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow);
+        padding: 22px;
+      }
+
+      .preview-header {
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+        padding-bottom: 16px;
+      }
+
+      .preview-title {
+        font-size: 15px;
+        font-weight: 850;
+        margin: 0;
+      }
+
+      .preview-status {
+        color: var(--green);
+        font-size: 13px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .timeline-item {
+        border-left: 4px solid var(--green);
+        display: grid;
+        gap: 3px;
+        padding: 3px 0 3px 14px;
+      }
+
+      .timeline-item:nth-child(2) {
+        border-color: var(--blue);
+      }
+
+      .timeline-item:nth-child(3) {
+        border-color: var(--gold);
+      }
+
+      .timeline-item:nth-child(4) {
+        border-color: var(--rose);
+      }
+
+      .timeline-item:nth-child(5) {
+        border-color: #557a2f;
+      }
+
+      .timeline-item:nth-child(6) {
+        border-color: #5d4b8c;
+      }
+
+      .horizon {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+
+      .timeline-item strong {
+        font-size: 15px;
+      }
+
+      .section {
+        border-top: 1px solid var(--line);
+        padding: 58px 24px;
+      }
+
+      .section-inner {
+        margin: 0 auto;
+        max-width: 1160px;
+      }
+
+      .section-heading {
+        display: grid;
+        gap: 12px;
+        margin-bottom: 30px;
+        max-width: 760px;
+      }
+
+      h2 {
+        font-size: clamp(30px, 4vw, 48px);
+        line-height: 1.05;
+        letter-spacing: 0;
+        margin: 0;
+      }
+
+      .section-heading p,
+      .feature p,
+      .plan p,
+      .example p {
+        color: var(--muted);
+        margin: 0;
+      }
+
+      .feature-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .feature,
+      .plan,
+      .example {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        padding: 22px;
+      }
+
+      .feature h3,
+      .plan h3,
+      .example h3 {
+        font-size: 20px;
+        margin: 0 0 10px;
+      }
+
+      .example-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .plan-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      .plan {
+        min-height: 220px;
+      }
+
+      .plan .label {
+        color: var(--gold);
+        font-size: 12px;
+        font-weight: 850;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+      }
+
+      .plan ul {
+        color: var(--muted);
+        font-size: 14px;
+        margin: 14px 0 0;
+        padding-left: 18px;
+      }
+
+      .cta-band {
+        background: var(--green-dark);
+        color: #fff;
+      }
+
+      .cta-band .section-heading p {
+        color: rgba(255, 255, 255, 0.78);
+      }
+
+      .cta-band .button.primary {
+        background: #fff;
+        border-color: #fff;
+        color: var(--green-dark);
+      }
+
+      .cta-band .button.secondary {
+        border-color: rgba(255, 255, 255, 0.5);
+        color: #fff;
+      }
+
+      footer {
+        color: var(--muted);
+        font-size: 14px;
+        margin: 0 auto;
+        max-width: 1160px;
+        padding: 28px 24px 40px;
+      }
+
+      @media (max-width: 920px) {
+        .hero-grid,
+        .feature-grid,
+        .example-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .plan-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 620px) {
+        .nav {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .nav-links {
+          justify-content: flex-start;
+        }
+
+        .hero {
+          padding-top: 48px;
+        }
+
+        .hero-grid {
+          gap: 28px;
+        }
+
+        .roadmap-preview {
+          padding: 18px;
+        }
+
+        .preview-header {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .plan-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav" aria-label="Primary navigation">
+        <a class="brand" href="/">
+          <span class="brand-mark">I</span>
+          <span>Intrepion</span>
+        </a>
+        <div class="nav-links">
+          <a href="#roadmap">Roadmap</a>
+          <a href="#examples">Examples</a>
+          <a href="#plans">Plans</a>
+          <a class="button secondary" href="mailto:hello@intrepion.com?subject=Intrepion%20early%20access">Request access</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-grid">
+          <div>
+            <p class="eyebrow">Dynamic roadmaps for ambitious projects</p>
+            <h1>Turn big goals into living roadmaps.</h1>
+            <p class="hero-copy">
+              Intrepion helps creators, founders, and small teams separate what matters in the next hour from what can compound over a decade.
+            </p>
+            <div class="hero-actions">
+              <a class="button primary" href="mailto:hello@intrepion.com?subject=Intrepion%20early%20access">Request early access</a>
+              <a class="button secondary" href="#roadmap">View the Intrepion roadmap</a>
+            </div>
+            <p class="proof-line">The first roadmap Intrepion manages is its own.</p>
+          </div>
+
+          <aside class="roadmap-preview" aria-label="Intrepion roadmap preview">
+            <div class="preview-header">
+              <p class="preview-title">intrepion.com roadmap</p>
+              <span class="preview-status">Preview</span>
+            </div>
+            <div class="timeline">
+              <div class="timeline-item">
+                <span class="horizon">1 hour</span>
+                <strong>Publish the promise and product rules.</strong>
+              </div>
+              <div class="timeline-item">
+                <span class="horizon">1 day</span>
+                <strong>Scaffold users, projects, roadmaps, and tutorials.</strong>
+              </div>
+              <div class="timeline-item">
+                <span class="horizon">1 week</span>
+                <strong>Connect tutorials to service integrations.</strong>
+              </div>
+              <div class="timeline-item">
+                <span class="horizon">1 month</span>
+                <strong>Add teams, AI support, and reviewed tutorial drafts.</strong>
+              </div>
+              <div class="timeline-item">
+                <span class="horizon">1 year</span>
+                <strong>Make roadmap operations repeatable for customers.</strong>
+              </div>
+              <div class="timeline-item">
+                <span class="horizon">1 decade</span>
+                <strong>Build a compounding execution platform.</strong>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section" id="roadmap">
+        <div class="section-inner">
+          <div class="section-heading">
+            <h2>A roadmap should change as the project becomes real.</h2>
+            <p>
+              Long-term architecture matters, but the next useful move matters more. Intrepion keeps both visible.
+            </p>
+          </div>
+          <div class="feature-grid">
+            <article class="feature">
+              <h3>Six fixed horizons</h3>
+              <p>Plan across 1 hour, 1 day, 1 week, 1 month, 1 year, and 1 decade without pretending every decision belongs in the same bucket.</p>
+            </article>
+            <article class="feature">
+              <h3>Tutorial-aware planning</h3>
+              <p>Roadmaps can point users to tutorials for the choices they make, or mark missing tutorials as planned and requestable.</p>
+            </article>
+            <article class="feature">
+              <h3>Automation later</h3>
+              <p>Services will eventually help users perform tutorial steps through APIs, with explicit credential control and admin-reviewed workflows.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="examples">
+        <div class="section-inner">
+          <div class="section-heading">
+            <h2>Starting with real projects.</h2>
+            <p>
+              The first examples are intentionally concrete: this business, Oliver's portfolio, and Karinna's art portfolio.
+            </p>
+          </div>
+          <div class="example-grid">
+            <article class="example">
+              <h3>intrepion.com</h3>
+              <p>A roadmap for building the roadmap-management business in public, from domain and landing page to automation and AI support.</p>
+            </article>
+            <article class="example">
+              <h3>oliverforral.com</h3>
+              <p>A portfolio roadmap for turning work history, projects, writing, and services into a durable professional presence.</p>
+            </article>
+            <article class="example">
+              <h3>karinnaaf.art</h3>
+              <p>An artist portfolio roadmap for presenting work, publishing updates, and creating a clear path for collectors or collaborators.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="plans">
+        <div class="section-inner">
+          <div class="section-heading">
+            <h2>Plans that grow with the roadmap.</h2>
+            <p>
+              Pricing is not open yet. These plan boundaries are the first draft of how roadmap depth, tutorials, automation, and support will scale.
+            </p>
+          </div>
+          <div class="plan-grid">
+            <article class="plan">
+              <div class="label">Free</div>
+              <h3>Start</h3>
+              <p>For trying one static roadmap.</p>
+              <ul>
+                <li>1 static roadmap</li>
+                <li>Public tutorials</li>
+                <li>Automated help</li>
+              </ul>
+            </article>
+            <article class="plan">
+              <div class="label">Plus</div>
+              <h3>Build</h3>
+              <p>For one dynamic project.</p>
+              <ul>
+                <li>1 dynamic roadmap</li>
+                <li>10 static roadmaps</li>
+                <li>Tutorial requests</li>
+              </ul>
+            </article>
+            <article class="plan">
+              <div class="label">Pro</div>
+              <h3>Operate</h3>
+              <p>For serious solo operators.</p>
+              <ul>
+                <li>10 dynamic roadmaps</li>
+                <li>Unlimited static roadmaps</li>
+                <li>Future AI support</li>
+              </ul>
+            </article>
+            <article class="plan">
+              <div class="label">Business</div>
+              <h3>Team</h3>
+              <p>For teams that need support and automation.</p>
+              <ul>
+                <li>Unlimited roadmaps</li>
+                <li>Team management</li>
+                <li>Priority human support</li>
+              </ul>
+            </article>
+            <article class="plan">
+              <div class="label">Enterprise</div>
+              <h3>Custom</h3>
+              <p>For organizations with custom needs.</p>
+              <ul>
+                <li>Custom terms</li>
+                <li>Custom integrations</li>
+                <li>Custom rate limits</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section cta-band">
+        <div class="section-inner">
+          <div class="section-heading">
+            <h2>Help shape the first roadmap.</h2>
+            <p>
+              Intrepion is being built from its own dynamic roadmap. Early reviewers can influence the product before accounts, billing, and automation are opened publicly.
+            </p>
+          </div>
+          <div class="hero-actions">
+            <a class="button primary" href="mailto:hello@intrepion.com?subject=Intrepion%20early%20access">Request early access</a>
+            <a class="button secondary" href="docs/product-roadmap.md">Read the roadmap draft</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>&copy; 2026 Intrepion. Dynamic roadmaps for ambitious projects.</span>
+    </footer>
+  </body>
+</html>
