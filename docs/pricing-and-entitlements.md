@@ -32,6 +32,14 @@ Tutorial service:
 
 An automation tied to a tutorial that can perform steps through third-party APIs after user confirmation.
 
+AI-assisted roadmap draft:
+
+A structured roadmap generated or revised by AI from user-provided project context. Drafts should be labeled as AI-assisted until reviewed or accepted by the user.
+
+AI guide:
+
+A user-facing assistant that answers from reviewed project, portfolio, tutorial, or support material. AI guides should not invent facts, pricing, availability, credentials, biography, professional claims, or commitments.
+
 ## Internal Free Access
 
 The following users should be allowed to use paid-plan capabilities without payment:
@@ -122,6 +130,29 @@ Required rules before automation is released:
 - Destructive actions require extra confirmation.
 - AI-generated service actions require admin review before publication.
 - Users must be able to revoke credentials.
+
+## AI Safety
+
+AI should enter the product as structured roadmap assistance before generic chat.
+
+Allowed early uses:
+
+- Drafting six-horizon roadmaps from user-provided goals.
+- Identifying missing tutorials or unclear assumptions.
+- Suggesting which roadmap items might become services later.
+- Answering questions from reviewed project, portfolio, or tutorial material.
+
+Not allowed without explicit review:
+
+- Publishing AI-generated tutorials publicly.
+- Executing AI-generated service actions.
+- Inventing user credentials, experience, biography, artwork meaning, pricing, availability, or business commitments.
+- Presenting an AI assistant as a person without clear boundaries.
+
+Owned-project examples:
+
+- Oliver's future AI avatar should answer from reviewed professional material and should not invent experience or make commitments to employers or clients.
+- Karinna's future studio guide should answer from artist-approved material and should not replace the artist's authorship, interpretation, pricing decisions, or availability decisions.
 
 ## Open Questions
 

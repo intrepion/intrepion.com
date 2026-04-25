@@ -403,36 +403,6 @@
         color: var(--blue);
       }
 
-      .meta-stack {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-
-      .pill {
-        border: 1px solid var(--line);
-        color: var(--muted);
-        display: inline-flex;
-        font-size: 12px;
-        font-weight: 750;
-        line-height: 1;
-        padding: 7px 9px;
-      }
-
-      .pill.available {
-        border-color: rgba(36, 90, 67, 0.35);
-        color: var(--green);
-      }
-
-      .pill.planned {
-        border-color: rgba(173, 122, 34, 0.38);
-        color: var(--gold);
-      }
-
-      .pill.future {
-        border-color: rgba(83, 96, 87, 0.28);
-      }
-
       .feature,
       .flow-step,
       .plan,
@@ -732,7 +702,7 @@
                 <span>Horizon</span>
                 <span>Roadmap item</span>
                 <span>Included / missing</span>
-                <span>Service path</span>
+                <span>Service readiness</span>
               </div>
               <div class="roadmap-row">
                 <div class="horizon">1 hour</div>
@@ -745,9 +715,10 @@
                   <li><span class="status-mark included">✓</span><span>Included: Free users can read the public example.</span></li>
                   <li><span class="status-mark missing">X</span><span>Missing: editable roadmap accounts.</span></li>
                 </ul>
-                <div class="meta-stack">
-                  <span class="pill future">Manual for now</span>
-                </div>
+                <ul class="status-list">
+                  <li><span class="status-mark included">✓</span><span>Included: no external service required.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: publish workflow can stay manual.</span></li>
+                </ul>
               </div>
               <div class="roadmap-row">
                 <div class="horizon">1 day</div>
@@ -760,9 +731,10 @@
                   <li><span class="status-mark included">✓</span><span>Included: Plus and Pro should be able to request it.</span></li>
                   <li><span class="status-mark unknown">?</span><span>Unclear: first app stack has not been chosen.</span></li>
                 </ul>
-                <div class="meta-stack">
-                  <span class="pill future">No service yet</span>
-                </div>
+                <ul class="status-list">
+                  <li><span class="status-mark missing">X</span><span>Missing: app scaffold service.</span></li>
+                  <li><span class="status-mark unknown">?</span><span>Unclear: stack choice comes first.</span></li>
+                </ul>
               </div>
               <div class="roadmap-row">
                 <div class="horizon">1 week</div>
@@ -775,9 +747,10 @@
                   <li><span class="status-mark included">✓</span><span>Included: Pro and Business are eligible for assistance.</span></li>
                   <li><span class="status-mark missing">X</span><span>Missing: credential storage and audit logs.</span></li>
                 </ul>
-                <div class="meta-stack">
-                  <span class="pill planned">Service planned</span>
-                </div>
+                <ul class="status-list">
+                  <li><span class="status-mark pending">!</span><span>Pending: first safe service spike.</span></li>
+                  <li><span class="status-mark missing">X</span><span>Missing: credential consent flow.</span></li>
+                </ul>
               </div>
               <div class="roadmap-row">
                 <div class="horizon">1 month</div>
@@ -790,9 +763,42 @@
                   <li><span class="status-mark included">✓</span><span>Included: Business and Enterprise roadmap depth.</span></li>
                   <li><span class="status-mark missing">X</span><span>Missing: admin review and publishing workflow.</span></li>
                 </ul>
-                <div class="meta-stack">
-                  <span class="pill planned">Reviewed only</span>
+                <ul class="status-list">
+                  <li><span class="status-mark pending">!</span><span>Pending: admin review queue.</span></li>
+                  <li><span class="status-mark missing">X</span><span>Missing: reviewed service publishing.</span></li>
+                </ul>
+              </div>
+              <div class="roadmap-row">
+                <div class="horizon">1 year</div>
+                <div>
+                  <h4>Make roadmap operations repeatable</h4>
+                  <p>Turn the launch workflow into templates, review rhythms, collaboration patterns, and measurable roadmap progress.</p>
                 </div>
+                <ul class="status-list">
+                  <li><span class="status-mark pending">!</span><span>Pending: roadmap templates by goal type.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: public roadmap publishing.</span></li>
+                  <li><span class="status-mark unknown">?</span><span>Unclear: which analytics actually help users decide.</span></li>
+                </ul>
+                <ul class="status-list">
+                  <li><span class="status-mark pending">!</span><span>Pending: scheduled review assistance.</span></li>
+                  <li><span class="status-mark missing">X</span><span>Missing: approval and collaboration services.</span></li>
+                </ul>
+              </div>
+              <div class="roadmap-row">
+                <div class="horizon">1 decade</div>
+                <div>
+                  <h4>Build a compounding execution platform</h4>
+                  <p>Make roadmaps adapt to outcomes, carry organizational memory, and connect verified guidance to safe operational services.</p>
+                </div>
+                <ul class="status-list">
+                  <li><span class="status-mark pending">!</span><span>Pending: verified tutorial and automation library.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: cross-project dependency mapping.</span></li>
+                  <li><span class="status-mark missing">X</span><span>Missing: governance for AI-generated operational changes.</span></li>
+                </ul>
+                <ul class="status-list">
+                  <li><span class="status-mark pending">!</span><span>Pending: expert-reviewed service marketplace.</span></li>
+                  <li><span class="status-mark unknown">?</span><span>Unclear: what should stay human-led forever.</span></li>
+                </ul>
               </div>
             </div>
           </div>
@@ -810,15 +816,15 @@
           <div class="example-grid">
             <article class="example">
               <h3>intrepion.com</h3>
-              <p>The business roadmap: prove the public promise, document the product rules, then grow into accounts, tutorials, services, and reviewed AI support.</p>
+              <p>An AI-assisted roadmap business that starts by proving the public promise, then grows into draft guidance, reviewed tutorials, and safe service automation.</p>
             </article>
             <article class="example">
               <h3>oliverforral.com</h3>
-              <p>The founder portfolio roadmap: turn work history, projects, writing, and services into a durable professional presence.</p>
+              <p>An AI-assisted software engineer portfolio that starts with proof of work and grows into a reviewed professional avatar for employers and clients.</p>
             </article>
             <article class="example">
               <h3>karinnaaf.art</h3>
-              <p>The artist portfolio roadmap: present work, publish updates, and create a clear path for collectors, collaborators, and future launches.</p>
+              <p>An AI-assisted artist portfolio that starts with selected work and grows into an artist-approved studio guide for collectors, collaborators, and visitors.</p>
             </article>
           </div>
         </div>

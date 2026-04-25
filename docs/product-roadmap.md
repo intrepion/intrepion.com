@@ -8,6 +8,8 @@ The first roadmap Intrepion should manage is its own.
 
 Intrepion helps users turn a large goal into a living roadmap that separates immediate next steps from longer-term architecture, operations, automation, and strategy.
 
+AI should help draft and revise roadmap guidance, but the core artifact is still the roadmap. Intrepion should not become a generic chatbot. AI output should be structured into horizons, roadmap items, tutorial needs, missing guidance, assumptions, and service opportunities.
+
 The product should answer:
 
 - What matters in the next hour?
@@ -67,6 +69,53 @@ User-facing behavior:
 - Users can view roadmap examples.
 - Users can see tutorial availability.
 - Paid-plan users can request planned tutorials.
+
+## Owned Example Roadmaps
+
+The first examples should be ambitious enough to show why AI-assisted roadmaps matter, while staying honest about what is reviewed, planned, or missing.
+
+### intrepion.com
+
+Product ambition: an AI-assisted roadmap business that turns user goals into six-horizon roadmap drafts, identifies missing tutorials, and eventually turns repeated tutorial work into reviewed services.
+
+Horizon sketch:
+
+- 1 hour: publish the differentiated homepage and public roadmap specimen.
+- 1 day: model users, projects, roadmaps, plans, tutorials, and tutorial requests.
+- 1 week: define safe service integration patterns for Namecheap, Neon, Google Cloud, and GitHub.
+- 1 month: allow AI-generated tutorial and service drafts with admin review before publishing.
+- 1 year: make roadmap operations repeatable through templates, reviews, collaboration, and public roadmap publishing.
+- 1 decade: build a compounding planning and execution platform with verified guidance, organizational memory, and governed automation.
+
+### oliverforral.com
+
+Product ambition: an AI-assisted software engineer portfolio that starts with proof of work and grows into a reviewed professional avatar for employers, clients, and collaborators.
+
+Horizon sketch:
+
+- 1 hour: publish a simple software engineer portfolio with positioning, strongest projects, contact path, and current availability.
+- 1 day: add case studies, work history, project screenshots, resume content, and a profile summary.
+- 1 week: structure portfolio content so it is AI-readable: projects, skills, decisions, outcomes, constraints, and proof.
+- 1 month: add an AI-assisted Q&A prototype that answers from reviewed portfolio content without inventing experience, claims, or commitments.
+- 1 year: grow the site into a durable professional presence with writing, project updates, services, testimonials, and analytics on visitor questions.
+- 1 decade: build a professional memory and avatar that can explain what Oliver has built, how he thinks, what roles fit, and what work he wants next.
+
+Important boundary: the AI should represent reviewed professional material. It should not invent credentials, speak for Oliver beyond approved facts, or make commitments to employers or clients.
+
+### karinnaaf.art
+
+Product ambition: an AI-assisted artist portfolio that starts with selected work and grows into an artist-approved studio guide for collectors, collaborators, and visitors.
+
+Horizon sketch:
+
+- 1 hour: publish a simple artist portfolio with selected works, artist statement, contact path, and a clear first collection.
+- 1 day: add artwork details such as titles, mediums, dimensions, availability, series notes, process notes, and high-quality images.
+- 1 week: structure the studio archive so it is AI-readable: works, collections, themes, materials, influences, exhibitions, pricing status, and collector questions.
+- 1 month: add an AI-assisted studio guide prototype that answers from artist-approved content without inventing meaning, prices, availability, or biography.
+- 1 year: grow the site into a collector and collaborator hub with collection updates, commissions, newsletters, studio notes, inquiry workflows, and analytics on visitor questions.
+- 1 decade: build a durable studio memory that preserves the evolution of the work, helps visitors explore themes across collections, and supports future exhibitions, licensing, and collector relationships.
+
+Important boundary: the AI should be an artist-approved studio guide, not an automated substitute for the artist's authorship or interpretation.
 
 ## One-Week Target
 
