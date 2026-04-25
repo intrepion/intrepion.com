@@ -18,5 +18,6 @@ Prototype artifacts:
 - `docs/ambitions-prototype.md`: first Ambitions model, examples, and build boundary.
 - `ambitions.html`: static app-shaped mock for the first Ambitions screen.
 - `ambition-form.html`: static intake form mock for manually filling in one ambition.
+- `docs/ambitions/oliverforral.md`: first real Ambition record.
 
 This repository is currently a static marketing and product-spec surface. It intentionally does not implement authentication, billing, banking imports, receipt ingestion, job applications, or external automation yet.
