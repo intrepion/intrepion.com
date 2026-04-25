@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Intrepion Ambition Intake</title>
+    <meta
+      name="description"
+      content="Create an Intrepion ambition with records, decisions, check-in questions, and AI-assisted roadmap suggestions."
+    >
+    <style>
+      :root {
+        --bg: #f7f4ee;
+        --ink: #1e2526;
+        --muted: #65716f;
+        --line: #d8d0c2;
+        --panel: #fffdf8;
+        --panel-strong: #ebe4d6;
+        --green: #335c4a;
+        --blue: #2c5068;
+        --gold: #8f650f;
+        --rose: #8f463e;
+        --focus: rgba(51, 92, 74, 0.18);
+        --shadow: 0 18px 45px rgba(37, 35, 29, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 0;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .topbar {
+        align-items: center;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 20px;
+        justify-content: space-between;
+        padding: 18px 28px;
+      }
+
+      .brand {
+        display: grid;
+        gap: 3px;
+      }
+
+      .brand strong {
+        font-size: 19px;
+        letter-spacing: 0;
+      }
+
+      .brand span,
+      .topbar nav {
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .topbar nav {
+        display: flex;
+        gap: 16px;
+      }
+
+      .page {
+        display: grid;
+        gap: 22px;
+        margin: 0 auto;
+        max-width: 1480px;
+        padding: 28px;
+      }
+
+      .hero {
+        background: var(--green);
+        color: #fffdf8;
+        display: grid;
+        gap: 14px;
+        padding: 30px;
+      }
+
+      .hero h1 {
+        font-size: clamp(34px, 6vw, 64px);
+        letter-spacing: 0;
+        line-height: 1;
+        margin: 0;
+        max-width: 1200px;
+      }
+
+      .hero p {
+        color: rgba(255, 253, 248, 0.78);
+        font-size: 17px;
+        line-height: 1.55;
+        margin: 0;
+        max-width: 1120px;
+      }
+
+      .form-layout {
+        align-items: start;
+        display: grid;
+        gap: 20px;
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      form,
+      .side-panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow);
+      }
+
+      form {
+        display: grid;
+      }
+
+      .form-section {
+        display: grid;
+        gap: 16px;
+        padding: 22px;
+      }
+
+      .form-section + .form-section {
+        border-top: 1px solid var(--line);
+      }
+
+      .section-heading {
+        display: grid;
+        gap: 6px;
+      }
+
+      .section-heading h2 {
+        font-size: 22px;
+        letter-spacing: 0;
+        margin: 0;
+      }
+
+      .section-heading p,
+      .help,
+      .side-panel p {
+        color: var(--muted);
+        line-height: 1.5;
+        margin: 0;
+      }
+
+      .field-grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: repeat(2, minmax(360px, 1fr));
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+      }
+
+      .field.full {
+        grid-column: 1 / -1;
+      }
+
+      label {
+        font-size: 13px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .field-head {
+        align-items: center;
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+      }
+
+      .magic-button {
+        align-items: center;
+        background: var(--blue);
+        color: #fffdf8;
+        display: inline-flex;
+        font-size: 12px;
+        gap: 6px;
+        justify-content: center;
+        line-height: 1;
+        min-height: 34px;
+        padding: 9px 10px;
+        white-space: nowrap;
+      }
+
+      .magic-button[disabled] {
+        cursor: not-allowed;
+        opacity: 0.62;
+      }
+
+      .magic-button.waiting {
+        background: var(--gold);
+      }
+
+      .magic-button.gated,
+      .magic-button.error {
+        background: var(--rose);
+      }
+
+      .suggestions {
+        background: var(--bg);
+        border: 1px solid var(--line);
+        display: grid;
+        gap: 8px;
+        padding: 10px;
+      }
+
+      .suggestion-title,
+      .status-note {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .suggestion-options {
+        display: grid;
+        gap: 8px;
+      }
+
+      .suggestion-options label {
+        align-items: start;
+        display: grid;
+        gap: 8px;
+        grid-template-columns: auto minmax(0, 1fr);
+        line-height: 1.4;
+        text-transform: none;
+      }
+
+      .suggestion-options input {
+        margin-top: 2px;
+      }
+
+      .status-note {
+        background: #fffefa;
+        border-left: 4px solid var(--gold);
+        line-height: 1.4;
+        padding: 8px 10px;
+        text-transform: none;
+      }
+
+      .status-note.error {
+        border-left-color: var(--rose);
+      }
+
+      input,
+      textarea,
+      select {
+        background: #fffefa;
+        border: 1px solid var(--line);
+        color: var(--ink);
+        font: inherit;
+        min-width: 0;
+        padding: 12px;
+      }
+
+      input[type="radio"],
+      input[type="checkbox"] {
+        accent-color: var(--green);
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        border-color: var(--green);
+        box-shadow: 0 0 0 4px var(--focus);
+        outline: none;
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      .horizon-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .horizon-card {
+        background: var(--bg);
+        border: 1px solid var(--line);
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 96px minmax(0, 1fr);
+        padding: 14px;
+      }
+
+      .horizon-card strong {
+        color: var(--green);
+        font-size: 14px;
+        text-transform: uppercase;
+      }
+
+      .horizon-fields {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(2, minmax(340px, 1fr));
+      }
+
+      .actions {
+        align-items: center;
+        background: var(--panel-strong);
+        border-top: 1px solid var(--line);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: space-between;
+        padding: 18px 22px;
+      }
+
+      button {
+        border: 0;
+        color: #fffdf8;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 900;
+        padding: 12px 16px;
+      }
+
+      .primary {
+        background: var(--green);
+      }
+
+      .secondary {
+        background: var(--blue);
+      }
+
+      .danger {
+        background: var(--rose);
+      }
+
+      .save-state {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .side-panel {
+        display: grid;
+        gap: 18px;
+        padding: 20px;
+        position: sticky;
+        top: 18px;
+      }
+
+      .side-panel h2 {
+        font-size: 16px;
+        margin: 0;
+        text-transform: uppercase;
+      }
+
+      .summary-preview {
+        display: grid;
+        gap: 14px;
+      }
+
+      .summary-card {
+        background: #fffefa;
+        border: 1px solid var(--line);
+        display: grid;
+        gap: 8px;
+        padding: 14px;
+      }
+
+      .summary-card h3 {
+        font-size: 15px;
+        margin: 0;
+      }
+
+      .summary-card p,
+      .summary-card li {
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .summary-card p {
+        margin: 0;
+      }
+
+      .summary-card ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .summary-roadmap {
+        display: grid;
+        gap: 10px;
+      }
+
+      .summary-horizon {
+        background: var(--bg);
+        border-left: 4px solid var(--green);
+        display: grid;
+        gap: 4px;
+        padding: 10px;
+      }
+
+      .summary-horizon strong {
+        color: var(--green);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      @media (max-width: 1100px) {
+        .form-layout,
+        .field-grid,
+        .horizon-fields {
+          grid-template-columns: 1fr;
+        }
+
+        .side-panel {
+          position: static;
+        }
+
+        .horizon-card {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .topbar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .page {
+          padding: 14px;
+        }
+
+        .hero,
+        .form-section,
+        .side-panel,
+        .actions {
+          padding: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <strong>Intrepion</strong>
+        <span>Ambition intake</span>
+      </div>
+      <nav aria-label="Ambitions navigation">
+        <a href="ambitions.html">Ambitions dashboard</a>
+      </nav>
+    </header>
+
+    <main class="page">
+      <section class="hero">
+        <p>New ambition</p>
+        <h1>Turn an ambition into a roadmap.</h1>
+        <p>
+          Capture the goal, records, open decisions, check-in questions, and AI suggestions that shape what happens next.
+        </p>
+      </section>
+
+      <div class="form-layout">
+        <form id="ambition-form">
+          <section class="form-section">
+            <div class="section-heading">
+              <h2>Ambition Basics</h2>
+              <p>Name the thing you are trying to move forward and define the first useful outcome.</p>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <div class="field-head">
+                  <label for="ambition-name">Ambition name</label>
+                  <button class="magic-button waiting" type="button" disabled aria-label="Generating ambition name suggestions">✦ Waiting</button>
+                </div>
+                <input id="ambition-name" name="ambitionName" placeholder="Example: oliverforral.com">
+                <p class="status-note">AI suggestions are still generating for this field.</p>
+              </div>
+              <div class="field">
+                <div class="field-head">
+                  <label for="ambition-type">Ambition type</label>
+                  <button class="magic-button" type="button" aria-label="Suggest ambition type">✦ Suggest</button>
+                </div>
+                <select id="ambition-type" name="ambitionType">
+                  <option value="">Choose a type</option>
+                  <option selected>Portfolio site</option>
+                  <option>Product</option>
+                  <option>Business</option>
+                  <option>Creative project</option>
+                  <option>Personal goal</option>
+                </select>
+                <div class="suggestions">
+                  <span class="suggestion-title">AI suggestions</span>
+                  <div class="suggestion-options">
+                    <label><input type="radio" name="suggestion-2"><span>None</span></label>
+                    <label><input type="radio" name="suggestion-2" checked><span>Portfolio site</span></label>
+                    <label><input type="radio" name="suggestion-2"><span>Career ambition</span></label>
+                    <label><input type="radio" name="suggestion-2"><span>Public proof-of-work project</span></label>
+                  </div>
+                </div>
+              </div>
+              <div class="field full">
+                <div class="field-head">
+                  <label for="goal">Goal</label>
+                  <button class="magic-button" type="button" aria-label="Suggest goal">✦ Suggest</button>
+                </div>
+                <textarea id="goal" name="goal" placeholder="What should this ambition accomplish?">Publish a simple site that makes Oliver's strongest engineering projects easy to inspect.</textarea>
+                <div class="suggestions">
+                  <span class="suggestion-title">AI suggestions</span>
+                  <div class="suggestion-options">
+                    <label><input type="radio" name="suggestion-3"><span>None</span></label>
+                    <label><input type="radio" name="suggestion-3"><span>Launch a software engineer portfolio that helps employers and clients understand Oliver's work, judgment, projects, and direction.</span></label>
+                    <label><input type="radio" name="suggestion-3" checked><span>Publish a simple site that makes Oliver's strongest engineering projects easy to inspect.</span></label>
+                    <label><input type="radio" name="suggestion-3"><span>Create a professional home base that can later support writing, case studies, and an AI avatar.</span></label>
+                  </div>
+                </div>
+              </div>
+              <div class="field full">
+                <div class="field-head">
+                  <label for="current-state">Current state</label>
+                  <button class="magic-button gated" type="button" disabled aria-label="AI credentials required">✦ Locked</button>
+                </div>
+                <textarea id="current-state" name="currentState" placeholder="What is already true? What exists? What is unclear?"></textarea>
+                <p class="status-note">Connect AI credentials or upgrade to Plus to generate suggestions for this field.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <div class="section-heading">
+              <h2>Records And Decisions</h2>
+              <p>Capture the facts the roadmap should use and the choices that are blocking progress.</p>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <div class="field-head">
+                  <label for="records-needed">Records needed</label>
+                  <button class="magic-button" type="button" aria-label="Suggest records needed">✦ Suggest</button>
+                </div>
+                <textarea id="records-needed" name="recordsNeeded" placeholder="What facts, files, links, or notes would make this roadmap smarter?">Resume or professional summary.
+Project descriptions, screenshots, links, and technical notes.
+Preferred contact method.</textarea>
+                <div class="suggestions">
+                  <span class="suggestion-title">AI suggestions</span>
+                  <div class="suggestion-options">
+                    <label><input type="checkbox" checked><span>Resume or professional summary.</span></label>
+                    <label><input type="checkbox"><span>3-5 projects worth featuring.</span></label>
+                    <label><input type="checkbox" checked><span>Project descriptions, screenshots, links, and technical notes.</span></label>
+                    <label><input type="checkbox" checked><span>Preferred contact method.</span></label>
+                  </div>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field-head">
+                  <label for="open-decisions">Open decisions</label>
+                  <button class="magic-button error" type="button" disabled aria-label="AI provider limit reached">✦ Limit</button>
+                </div>
+                <textarea id="open-decisions" name="openDecisions" placeholder="What choices are blocking progress?"></textarea>
+                <p class="status-note error">The configured AI provider returned a rate-limit error. Try again later, switch providers, or use plan AI credits.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <div class="section-heading">
+              <h2>Six-Horizon Roadmap</h2>
+              <p>Each horizon should have one useful item and one check-in question that helps you decide what to do when you return.</p>
+            </div>
+            <div class="horizon-grid">
+              <div class="horizon-card">
+                <strong>1 hour</strong>
+                <div class="horizon-fields">
+                  <div class="field">
+                    <div class="field-head">
+                      <label for="h1-item">Roadmap item</label>
+                      <button class="magic-button" type="button" aria-label="Suggest 1 hour roadmap item">✦ Suggest</button>
+                    </div>
+                    <input id="h1-item" name="h1Item" value="Write the one-sentence visitor takeaway." placeholder="What can create useful progress immediately?">
+                    <div class="suggestions">
+                      <span class="suggestion-title">AI suggestions</span>
+                      <div class="suggestion-options">
+                        <label><input type="radio" name="suggestion-5"><span>None</span></label>
+                        <label><input type="radio" name="suggestion-5"><span>Choose the first portfolio promise.</span></label>
+                        <label><input type="radio" name="suggestion-5" checked><span>Write the one-sentence visitor takeaway.</span></label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <div class="field-head">
+                      <label for="h1-prompt">Check-In Question</label>
+                      <button class="magic-button" type="button" aria-label="Suggest 1 hour check-in question">✦ Suggest</button>
+                    </div>
+                    <input id="h1-prompt" name="h1Prompt" value="What should a visitor understand after 30 seconds?" placeholder="What question should you answer when you return?">
+                    <div class="suggestions">
+                      <span class="suggestion-title">AI suggestions</span>
+                      <div class="suggestion-options">
+                        <label><input type="radio" name="suggestion-6"><span>None</span></label>
+                        <label><input type="radio" name="suggestion-6" checked><span>What should a visitor understand after 30 seconds?</span></label>
+                        <label><input type="radio" name="suggestion-6"><span>What is the smallest decision that would unlock the next step?</span></label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="horizon-card">
+                <strong>1 day</strong>
+                <div class="horizon-fields">
+                  <div class="field">
+                    <div class="field-head">
+                      <label for="h2-item">Roadmap item</label>
+                      <button class="magic-button" type="button" aria-label="Suggest 1 day roadmap item">✦ Suggest</button>
+                    </div>
+                    <input id="h2-item" name="h2Item" value="Draft the first site outline." placeholder="What can make this coherent by tomorrow?">
+                    <div class="suggestions">
+                      <span class="suggestion-title">AI suggestions</span>
+                      <div class="suggestion-options">
+                        <label><input type="radio" name="suggestion-7"><span>None</span></label>
+                        <label><input type="radio" name="suggestion-7" checked><span>Draft the first site outline.</span></label>
+                        <label><input type="radio" name="suggestion-7"><span>Pick the first three portfolio sections.</span></label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <div class="field-head">
+                      <label for="h2-prompt">Check-In Question</label>
+                      <button class="magic-button" type="button" aria-label="Suggest 1 day check-in question">✦ Suggest</button>
+                    </div>
+                    <input id="h2-prompt" name="h2Prompt" value="What is still too vague to build from?" placeholder="What should tomorrow's check-in ask?">
+                    <div class="suggestions">
+                      <span class="suggestion-title">AI suggestions</span>
+                      <div class="suggestion-options">
+                        <label><input type="radio" name="suggestion-8"><span>None</span></label>
+                        <label><input type="radio" name="suggestion-8"><span>What can be published without waiting for perfect polish?</span></label>
+                        <label><input type="radio" name="suggestion-8" checked><span>What is still too vague to build from?</span></label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="horizon-card">
+                <strong>1 week</strong>
+                <div class="horizon-fields">
+                  <div class="field">
+                    <div class="field-head">
+                      <label for="h3-item">Roadmap item</label>
+                      <button class="magic-button" type="button" aria-label="Suggest 1 week roadmap item">✦ Suggest</button>
+                    </div>
+                    <input id="h3-item" name="h3Item" value="Publish a simple portfolio." placeholder="What can become repeatable this week?">
+                    <div class="suggestions">
+                      <span class="suggestion-title">AI suggestions</span>
+                      <div class="suggestion-options">
+                        <label><input type="radio" name="suggestion-9"><span>None</span></label>
+                        <label><input type="radio" name="suggestion-9" checked><span>Publish a simple portfolio.</span></label>
+                        <label><input type="radio" name="suggestion-9"><span>Set up a weekly portfolio improvement review.</span></label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <div class="field-head">
+                      <label for="h3-prompt">Check-In Question</label>
+                      <button class="magic-button" type="button" aria-label="Suggest 1 week check-in question">✦ Suggest</button>
+                    </div>
+                    <input id="h3-prompt" name="h3Prompt" value="Which missing record would make the site easier to publish?" placeholder="What should this week's check-in ask?">
+                    <div class="suggestions">
+                      <span class="suggestion-title">AI suggestions</span>
+                      <div class="suggestion-options">
+                        <label><input type="radio" name="suggestion-10"><span>None</span></label>
+                        <label><input type="radio" name="suggestion-10"><span>What is blocking a public link?</span></label>
+                        <label><input type="radio" name="suggestion-10" checked><span>Which missing record would make the site easier to publish?</span></label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="horizon-card">
+                <strong>1 month</strong>
+                <div class="horizon-fields">
+                  <div class="field">
+                    <div class="field-head">
+                      <label for="h4-item">Roadmap item</label>
+                      <button class="magic-button" type="button" aria-label="Suggest 1 month roadmap item">✦ Suggest</button>
+                    </div>
+                    <input id="h4-item" name="h4Item" value="Write one deeper case study from a real project." placeholder="What would make this meaningfully useful this month?">
+                    <div class="suggestions">
+                      <span class="suggestion-title">AI suggestions</span>
+                      <div class="suggestion-options">
+                        <label><input type="radio" name="suggestion-11"><span>None</span></label>
+                        <label><input type="radio" name="suggestion-11"><span>Add stronger proof of work.</span></label>
+                        <label><input type="radio" name="suggestion-11" checked><span>Write one deeper case study from a real project.</span></label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <div class="field-head">
+                      <label for="h4-prompt">Check-In Question</label>
+                      <button class="magic-button" type="button" aria-label="Suggest 1 month check-in question">✦ Suggest</button>
+                    </div>
+                    <input id="h4-prompt" name="h4Prompt" value="Which project deserves a deeper write-up?" placeholder="What should this month's check-in ask?">
+                    <div class="suggestions">
+                      <span class="suggestion-title">AI suggestions</span>
+                      <div class="suggestion-options">
+                        <label><input type="radio" name="suggestion-12"><span>None</span></label>
+                        <label><input type="radio" name="suggestion-12" checked><span>Which project deserves a deeper write-up?</span></label>
+                        <label><input type="radio" name="suggestion-12"><span>What proof would make the portfolio more credible?</span></label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="horizon-card">
+                <strong>1 year</strong>
+                <div class="horizon-fields">
+                  <div class="field">
+                    <div class="field-head">
+                      <label for="h5-item">Roadmap item</label>
+                      <button class="magic-button gated" type="button" disabled aria-label="Paid AI plan required">✦ Locked</button>
+                    </div>
+                    <input id="h5-item" name="h5Item" placeholder="What could make this durable this year?">
+                    <p class="status-note">Long-horizon AI suggestions require configured credentials or a paid plan.</p>
+                  </div>
+                  <div class="field">
+                    <div class="field-head">
+                      <label for="h5-prompt">Check-In Question</label>
+                      <button class="magic-button" type="button" aria-label="Suggest 1 year check-in question">✦ Suggest</button>
+                    </div>
+                    <input id="h5-prompt" name="h5Prompt" value="Which portfolio evidence is now outdated?" placeholder="What should this year's check-in ask?">
+                    <div class="suggestions">
+                      <span class="suggestion-title">AI suggestions</span>
+                      <div class="suggestion-options">
+                        <label><input type="radio" name="suggestion-14"><span>None</span></label>
+                        <label><input type="radio" name="suggestion-14"><span>What changed about Oliver's professional direction?</span></label>
+                        <label><input type="radio" name="suggestion-14" checked><span>Which portfolio evidence is now outdated?</span></label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="horizon-card">
+                <strong>1 decade</strong>
+                <div class="horizon-fields">
+                  <div class="field">
+                    <div class="field-head">
+                      <label for="h6-item">Roadmap item</label>
+                      <button class="magic-button" type="button" aria-label="Suggest 1 decade roadmap item">✦ Suggest</button>
+                    </div>
+                    <input id="h6-item" name="h6Item" value="Build a long-term professional memory grounded in real artifacts." placeholder="What could compound for a decade?">
+                    <div class="suggestions">
+                      <span class="suggestion-title">AI suggestions</span>
+                      <div class="suggestion-options">
+                        <label><input type="radio" name="suggestion-15"><span>None</span></label>
+                        <label><input type="radio" name="suggestion-15"><span>Preserve a body of work and judgment.</span></label>
+                        <label><input type="radio" name="suggestion-15" checked><span>Build a long-term professional memory grounded in real artifacts.</span></label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <div class="field-head">
+                      <label for="h6-prompt">Check-In Question</label>
+                      <button class="magic-button" type="button" aria-label="Suggest 1 decade check-in question">✦ Suggest</button>
+                    </div>
+                    <input id="h6-prompt" name="h6Prompt" value="What should the long-term professional memory never misrepresent?" placeholder="What should the decade check-in protect?">
+                    <div class="suggestions">
+                      <span class="suggestion-title">AI suggestions</span>
+                      <div class="suggestion-options">
+                        <label><input type="radio" name="suggestion-16"><span>None</span></label>
+                        <label><input type="radio" name="suggestion-16" checked><span>What should the long-term professional memory never misrepresent?</span></label>
+                        <label><input type="radio" name="suggestion-16"><span>Which decisions should future Oliver be able to trace clearly?</span></label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <div class="section-heading">
+              <h2>Check-In And AI Draft</h2>
+              <p>Set the next question to revisit and choose what kind of AI help would move this ambition forward.</p>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <div class="field-head">
+                  <label for="next-review">Next check-in question</label>
+                  <button class="magic-button" type="button" aria-label="Suggest next check-in question">✦ Suggest</button>
+                </div>
+                <textarea id="next-review" name="nextReview" placeholder="What should you ask when you come back to this ambition?">What decision would make the next hour easier?</textarea>
+                <div class="suggestions">
+                  <span class="suggestion-title">AI suggestions</span>
+                  <div class="suggestion-options">
+                    <label><input type="radio" name="suggestion-17"><span>None</span></label>
+                    <label><input type="radio" name="suggestion-17"><span>What is the smallest honest version of oliverforral.com that can be published this week?</span></label>
+                    <label><input type="radio" name="suggestion-17" checked><span>What decision would make the next hour easier?</span></label>
+                    <label><input type="radio" name="suggestion-17"><span>Which record should be gathered before the next review?</span></label>
+                  </div>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field-head">
+                  <label for="ai-request">AI suggestion request</label>
+                  <button class="magic-button" type="button" aria-label="Suggest AI assistance request">✦ Suggest</button>
+                </div>
+                <textarea id="ai-request" name="aiRequest" placeholder="What should AI help draft, compare, or clarify?">Draft a homepage outline from Oliver's resume, project notes, and desired audience. Mark missing facts instead of inventing experience.</textarea>
+                <div class="suggestions">
+                  <span class="suggestion-title">AI suggestions</span>
+                  <div class="suggestion-options">
+                    <label><input type="radio" name="suggestion-18"><span>None</span></label>
+                    <label><input type="radio" name="suggestion-18" checked><span>Draft a homepage outline from Oliver's resume, project notes, and desired audience. Mark missing facts instead of inventing experience.</span></label>
+                    <label><input type="radio" name="suggestion-18"><span>Compare a simple portfolio launch against an app-like first version and list the tradeoffs.</span></label>
+                    <label><input type="radio" name="suggestion-18"><span>Identify which missing records block a credible first portfolio page.</span></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="actions">
+            <div>
+              <button class="primary" type="submit">Save draft locally</button>
+              <button class="secondary" type="button" id="export-button">Generate summary</button>
+              <button class="danger" type="button" id="clear-button">Clear draft</button>
+            </div>
+            <span class="save-state" id="save-state">Draft autosaves in this browser.</span>
+          </div>
+        </form>
+
+        <section class="side-panel" aria-label="Summary output">
+          <h2>Summary Output</h2>
+          <p class="help">Generate a structured draft from the form fields so the ambition can be reviewed as a roadmap.</p>
+          <div class="summary-preview" id="summary-preview"></div>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      const form = document.querySelector("#ambition-form");
+      const saveState = document.querySelector("#save-state");
+      const summaryPreview = document.querySelector("#summary-preview");
+      const exportButton = document.querySelector("#export-button");
+      const clearButton = document.querySelector("#clear-button");
+      const magicButtons = document.querySelectorAll(".magic-button:not([disabled])");
+      const storageKey = "intrepion-ambition-form-v3";
+
+      function getData() {
+        return Object.fromEntries(
+          [...new FormData(form).entries()].filter(([name]) => !name.startsWith("suggestion-"))
+        );
+      }
+
+      function saveDraft() {
+        localStorage.setItem(storageKey, JSON.stringify(getData()));
+        saveState.textContent = "Draft saved locally in this browser.";
+      }
+
+      function restoreDraft() {
+        const raw = localStorage.getItem(storageKey);
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        Object.entries(data).forEach(([name, value]) => {
+          const field = form.elements[name];
+          if (field) field.value = value;
+        });
+        saveState.textContent = "Local draft restored.";
+        return true;
+      }
+
+      function fieldForSuggestions(suggestions) {
+        const field = suggestions.closest(".field");
+        if (!field) return null;
+        return field.querySelector("input:not([type='radio']):not([type='checkbox']), textarea, select");
+      }
+
+      function applySuggestionGroup(suggestions) {
+        const field = fieldForSuggestions(suggestions);
+        if (!field) return;
+
+        const checked = [...suggestions.querySelectorAll("input:checked")]
+          .map((option) => option.closest("label")?.querySelector("span")?.textContent.trim())
+          .filter((text) => text && text !== "None");
+
+        if (field.tagName === "SELECT") {
+          field.value = checked[0] || "";
+          return;
+        }
+
+        field.value = checked.join(field.tagName === "TEXTAREA" ? "\n" : "");
+      }
+
+      function applySelectedSuggestions() {
+        document.querySelectorAll(".suggestion-options").forEach(applySuggestionGroup);
+      }
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function listItems(value) {
+        const items = String(value || "")
+          .split("\n")
+          .map((item) => item.trim())
+          .filter(Boolean);
+
+        if (!items.length) return "<p>Nothing added yet.</p>";
+        return `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+      }
+
+      function textOrEmpty(value) {
+        return escapeHtml(value || "Nothing added yet.");
+      }
+
+      function generateSummary() {
+        const data = getData();
+        const horizons = [
+          ["1 hour", data.h1Item, data.h1Prompt],
+          ["1 day", data.h2Item, data.h2Prompt],
+          ["1 week", data.h3Item, data.h3Prompt],
+          ["1 month", data.h4Item, data.h4Prompt],
+          ["1 year", data.h5Item, data.h5Prompt],
+          ["1 decade", data.h6Item, data.h6Prompt],
+        ];
+
+        summaryPreview.innerHTML = `
+          <section class="summary-card">
+            <h3>${textOrEmpty(data.ambitionName || "Untitled ambition")}</h3>
+            <p><strong>Type:</strong> ${textOrEmpty(data.ambitionType)}</p>
+            <p>${textOrEmpty(data.goal)}</p>
+          </section>
+          <section class="summary-card">
+            <h3>Current State</h3>
+            <p>${textOrEmpty(data.currentState)}</p>
+          </section>
+          <section class="summary-card">
+            <h3>Records Needed</h3>
+            ${listItems(data.recordsNeeded)}
+          </section>
+          <section class="summary-card">
+            <h3>Open Decisions</h3>
+            ${listItems(data.openDecisions)}
+          </section>
+          <section class="summary-card">
+            <h3>Roadmap</h3>
+            <div class="summary-roadmap">
+              ${horizons.map(([horizon, item, question]) => `
+                <div class="summary-horizon">
+                  <strong>${horizon}</strong>
+                  <p>${textOrEmpty(item)}</p>
+                  <p><strong>Check-in:</strong> ${textOrEmpty(question)}</p>
+                </div>
+              `).join("")}
+            </div>
+          </section>
+          <section class="summary-card">
+            <h3>Next Check-In</h3>
+            <p>${textOrEmpty(data.nextReview)}</p>
+          </section>
+          <section class="summary-card">
+            <h3>AI Request</h3>
+            <p>${textOrEmpty(data.aiRequest)}</p>
+          </section>
+        `;
+      }
+
+      form.addEventListener("input", () => {
+        saveDraft();
+      });
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        saveDraft();
+        generateSummary();
+      });
+
+      exportButton.addEventListener("click", generateSummary);
+
+      magicButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const originalText = button.textContent;
+          button.textContent = "✦ Waiting";
+          button.classList.add("waiting");
+          button.disabled = true;
+
+          window.setTimeout(() => {
+            button.textContent = originalText;
+            button.classList.remove("waiting");
+            button.disabled = false;
+          }, 900);
+        });
+      });
+
+      clearButton.addEventListener("click", () => {
+        localStorage.removeItem(storageKey);
+        form.reset();
+        generateSummary();
+        saveState.textContent = "Local draft cleared.";
+      });
+
+      if (!restoreDraft()) {
+        applySelectedSuggestions();
+      }
+
+      generateSummary();
+
+      document.querySelectorAll(".suggestion-options input").forEach((option) => {
+        option.addEventListener("change", () => {
+          applySuggestionGroup(option.closest(".suggestion-options"));
+          saveDraft();
+          generateSummary();
+        });
+      });
+    </script>
+  </body>
+</html>

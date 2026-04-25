@@ -33,7 +33,7 @@ A roadmap whose items are manually edited and do not automatically adapt based o
 
 Dynamic roadmap:
 
-A roadmap that can adjust recommendations, review prompts, missing information, or next actions based on records, user choices, AI summaries, and life-area context.
+A roadmap that can adjust recommendations, check-in questions, missing information, or next actions based on records, user choices, AI summaries, and life-area context.
 
 Record:
 

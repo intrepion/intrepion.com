@@ -6,7 +6,7 @@ The goal is to prove that Intrepion can help Oliver and Karinna move real portfo
 
 ## Prototype Question
 
-Can Intrepion turn two real portfolio goals into records, open decisions, six-horizon roadmaps, and review prompts that make the next action obvious?
+Can Intrepion turn two real portfolio goals into records, open decisions, six-horizon roadmaps, and check-in questions that make the next action obvious?
 
 If this does not help oliverforral.com and karinnaaf.art move forward, adding more life areas will probably create clutter instead of clarity.
 
@@ -29,7 +29,7 @@ The six-horizon plan for an ambition:
 
 Roadmap item:
 
-A task, milestone, question, decision, record request, or review prompt attached to one horizon.
+A task, milestone, question, decision, record request, or check-in question attached to one horizon.
 
 Record:
 
@@ -55,10 +55,37 @@ The first app-shaped screen should show:
 - The current 1-hour action for each ambition.
 - Missing records that would make the roadmap more useful.
 - Open decisions blocking progress.
-- The next review prompt.
+- The next check-in question.
 - A clearly labeled AI suggestion area.
 
 It does not need auth, billing, database persistence, uploads, or real AI yet.
+
+The first manual intake form should let the user fill in:
+
+- Ambition name and type.
+- Goal.
+- Current state.
+- Records needed.
+- Open decisions.
+- One roadmap item and check-in question for each horizon.
+- Next check-in question.
+- AI suggestion request.
+
+The form can save locally in the browser for the first usefulness test, but it should not imply production persistence.
+
+AI suggestion behavior in the mock:
+
+- Fields should start empty so the user can feel the blank-page problem.
+- Each field can show a magic-button affordance for requesting AI help.
+- Suggestions should appear as options that the user can choose from or ignore.
+- Use radio buttons when only one suggestion should fill the field.
+- Radio suggestion groups should include a selected None option so the user can clear the group.
+- Use checkboxes when multiple suggestions can be combined, such as records needed or open decisions.
+- In static examples, selected suggestions should match the visible field values.
+- Clicking a magic button should visually disable that button and show a waiting state until that field's AI operation finishes.
+- A field in a waiting, locked, or error state should show the status message instead of stale suggestions.
+- If the user has no configured AI credentials and is not on a paid plan, the field should show a configuration or upgrade message.
+- If the configured provider hits a rate limit, the field should show an error message and let the user try again later or switch providers.
 
 ## Ambition Example: oliverforral.com
 
@@ -91,7 +118,7 @@ Open decisions:
 
 Six-horizon roadmap:
 
-| Horizon | Roadmap Item | Records | Review Prompt |
+| Horizon | Roadmap Item | Records | Check-In Question |
 | --- | --- | --- | --- |
 | 1 hour | Choose the first portfolio promise. | Resume, current project list, desired role/client type. | What should a visitor understand after 30 seconds? |
 | 1 day | Draft the first site outline. | Bio draft, project names, contact method. | What can be published without waiting for perfect polish? |
@@ -100,7 +127,7 @@ Six-horizon roadmap:
 | 1 year | Turn the site into a durable professional presence. | New projects, job/client outcomes, writing, talks. | What changed about Oliver's professional direction? |
 | 1 decade | Preserve a body of work and judgment. | Career milestones, major projects, decisions, public artifacts. | What should the long-term professional memory never misrepresent? |
 
-Next review prompt:
+Next check-in question:
 
 What is the smallest honest version of oliverforral.com that can be published this week?
 
@@ -138,7 +165,7 @@ Open decisions:
 
 Six-horizon roadmap:
 
-| Horizon | Roadmap Item | Records | Review Prompt |
+| Horizon | Roadmap Item | Records | Check-In Question |
 | --- | --- | --- | --- |
 | 1 hour | Pick the first public collection. | Artwork photos, titles, notes, favorites. | Which pieces should represent the first version? |
 | 1 day | Draft the first artist-site structure. | Bio notes, collection names, contact method. | What page structure feels natural for the artwork? |
@@ -147,7 +174,7 @@ Six-horizon roadmap:
 | 1 year | Build an evolving art archive. | New collections, exhibitions, sales, commissions, updates. | What patterns are emerging across the work? |
 | 1 decade | Preserve an artist record. | Major bodies of work, milestones, statements, press, decisions. | What should the long-term artist memory protect and clarify? |
 
-Next review prompt:
+Next check-in question:
 
 What is the smallest beautiful version of karinnaaf.art that can be published this week?
 
@@ -163,7 +190,7 @@ Build only enough to test whether this structure helps:
 - Manual record notes.
 - Six-horizon roadmap display.
 - Open decisions.
-- Next review prompt.
+- Next check-in question.
 - AI suggestion placeholder.
 
 Do not build uploads, auth, billing, real AI, automations, or multi-user sharing yet.
