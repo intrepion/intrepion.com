@@ -1,44 +1,48 @@
 # Pricing And Entitlements
 
-This document defines the first draft of Intrepion's public plans and internal entitlement rules.
+This document defines the first draft of Intrepion's plan and entitlement rules for the AI-assisted life roadmap vision.
 
 Prices are intentionally not final. The goal is to document product boundaries before implementing billing.
 
 ## Public Plans
 
-| Plan | Intended User | Roadmaps | Tutorials | Support | Automation |
+| Plan | Intended User | Life Areas | Records | AI Assistance | Automation |
 | --- | --- | --- | --- | --- | --- |
-| Free | Curious individual | 1 static roadmap | View available public tutorials | Automated help and docs | None |
-| Plus | Individual builder | 1 dynamic roadmap, 10 static roadmaps | View tutorials and request planned tutorials | Automated help and support requests | None at first |
-| Pro | Serious solo operator | 10 dynamic roadmaps, 100 static roadmaps | View and request tutorials | Automated help, support requests, future AI support | Tutorial assistance when available |
-| Business | Small team | 100 dynamic and 1000 static roadmaps | View and request tutorials | Priority human support during work hours | Tutorial services when available |
-| Enterprise | Larger organization | Custom | Custom | Custom support terms | Custom integrations and rate limits |
+| Free | Curious individual | 1 life area | Limited manual records | Limited roadmap drafts | None |
+| Plus | Individual user | 3 life areas | More manual records and uploads | Regular roadmap and review help | None at first |
+| Pro | Power user | Unlimited personal life areas | Higher record and upload limits | Deeper AI summaries and drafts | Early assisted workflows |
+| Life | Serious personal operating system user | Unlimited personal life areas | High limits, richer history, stronger search | Cross-area AI reviews | Selected confirmed automations |
+| Family | Household or couple | Shared and private life areas | Shared household records | Household-aware reviews | Selected confirmed automations |
 
 ## Definitions
 
+Life area:
+
+A major domain the user wants to manage, such as finances, job search, language learning, media memory, shopping, receipts, or projects.
+
 Static roadmap:
 
-A roadmap whose items are manually edited and do not automatically adapt based on user choices, integrations, or AI assistance.
+A roadmap whose items are manually edited and do not automatically adapt based on records, reviews, or AI assistance.
 
 Dynamic roadmap:
 
-A roadmap that can adjust recommendations, tutorial suggestions, service steps, or next actions based on user choices, project context, plan level, or integrations.
+A roadmap that can adjust recommendations, review prompts, missing information, or next actions based on records, user choices, AI summaries, and life-area context.
 
-Tutorial request:
+Record:
 
-A request from an eligible user asking admins to create or prioritize a missing tutorial.
-
-Tutorial service:
-
-An automation tied to a tutorial that can perform steps through third-party APIs after user confirmation.
+A stored fact or artifact attached to a life area. Records may include receipts, job applications, watched videos, ratings, debts, bills, coupon codes, language notes, project notes, and uploaded files.
 
 AI-assisted roadmap draft:
 
-A structured roadmap generated or revised by AI from user-provided project context. Drafts should be labeled as AI-assisted until reviewed or accepted by the user.
+A structured roadmap generated or revised by AI from user-provided context and records. Drafts should be labeled as AI-assisted until reviewed or accepted by the user.
 
-AI guide:
+Review:
 
-A user-facing assistant that answers from reviewed project, portfolio, tutorial, or support material. AI guides should not invent facts, pricing, availability, credentials, biography, professional claims, or commitments.
+A recurring check-in that turns records, roadmap status, and user intent into next actions.
+
+Service:
+
+An optional automation that performs an external action after explicit user confirmation.
 
 ## Internal Free Access
 
@@ -62,25 +66,89 @@ Admins can eventually:
 
 - Manage users.
 - Manage plans.
-- Manage tutorials.
-- Manage tutorial requests.
-- Manage services.
-- Review AI-generated tutorial drafts.
-- Review AI-generated service drafts.
+- Manage public documentation.
+- Review AI-generated templates.
+- Review AI-generated service ideas.
+- Review safety rules for sensitive life areas.
 
-Admins should still be able to experience the app as regular users so internal projects can use the same roadmap workflow as customer projects.
+Admins should still be able to experience the app as regular users so internal life areas use the same workflow as customer life areas.
+
+## Entitlement Areas
+
+Plan limits may eventually include:
+
+- Number of life areas.
+- Number of records.
+- Upload storage.
+- Receipt/photo extraction volume.
+- AI draft and review volume.
+- Search history depth.
+- Cross-area review access.
+- Export and backup options.
+- Automation access.
+- Household sharing.
+
+Do not implement billing until the plan rules are reviewed.
+
+## Sensitive Areas
+
+Sensitive areas require careful product boundaries:
+
+- Finances, credit cards, debt, bills, and bank-like data.
+- Job applications, resumes, salary information, and employment history.
+- Receipts, purchases, store accounts, coupons, and discounts.
+- Credentials, API keys, OAuth tokens, and uploaded documents.
+- Private media history or learning notes if the user marks them private.
+
+## AI Safety
+
+AI should enter the product as structured roadmap, record, and review assistance before generic chat.
+
+Allowed early uses:
+
+- Drafting six-horizon roadmaps from user-provided goals.
+- Summarizing manually entered records.
+- Identifying missing information and unclear assumptions.
+- Suggesting next actions.
+- Drafting job materials from reviewed professional material.
+- Generating English, Spanish, or other language practice from user goals and known weak spots.
+- Extracting receipt fields from uploaded receipt images after the user confirms the result.
+
+Not allowed without explicit review or confirmation:
+
+- Giving professional financial advice.
+- Making payments or purchases.
+- Applying to jobs.
+- Sending messages to employers, stores, banks, or services.
+- Executing AI-generated service actions.
+- Inventing credentials, employment history, artwork meaning, pricing, availability, biography, financial facts, or commitments.
+- Deleting records or source files.
+
+## Automation Safety
+
+Services may eventually create, update, or configure external resources. These operations can have security, billing, employment, or financial consequences.
+
+Required rules before automation is released:
+
+- Users must explicitly connect credentials.
+- Users must explicitly confirm sensitive actions.
+- Service actions must be logged.
+- Destructive actions require extra confirmation.
+- AI-generated service actions require admin review before publication.
+- Users must be able to revoke credentials.
+- Users must be able to export or back up important records.
 
 ## Support Rules
 
 Initial support levels:
 
 - Free: documentation and automated support flow.
-- Plus: documentation, automated support flow, and tutorial requests.
-- Pro: Plus support plus future AI support.
-- Business: Pro support plus priority human support during published work hours.
-- Enterprise: custom terms.
+- Plus: documentation, automated support flow, and support requests.
+- Pro: Plus support plus higher AI usage.
+- Life: Pro support plus higher limits and selected assisted workflows.
+- Family: shared support for household setup.
 
-Avoid using the phrase "live chat" in public copy until a real staffing and response-time policy exists.
+Avoid promising live chat until there is a real staffing and response-time policy behind it.
 
 ## Billing Rules
 
@@ -92,75 +160,15 @@ When billing is added:
 - Other users should require payment for paid plans.
 - Failed payment should downgrade or restrict paid entitlements without deleting user data.
 - Plan changes should be auditable.
-- Enterprise should support manual billing outside self-serve checkout.
-
-## Seat Rules
-
-Business and Enterprise plans will eventually support teams.
-
-Draft assumptions:
-
-- Team management starts on Business.
-- Seat billing starts on Business.
-- Bulk discounts can be introduced at documented thresholds.
-- Enterprise can negotiate custom seat terms.
-
-Do not implement seat billing until individual plan billing is working.
-
-## API Access Rules
-
-Business and Enterprise users may eventually buy increased API limits.
-
-Draft assumptions:
-
-- Default public API access is not part of the first MVP.
-- Higher rate limits should cost more.
-- API access should have separate keys, logs, and revocation from user login.
-- Enterprise can negotiate custom limits.
-
-## Automation Safety
-
-Tutorial services may create, update, or configure external resources. These operations can have security or billing consequences.
-
-Required rules before automation is released:
-
-- Users must explicitly connect credentials.
-- Users must explicitly confirm sensitive actions.
-- Service actions must be logged.
-- Destructive actions require extra confirmation.
-- AI-generated service actions require admin review before publication.
-- Users must be able to revoke credentials.
-
-## AI Safety
-
-AI should enter the product as structured roadmap assistance before generic chat.
-
-Allowed early uses:
-
-- Drafting six-horizon roadmaps from user-provided goals.
-- Identifying missing tutorials or unclear assumptions.
-- Suggesting which roadmap items might become services later.
-- Answering questions from reviewed project, portfolio, or tutorial material.
-
-Not allowed without explicit review:
-
-- Publishing AI-generated tutorials publicly.
-- Executing AI-generated service actions.
-- Inventing user credentials, experience, biography, artwork meaning, pricing, availability, or business commitments.
-- Presenting an AI assistant as a person without clear boundaries.
-
-Owned-project examples:
-
-- Oliver's future AI avatar should answer from reviewed professional material and should not invent experience or make commitments to employers or clients.
-- Karinna's future studio guide should answer from artist-approved material and should not replace the artist's authorship, interpretation, pricing decisions, or availability decisions.
+- Users should be able to export core records.
 
 ## Open Questions
 
-- What are the actual monthly prices for Plus, Pro, and Business?
-- Should static public roadmaps count differently from private static roadmaps?
-- Should tutorial requests be limited per month?
-- Should Pro include any human support or only AI-assisted support?
-- What are the published Business support hours?
-- Should Enterprise require annual contracts only?
-- Which payment provider should be used first?
+- What is the first life area to prototype?
+- Should Free include one AI-generated roadmap draft?
+- How should receipt image storage be priced?
+- Should Family be a plan now or later?
+- Should debt tracking be included early, given the sensitivity?
+- What financial disclaimers are required?
+- Which data should be local-first or exportable from day one?
 - Which auth provider should be used first?

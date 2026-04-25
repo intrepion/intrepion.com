@@ -3,16 +3,16 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Intrepion | Guided Roadmaps For Launching Real Projects</title>
+    <title>Intrepion | AI-Assisted Life Roadmaps</title>
     <meta
       name="description"
-      content="Intrepion turns ambitious goals into guided six-horizon roadmaps with tutorials, requestable missing guidance, and reviewed automation paths."
+      content="Intrepion helps you turn open loops across projects, debt, jobs, learning, media, shopping, and receipts into AI-assisted life roadmaps."
     >
     <meta name="robots" content="index,follow">
-    <meta property="og:title" content="Intrepion | Guided Roadmaps For Launching Real Projects">
+    <meta property="og:title" content="Intrepion | AI-Assisted Life Roadmaps">
     <meta
       property="og:description"
-      content="Move from a messy ambition to a concrete roadmap across 1 hour, 1 day, 1 week, 1 month, 1 year, and 1 decade."
+      content="Organize the areas of your life into roadmaps, records, reviews, and next actions."
     >
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://intrepion.com/">
@@ -21,7 +21,7 @@
       :root {
         color-scheme: light;
         --ink: #17211c;
-        --muted: #536057;
+        --muted: #56645c;
         --paper: #f7f4ed;
         --panel: #ffffff;
         --line: #d8d2c5;
@@ -30,6 +30,7 @@
         --blue: #255b78;
         --gold: #ad7a22;
         --rose: #9b4b54;
+        --plum: #5d4b8c;
         --shadow: 0 18px 60px rgba(23, 33, 28, 0.12);
       }
 
@@ -62,7 +63,7 @@
         gap: 24px;
         justify-content: space-between;
         margin: 0 auto;
-        max-width: 1160px;
+        max-width: 1180px;
         padding: 18px 24px;
       }
 
@@ -70,7 +71,7 @@
         align-items: center;
         display: inline-flex;
         font-size: 18px;
-        font-weight: 800;
+        font-weight: 850;
         gap: 10px;
         text-decoration: none;
       }
@@ -97,7 +98,7 @@
       .nav-links a {
         color: var(--muted);
         font-size: 14px;
-        font-weight: 650;
+        font-weight: 700;
         text-decoration: none;
       }
 
@@ -106,7 +107,7 @@
         border: 1px solid var(--green);
         display: inline-flex;
         font-size: 15px;
-        font-weight: 750;
+        font-weight: 800;
         justify-content: center;
         min-height: 44px;
         padding: 10px 16px;
@@ -129,21 +130,21 @@
 
       .hero {
         margin: 0 auto;
-        max-width: 1160px;
-        padding: 72px 24px 52px;
+        max-width: 1180px;
+        padding: 74px 24px 56px;
       }
 
       .hero-grid {
         align-items: center;
         display: grid;
-        gap: 44px;
-        grid-template-columns: minmax(0, 1fr) minmax(360px, 0.85fr);
+        gap: 46px;
+        grid-template-columns: minmax(0, 1fr) minmax(380px, 0.86fr);
       }
 
       .eyebrow {
         color: var(--gold);
         font-size: 13px;
-        font-weight: 850;
+        font-weight: 900;
         letter-spacing: 0;
         margin: 0 0 14px;
         text-transform: uppercase;
@@ -161,7 +162,7 @@
         color: var(--muted);
         font-size: 20px;
         margin: 24px 0 0;
-        max-width: 670px;
+        max-width: 700px;
       }
 
       .hero-actions {
@@ -177,7 +178,7 @@
         margin-top: 18px;
       }
 
-      .roadmap-preview {
+      .life-preview {
         background: var(--panel);
         border: 1px solid var(--line);
         box-shadow: var(--shadow);
@@ -194,58 +195,59 @@
 
       .preview-title {
         font-size: 15px;
-        font-weight: 850;
+        font-weight: 900;
         margin: 0;
       }
 
       .preview-status {
         color: var(--green);
         font-size: 13px;
-        font-weight: 800;
+        font-weight: 850;
         white-space: nowrap;
       }
 
-      .timeline {
+      .preview-list {
         display: grid;
         gap: 12px;
         margin-top: 18px;
       }
 
-      .timeline-item {
+      .preview-item {
         border-left: 4px solid var(--green);
         display: grid;
         gap: 3px;
         padding: 3px 0 3px 14px;
       }
 
-      .timeline-item:nth-child(2) {
-        border-color: var(--blue);
-      }
-
-      .timeline-item:nth-child(3) {
-        border-color: var(--gold);
-      }
-
-      .timeline-item:nth-child(4) {
+      .preview-item:nth-child(2) {
         border-color: var(--rose);
       }
 
-      .timeline-item:nth-child(5) {
+      .preview-item:nth-child(3) {
+        border-color: var(--blue);
+      }
+
+      .preview-item:nth-child(4) {
+        border-color: var(--gold);
+      }
+
+      .preview-item:nth-child(5) {
+        border-color: var(--plum);
+      }
+
+      .preview-item:nth-child(6) {
         border-color: #557a2f;
       }
 
-      .timeline-item:nth-child(6) {
-        border-color: #5d4b8c;
-      }
-
+      .preview-label,
       .horizon {
         color: var(--muted);
         font-size: 12px;
-        font-weight: 850;
+        font-weight: 900;
         text-transform: uppercase;
       }
 
-      .timeline-item strong {
+      .preview-item strong {
         font-size: 15px;
       }
 
@@ -256,14 +258,14 @@
 
       .section-inner {
         margin: 0 auto;
-        max-width: 1160px;
+        max-width: 1180px;
       }
 
       .section-heading {
         display: grid;
         gap: 12px;
         margin-bottom: 30px;
-        max-width: 760px;
+        max-width: 820px;
       }
 
       h2 {
@@ -275,8 +277,8 @@
 
       .section-heading p,
       .feature p,
-      .plan p,
-      .example p {
+      .area p,
+      .plan p {
         color: var(--muted);
         margin: 0;
       }
@@ -284,20 +286,42 @@
       .feature-grid {
         display: grid;
         gap: 16px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .area-grid {
+        display: grid;
+        gap: 16px;
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
-      .flow-grid {
-        display: grid;
-        gap: 16px;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+      .feature,
+      .area,
+      .plan {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        padding: 22px;
+      }
+
+      .feature h3,
+      .area h3,
+      .plan h3 {
+        font-size: 20px;
+        margin: 0 0 10px;
+      }
+
+      .step-label {
+        color: var(--gold);
+        font-size: 12px;
+        font-weight: 900;
+        margin-bottom: 10px;
+        text-transform: uppercase;
       }
 
       .specimen {
         background: var(--panel);
         border: 1px solid var(--line);
         box-shadow: var(--shadow);
-        margin-top: 30px;
       }
 
       .specimen-header {
@@ -317,14 +341,14 @@
       .specimen-header p {
         color: var(--muted);
         margin: 0;
-        max-width: 680px;
+        max-width: 720px;
       }
 
       .specimen-badge {
         border: 1px solid var(--line);
         color: var(--green);
         font-size: 12px;
-        font-weight: 850;
+        font-weight: 900;
         padding: 7px 10px;
         text-transform: uppercase;
         white-space: nowrap;
@@ -337,7 +361,7 @@
       .roadmap-row {
         display: grid;
         gap: 16px;
-        grid-template-columns: 110px minmax(0, 1.2fr) minmax(210px, 0.8fr) minmax(170px, 0.6fr);
+        grid-template-columns: 110px minmax(0, 1.1fr) minmax(220px, 0.9fr) minmax(200px, 0.8fr);
         padding: 18px 22px;
       }
 
@@ -349,7 +373,7 @@
         background: #f2eee4;
         color: var(--muted);
         font-size: 12px;
-        font-weight: 850;
+        font-weight: 900;
         text-transform: uppercase;
       }
 
@@ -377,12 +401,12 @@
         display: grid;
         font-size: 14px;
         gap: 8px;
-        grid-template-columns: 20px 1fr;
+        grid-template-columns: 24px 1fr;
       }
 
       .status-mark {
         display: inline-flex;
-        font-weight: 850;
+        font-weight: 900;
         justify-content: center;
         line-height: 1.25;
       }
@@ -403,35 +427,19 @@
         color: var(--blue);
       }
 
-      .feature,
-      .flow-step,
-      .plan,
-      .example {
-        background: var(--panel);
-        border: 1px solid var(--line);
-        padding: 22px;
+      .dark-band {
+        background: var(--green-dark);
+        color: #fff;
       }
 
-      .feature h3,
-      .flow-step h3,
-      .plan h3,
-      .example h3 {
-        font-size: 20px;
-        margin: 0 0 10px;
+      .dark-band .section-heading p,
+      .dark-band .feature p {
+        color: rgba(255, 255, 255, 0.78);
       }
 
-      .step-label {
-        color: var(--gold);
-        font-size: 12px;
-        font-weight: 850;
-        margin-bottom: 10px;
-        text-transform: uppercase;
-      }
-
-      .example-grid {
-        display: grid;
-        gap: 16px;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+      .dark-band .feature {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.18);
       }
 
       .plan-grid {
@@ -447,7 +455,7 @@
       .plan .label {
         color: var(--gold);
         font-size: 12px;
-        font-weight: 850;
+        font-weight: 900;
         margin-bottom: 8px;
         text-transform: uppercase;
       }
@@ -479,38 +487,18 @@
         color: #fff;
       }
 
-      .differentiator {
-        background: var(--green-dark);
-        color: #fff;
-      }
-
-      .differentiator .section-heading p,
-      .differentiator .flow-step p {
-        color: rgba(255, 255, 255, 0.78);
-      }
-
-      .differentiator .flow-step {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(255, 255, 255, 0.18);
-      }
-
-      .differentiator .specimen {
-        color: var(--ink);
-      }
-
       footer {
         color: var(--muted);
         font-size: 14px;
         margin: 0 auto;
-        max-width: 1160px;
+        max-width: 1180px;
         padding: 28px 24px 40px;
       }
 
-      @media (max-width: 920px) {
+      @media (max-width: 980px) {
         .hero-grid,
         .feature-grid,
-        .flow-grid,
-        .example-grid {
+        .area-grid {
           grid-template-columns: 1fr;
         }
 
@@ -545,18 +533,15 @@
           gap: 28px;
         }
 
-        .roadmap-preview {
+        .life-preview {
           padding: 18px;
         }
 
-        .preview-header {
+        .preview-header,
+        .specimen-header {
           align-items: flex-start;
           flex-direction: column;
           gap: 6px;
-        }
-
-        .specimen-header {
-          flex-direction: column;
         }
 
         .plan-grid {
@@ -573,8 +558,9 @@
           <span>Intrepion</span>
         </a>
         <div class="nav-links">
-          <a href="#method">Method</a>
-          <a href="#examples">Examples</a>
+          <a href="#model">Model</a>
+          <a href="#areas">Life areas</a>
+          <a href="#specimen">Specimen</a>
           <a href="#plans">Plans</a>
           <a class="button secondary" href="mailto:hello@intrepion.com?subject=Intrepion%20early%20access">Request access</a>
         </div>
@@ -585,114 +571,137 @@
       <section class="hero">
         <div class="hero-grid">
           <div>
-            <p class="eyebrow">Guided roadmaps for launching real projects</p>
-            <h1>Turn a messy ambition into the next right move.</h1>
+            <p class="eyebrow">AI-assisted roadmaps for real life</p>
+            <h1>Turn open loops into life roadmaps.</h1>
             <p class="hero-copy">
-              Intrepion helps creators, founders, and small teams turn unclear goals into six-horizon roadmaps, then connect each step to tutorials, requests, and eventually reviewed automation.
+              Intrepion helps you manage projects, debt, job search, language learning, media history, shopping, coupons, and receipts with one shared system: roadmaps, records, reviews, and AI-assisted next actions.
             </p>
             <div class="hero-actions">
               <a class="button primary" href="mailto:hello@intrepion.com?subject=Intrepion%20early%20access">Request early access</a>
-              <a class="button secondary" href="#roadmap">View the Intrepion roadmap</a>
+              <a class="button secondary" href="#specimen">View the life roadmap specimen</a>
             </div>
-            <p class="proof-line">The first proof is Intrepion's own roadmap, built in public.</p>
+            <p class="proof-line">The first product test is whether Intrepion can help Oliver manage his real open loops.</p>
           </div>
 
-          <aside class="roadmap-preview" aria-label="Intrepion roadmap preview">
+          <aside class="life-preview" aria-label="Initial Intrepion life areas">
             <div class="preview-header">
-              <p class="preview-title">intrepion.com roadmap</p>
+              <p class="preview-title">Oliver's starting life areas</p>
               <span class="preview-status">Preview</span>
             </div>
-            <div class="timeline">
-              <div class="timeline-item">
-                <span class="horizon">1 hour</span>
-                <strong>Clarify the promise and publish the first roadmap.</strong>
+            <div class="preview-list">
+              <div class="preview-item">
+                <span class="preview-label">Roadmaps</span>
+                <strong>Projects, sites, products, and long-term goals.</strong>
               </div>
-              <div class="timeline-item">
-                <span class="horizon">1 day</span>
-                <strong>Model users, projects, roadmaps, plans, and tutorials.</strong>
+              <div class="preview-item">
+                <span class="preview-label">Finances</span>
+                <strong>Credit card debt, bills, spending decisions, and recovery.</strong>
               </div>
-              <div class="timeline-item">
-                <span class="horizon">1 week</span>
-                <strong>Connect tutorials to safe service-integration plans.</strong>
+              <div class="preview-item">
+                <span class="preview-label">Career</span>
+                <strong>Job applications, tailored materials, interviews, and follow-ups.</strong>
               </div>
-              <div class="timeline-item">
-                <span class="horizon">1 month</span>
-                <strong>Add teams, AI support, and reviewed tutorial drafts.</strong>
+              <div class="preview-item">
+                <span class="preview-label">Languages</span>
+                <strong>English and Spanish first, then more languages as the model proves itself.</strong>
               </div>
-              <div class="timeline-item">
-                <span class="horizon">1 year</span>
-                <strong>Make roadmap operations repeatable for customers.</strong>
+              <div class="preview-item">
+                <span class="preview-label">Media memory</span>
+                <strong>Shows, movies, YouTube, ratings, and what changed over time.</strong>
               </div>
-              <div class="timeline-item">
-                <span class="horizon">1 decade</span>
-                <strong>Build a compounding execution platform.</strong>
+              <div class="preview-item">
+                <span class="preview-label">Shopping</span>
+                <strong>Prices, receipts, coupons, discounts, and purchase history.</strong>
               </div>
             </div>
           </aside>
         </div>
       </section>
 
-      <section class="section" id="method">
+      <section class="section dark-band" id="model">
         <div class="section-inner">
           <div class="section-heading">
-            <h2>Not another issue tracker.</h2>
+            <h2>Not six separate apps.</h2>
             <p>
-              Linear helps teams execute known software work. Intrepion is for the earlier, messier moment: you have a domain, a goal, and a dozen possible directions, but need a sequence you can actually follow.
+              The shared primitive is a life area with a roadmap, records, recurring reviews, and AI help. If the same model cannot support debt, jobs, learning, media, receipts, and projects, the vision is too broad.
             </p>
           </div>
           <div class="feature-grid">
             <article class="feature">
-              <h3>Time-horizon discipline</h3>
-              <p>Every roadmap uses 1 hour, 1 day, 1 week, 1 month, 1 year, and 1 decade so immediate progress and long-term compounding stay connected.</p>
+              <div class="step-label">1. Area</div>
+              <h3>Name the loop</h3>
+              <p>Start with the thing that keeps resurfacing: debt, job search, language learning, receipts, media, or a project.</p>
             </article>
             <article class="feature">
-              <h3>Tutorial-aware steps</h3>
-              <p>Roadmap items can point to guidance for the choices users make, or mark missing tutorials as planned and requestable by eligible members.</p>
+              <div class="step-label">2. Records</div>
+              <h3>Capture the facts</h3>
+              <p>Add the bills, applications, receipts, ratings, notes, practice history, or project context the roadmap should use.</p>
             </article>
             <article class="feature">
-              <h3>Automation with review</h3>
-              <p>Repeated tutorial work can become services later, but credential access, sensitive actions, and AI-generated workflows require explicit review.</p>
+              <div class="step-label">3. Roadmap</div>
+              <h3>Split the horizons</h3>
+              <p>Turn the area into 1 hour, 1 day, 1 week, 1 month, 1 year, and 1 decade actions.</p>
+            </article>
+            <article class="feature">
+              <div class="step-label">4. Review</div>
+              <h3>Let AI help carefully</h3>
+              <p>Summarize what changed, expose missing facts, and suggest next actions without pretending uncertainty is certainty.</p>
             </article>
           </div>
         </div>
       </section>
 
-      <section class="section differentiator" id="roadmap">
+      <section class="section" id="areas">
         <div class="section-inner">
           <div class="section-heading">
-            <h2>From intention to sequence to execution.</h2>
+            <h2>Life areas with one grammar.</h2>
             <p>
-              The product center is not task management. It is helping someone move from "I want to launch this" to a visible path of next actions, guidance, and future assistance.
+              The first examples come from real pressure: money, work, learning, memory, shopping, receipts, and long-term projects.
             </p>
           </div>
-          <div class="flow-grid">
-            <article class="flow-step">
-              <div class="step-label">1. Goal</div>
-              <h3>Name the project</h3>
-              <p>Start with a real ambition: a business, portfolio, product, service, or site that needs a concrete launch path.</p>
+          <div class="area-grid">
+            <article class="area">
+              <h3>Debt and finances</h3>
+              <p>Track credit card balances, due dates, minimum payments, spending constraints, and financial recovery next actions.</p>
             </article>
-            <article class="flow-step">
-              <div class="step-label">2. Roadmap</div>
-              <h3>Split the horizons</h3>
-              <p>Separate the next hour from the next decade so strategy does not crowd out the move that can happen today.</p>
+            <article class="area">
+              <h3>Career and jobs</h3>
+              <p>Manage postings, applications, tailored resumes, interview prep, follow-ups, and a portfolio improvement roadmap.</p>
             </article>
-            <article class="flow-step">
-              <div class="step-label">3. Tutorial</div>
-              <h3>Attach guidance</h3>
-              <p>Show available tutorials for roadmap choices, and make missing guidance visible instead of silently leaving users stuck.</p>
+            <article class="area">
+              <h3>Language learning</h3>
+              <p>Start with English and Spanish, then turn vocabulary, mistakes, listening, speaking, reading, and practice history into review loops.</p>
             </article>
-            <article class="flow-step">
-              <div class="step-label">4. Service</div>
-              <h3>Assist carefully</h3>
-              <p>Turn repeatable tutorial steps into reviewed services only after the safety, credential, and confirmation rules are clear.</p>
+            <article class="area">
+              <h3>Media memory</h3>
+              <p>Remember what you watched, when you watched it, how you ranked it, and what you thought at the time.</p>
+            </article>
+            <article class="area">
+              <h3>Shopping and coupons</h3>
+              <p>Compare prices across stores, track discounts, expiration dates, one-time-use coupons, and whether you used them.</p>
+            </article>
+            <article class="area">
+              <h3>Receipts and records</h3>
+              <p>Capture receipt photos, extract purchase details, preserve source evidence, and feel okay throwing paper away.</p>
             </article>
           </div>
-          <div class="specimen" aria-label="Intrepion roadmap specimen">
+        </div>
+      </section>
+
+      <section class="section" id="specimen">
+        <div class="section-inner">
+          <div class="section-heading">
+            <h2>A life area becomes a roadmap.</h2>
+            <p>
+              This specimen shows the shape of an Intrepion area. It is not a live finance product yet. It is the object the app needs to make real.
+            </p>
+          </div>
+          <div class="specimen" aria-label="Debt payoff roadmap specimen">
             <div class="specimen-header">
               <div>
-                <h3>intrepion.com roadmap specimen</h3>
+                <h3>Debt payoff roadmap specimen</h3>
                 <p>
-                  A roadmap item is more than a task. It carries the horizon, intended outcome, tutorial availability, plan relevance, and service maturity.
+                  The point is not to give financial advice. The point is to organize known facts, expose missing information, and make the next review less overwhelming.
                 </p>
               </div>
               <span class="specimen-badge">Public preview</span>
@@ -701,103 +710,97 @@
               <div class="roadmap-row header">
                 <span>Horizon</span>
                 <span>Roadmap item</span>
-                <span>Included / missing</span>
-                <span>Service readiness</span>
+                <span>Records needed</span>
+                <span>AI review</span>
               </div>
               <div class="roadmap-row">
                 <div class="horizon">1 hour</div>
                 <div>
-                  <h4>Publish the differentiated homepage</h4>
-                  <p>Show that Intrepion is for turning unclear launch goals into guided roadmaps, not for tracking generic tasks.</p>
+                  <h4>List every credit card debt</h4>
+                  <p>Create a first inventory of card names, balances, interest rates, minimum payments, and due dates.</p>
                 </div>
                 <ul class="status-list">
-                  <li><span class="status-mark included">✓</span><span>Included: public homepage and roadmap preview.</span></li>
-                  <li><span class="status-mark included">✓</span><span>Included: Free users can read the public example.</span></li>
-                  <li><span class="status-mark missing">X</span><span>Missing: editable roadmap accounts.</span></li>
+                  <li><span class="status-mark included">OK</span><span>Included: manual debt record entry.</span></li>
+                  <li><span class="status-mark missing">X</span><span>Missing: imported balances.</span></li>
                 </ul>
                 <ul class="status-list">
-                  <li><span class="status-mark included">✓</span><span>Included: no external service required.</span></li>
-                  <li><span class="status-mark pending">!</span><span>Pending: publish workflow can stay manual.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: identify missing rates and due dates.</span></li>
+                  <li><span class="status-mark unknown">?</span><span>Unclear: which card is most urgent.</span></li>
                 </ul>
               </div>
               <div class="roadmap-row">
                 <div class="horizon">1 day</div>
                 <div>
-                  <h4>Model projects, roadmaps, plans, and tutorials</h4>
-                  <p>Define the core product objects before choosing a full application stack or building private account flows.</p>
+                  <h4>Make the debt picture coherent</h4>
+                  <p>Group cards by urgency, payment dates, interest, and available cash for the month.</p>
                 </div>
                 <ul class="status-list">
-                  <li><span class="status-mark pending">!</span><span>Pending: tutorial for modeling the first app objects.</span></li>
-                  <li><span class="status-mark included">✓</span><span>Included: Plus and Pro should be able to request it.</span></li>
-                  <li><span class="status-mark unknown">?</span><span>Unclear: first app stack has not been chosen.</span></li>
+                  <li><span class="status-mark included">OK</span><span>Included: due dates and minimum payments.</span></li>
+                  <li><span class="status-mark missing">X</span><span>Missing: full monthly bill calendar.</span></li>
                 </ul>
                 <ul class="status-list">
-                  <li><span class="status-mark missing">X</span><span>Missing: app scaffold service.</span></li>
-                  <li><span class="status-mark unknown">?</span><span>Unclear: stack choice comes first.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: draft a first payoff roadmap.</span></li>
+                  <li><span class="status-mark unknown">?</span><span>Unclear: what spending can be paused.</span></li>
                 </ul>
               </div>
               <div class="roadmap-row">
                 <div class="horizon">1 week</div>
                 <div>
-                  <h4>Design safe integration services</h4>
-                  <p>Map how Namecheap, Neon, Google Cloud, and GitHub steps could become reviewed assistance without hiding risk.</p>
+                  <h4>Create a repeatable money review</h4>
+                  <p>Review balances, bills, recent receipts, upcoming due dates, and the next payment decision each week.</p>
                 </div>
                 <ul class="status-list">
-                  <li><span class="status-mark pending">!</span><span>Pending: Namecheap, Neon, Google Cloud, and GitHub tutorials.</span></li>
-                  <li><span class="status-mark included">✓</span><span>Included: Pro and Business are eligible for assistance.</span></li>
-                  <li><span class="status-mark missing">X</span><span>Missing: credential storage and audit logs.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: receipt capture and spending categories.</span></li>
+                  <li><span class="status-mark missing">X</span><span>Missing: automatic transaction import.</span></li>
                 </ul>
                 <ul class="status-list">
-                  <li><span class="status-mark pending">!</span><span>Pending: first safe service spike.</span></li>
-                  <li><span class="status-mark missing">X</span><span>Missing: credential consent flow.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: summarize what changed this week.</span></li>
+                  <li><span class="status-mark included">OK</span><span>Included: ask for user confirmation before action.</span></li>
                 </ul>
               </div>
               <div class="roadmap-row">
                 <div class="horizon">1 month</div>
                 <div>
-                  <h4>Add teams, AI support, and admin review</h4>
-                  <p>Let AI draft tutorials and service ideas only when admins can review, revise, and publish them deliberately.</p>
+                  <h4>Connect spending, receipts, and debt</h4>
+                  <p>Use receipts and purchase records to understand what spending patterns are slowing debt recovery.</p>
                 </div>
                 <ul class="status-list">
-                  <li><span class="status-mark pending">!</span><span>Pending: AI-generated tutorial drafts.</span></li>
-                  <li><span class="status-mark included">✓</span><span>Included: Business and Enterprise roadmap depth.</span></li>
-                  <li><span class="status-mark missing">X</span><span>Missing: admin review and publishing workflow.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: receipt photo extraction.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: coupon and discount history.</span></li>
                 </ul>
                 <ul class="status-list">
-                  <li><span class="status-mark pending">!</span><span>Pending: admin review queue.</span></li>
-                  <li><span class="status-mark missing">X</span><span>Missing: reviewed service publishing.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: monthly review summary.</span></li>
+                  <li><span class="status-mark missing">X</span><span>Missing: professional financial advice.</span></li>
                 </ul>
               </div>
               <div class="roadmap-row">
                 <div class="horizon">1 year</div>
                 <div>
-                  <h4>Make roadmap operations repeatable</h4>
-                  <p>Turn the launch workflow into templates, review rhythms, collaboration patterns, and measurable roadmap progress.</p>
+                  <h4>Make financial recovery durable</h4>
+                  <p>Build a record of decisions, payments, spending changes, and lessons that can survive stressful months.</p>
                 </div>
                 <ul class="status-list">
-                  <li><span class="status-mark pending">!</span><span>Pending: roadmap templates by goal type.</span></li>
-                  <li><span class="status-mark pending">!</span><span>Pending: public roadmap publishing.</span></li>
-                  <li><span class="status-mark unknown">?</span><span>Unclear: which analytics actually help users decide.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: long-term payment history.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: exportable financial records.</span></li>
                 </ul>
                 <ul class="status-list">
-                  <li><span class="status-mark pending">!</span><span>Pending: scheduled review assistance.</span></li>
-                  <li><span class="status-mark missing">X</span><span>Missing: approval and collaboration services.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: pattern detection across months.</span></li>
+                  <li><span class="status-mark unknown">?</span><span>Unclear: which metrics actually help.</span></li>
                 </ul>
               </div>
               <div class="roadmap-row">
                 <div class="horizon">1 decade</div>
                 <div>
-                  <h4>Build a compounding execution platform</h4>
-                  <p>Make roadmaps adapt to outcomes, carry organizational memory, and connect verified guidance to safe operational services.</p>
+                  <h4>Build a financial memory</h4>
+                  <p>Preserve what worked, what caused setbacks, and how life decisions affected money over time.</p>
                 </div>
                 <ul class="status-list">
-                  <li><span class="status-mark pending">!</span><span>Pending: verified tutorial and automation library.</span></li>
-                  <li><span class="status-mark pending">!</span><span>Pending: cross-project dependency mapping.</span></li>
-                  <li><span class="status-mark missing">X</span><span>Missing: governance for AI-generated operational changes.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: cross-area memory with jobs and shopping.</span></li>
+                  <li><span class="status-mark missing">X</span><span>Missing: governed automation for payments.</span></li>
                 </ul>
                 <ul class="status-list">
-                  <li><span class="status-mark pending">!</span><span>Pending: expert-reviewed service marketplace.</span></li>
-                  <li><span class="status-mark unknown">?</span><span>Unclear: what should stay human-led forever.</span></li>
+                  <li><span class="status-mark pending">!</span><span>Pending: long-term life review.</span></li>
+                  <li><span class="status-mark unknown">?</span><span>Unclear: what should stay fully manual.</span></li>
                 </ul>
               </div>
             </div>
@@ -805,88 +808,63 @@
         </div>
       </section>
 
-      <section class="section" id="examples">
-        <div class="section-inner">
-          <div class="section-heading">
-            <h2>The first examples are the wedge.</h2>
-            <p>
-              Intrepion starts with three owned domains because they expose the same pattern future customers will bring: a real goal, an unclear sequence, and a need to keep learning, building, and launching connected.
-            </p>
-          </div>
-          <div class="example-grid">
-            <article class="example">
-              <h3>intrepion.com</h3>
-              <p>An AI-assisted roadmap business that starts by proving the public promise, then grows into draft guidance, reviewed tutorials, and safe service automation.</p>
-            </article>
-            <article class="example">
-              <h3>oliverforral.com</h3>
-              <p>An AI-assisted software engineer portfolio that starts with proof of work and grows into a reviewed professional avatar for employers and clients.</p>
-            </article>
-            <article class="example">
-              <h3>karinnaaf.art</h3>
-              <p>An AI-assisted artist portfolio that starts with selected work and grows into an artist-approved studio guide for collectors, collaborators, and visitors.</p>
-            </article>
-          </div>
-        </div>
-      </section>
-
       <section class="section" id="plans">
         <div class="section-inner">
           <div class="section-heading">
-            <h2>Plans that grow with the roadmap.</h2>
+            <h2>Plans for depth, not fake enterprise.</h2>
             <p>
-              Pricing is not open yet. These plan boundaries are the first draft of how roadmap depth, tutorials, automation, and support will scale.
+              Pricing is not open yet. These plan names describe how life areas, records, AI usage, and household sharing may scale.
             </p>
           </div>
           <div class="plan-grid">
             <article class="plan">
               <div class="label">Free</div>
               <h3>Start</h3>
-              <p>For trying one static roadmap.</p>
+              <p>For trying one life area.</p>
               <ul>
-                <li>1 static roadmap</li>
-                <li>Public tutorials</li>
-                <li>Automated help</li>
+                <li>1 life area</li>
+                <li>Limited manual records</li>
+                <li>Limited AI draft help</li>
               </ul>
             </article>
             <article class="plan">
               <div class="label">Plus</div>
-              <h3>Build</h3>
-              <p>For one dynamic project.</p>
+              <h3>Organize</h3>
+              <p>For managing a few active areas.</p>
               <ul>
-                <li>1 dynamic roadmap</li>
-                <li>10 static roadmaps</li>
-                <li>Tutorial requests</li>
+                <li>3 life areas</li>
+                <li>More records and uploads</li>
+                <li>Regular AI reviews</li>
               </ul>
             </article>
             <article class="plan">
               <div class="label">Pro</div>
               <h3>Operate</h3>
-              <p>For serious solo operators.</p>
+              <p>For using Intrepion every week.</p>
               <ul>
-                <li>10 dynamic roadmaps</li>
-                <li>Unlimited static roadmaps</li>
-                <li>Future AI support</li>
+                <li>Unlimited personal areas</li>
+                <li>Higher record limits</li>
+                <li>Deeper AI summaries</li>
               </ul>
             </article>
             <article class="plan">
-              <div class="label">Business</div>
-              <h3>Team</h3>
-              <p>For teams that need support and automation.</p>
+              <div class="label">Life</div>
+              <h3>Compound</h3>
+              <p>For a serious personal operating system.</p>
               <ul>
-                <li>Unlimited roadmaps</li>
-                <li>Team management</li>
-                <li>Priority human support</li>
+                <li>Cross-area reviews</li>
+                <li>Richer history</li>
+                <li>Selected assisted workflows</li>
               </ul>
             </article>
             <article class="plan">
-              <div class="label">Enterprise</div>
-              <h3>Custom</h3>
-              <p>For organizations with custom needs.</p>
+              <div class="label">Family</div>
+              <h3>Share</h3>
+              <p>For household records and shared planning.</p>
               <ul>
-                <li>Custom terms</li>
-                <li>Custom integrations</li>
-                <li>Custom rate limits</li>
+                <li>Shared and private areas</li>
+                <li>Household records</li>
+                <li>Family review support</li>
               </ul>
             </article>
           </div>
@@ -896,21 +874,21 @@
       <section class="section cta-band">
         <div class="section-inner">
           <div class="section-heading">
-            <h2>Help shape the first roadmap.</h2>
+            <h2>Help shape the first life roadmap.</h2>
             <p>
-              Intrepion is being built from its own dynamic roadmap. Early reviewers can influence the product before accounts, billing, and automation are opened publicly.
+              Intrepion is still a static preview. Early work should prove the model with one real life area before adding auth, billing, imports, or automation.
             </p>
           </div>
           <div class="hero-actions">
             <a class="button primary" href="mailto:hello@intrepion.com?subject=Intrepion%20early%20access">Request early access</a>
-            <a class="button secondary" href="docs/product-roadmap.md">Read the roadmap draft</a>
+            <a class="button secondary" href="docs/product-roadmap.md">Read the product roadmap</a>
           </div>
         </div>
       </section>
     </main>
 
     <footer>
-      <span>&copy; 2026 Intrepion. Dynamic roadmaps for ambitious projects.</span>
+      <span>&copy; 2026 Intrepion. AI-assisted life roadmaps for open loops.</span>
     </footer>
   </body>
 </html>

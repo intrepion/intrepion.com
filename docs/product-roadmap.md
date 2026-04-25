@@ -1,203 +1,240 @@
 # Intrepion Product Roadmap
 
-Intrepion is a roadmap-management business built around dynamic planning across six horizons: 1 hour, 1 day, 1 week, 1 month, 1 year, and 1 decade.
+Intrepion is an AI-assisted life roadmap system for people who have too many open loops.
 
-The first roadmap Intrepion should manage is its own.
+The product helps a person turn major life areas into roadmaps, records, reviews, and next actions. It should be useful for Oliver's real life first, then become general only where the pattern proves durable.
 
 ## Product Promise
 
-Intrepion helps users turn a large goal into a living roadmap that separates immediate next steps from longer-term architecture, operations, automation, and strategy.
+Intrepion helps users answer:
 
-AI should help draft and revise roadmap guidance, but the core artifact is still the roadmap. Intrepion should not become a generic chatbot. AI output should be structured into horizons, roadmap items, tutorial needs, missing guidance, assumptions, and service opportunities.
-
-The product should answer:
-
+- What am I trying to manage?
+- What facts, records, or history do I already have?
 - What matters in the next hour?
-- What should exist by tomorrow?
+- What should be coherent by tomorrow?
 - What should become repeatable this week?
-- What should be valuable enough to charge for this month?
+- What should be meaningfully useful this month?
 - What should become durable this year?
 - What could compound for a decade?
 
-## One-Hour Target
+AI should help draft, summarize, compare, and ask clarifying questions. The product center is not chat. The product center is the structured life roadmap.
 
-Goal: create a credible public foundation without pretending the full SaaS already exists.
+## Core Model
+
+Life area:
+
+A major domain the user wants to manage, such as finances, job search, language learning, media memory, shopping, receipts, or personal projects.
+
+Roadmap:
+
+A six-horizon plan for a life area.
+
+Roadmap item:
+
+A task, decision, habit, milestone, question, record request, or automation candidate.
+
+Record:
+
+Evidence or history attached to a life area. Examples include receipts, job applications, watched videos, ratings, debts, bills, coupon codes, language practice notes, project notes, and uploaded files.
+
+Review:
+
+A recurring check-in where the user and AI turn roadmap status and records into the next set of actions.
+
+Assistant:
+
+An AI helper that drafts roadmaps, summarizes records, identifies missing information, and suggests next actions with clear uncertainty.
+
+Service:
+
+An optional automation that performs an external action after explicit user confirmation.
+
+## Life Areas
+
+### Roadmaps
+
+Purpose: manage goals, projects, websites, products, portfolios, and long-term plans.
+
+Example uses:
+
+- Build intrepion.com.
+- Build oliverforral.com.
+- Build karinnaaf.art.
+- Plan a product launch.
+- Keep one-hour action and decade-scale ambition visible together.
+
+### Finances And Debt
+
+Purpose: help Oliver understand and reduce credit card debt without pretending the product is a financial advisor.
+
+Example uses:
+
+- Track debts, balances, interest rates, minimum payments, and due dates.
+- Create a debt payoff roadmap.
+- Record bills and recurring expenses.
+- Identify unclear financial facts.
+- Produce review summaries that help decide the next payment or spending constraint.
+
+Boundary: Intrepion may organize and explain user-provided financial information, but it should not present itself as professional financial advice.
+
+### Media Memory
+
+Purpose: remember what Oliver watched, when he watched it, how he ranked it, and what he thought at the time.
+
+Example uses:
+
+- Track TV shows, movies, YouTube videos, courses, talks, and playlists.
+- Record last watched date, progress, rating, notes, and context.
+- Surface unfinished media and changed opinions over time.
+- Turn media history into recommendations or reflection prompts.
+
+### Language Learning
+
+Purpose: turn human language learning into a repeatable roadmap instead of scattered practice. English and Spanish may be the first supported languages, but the model should not be limited to them.
+
+Example uses:
+
+- Track target languages, vocabulary, phrases, grammar, listening, speaking, reading, and writing practice.
+- Keep a review loop for weak areas.
+- Use AI to generate practice from recent mistakes and goals.
+- Connect media records to language learning when the watched content is in a target language.
+
+### Shopping, Prices, Coupons, And Receipts
+
+Purpose: help Oliver compare prices, remember discounts, manage coupons, and keep receipt records so physical receipts can be discarded with confidence.
+
+Example uses:
+
+- Track item prices across stores.
+- Record discounts, coupons, expiration dates, and whether a coupon is one-time use.
+- Mark used coupons.
+- Upload or photograph receipts.
+- Extract store, date, items, totals, and payment method from receipts.
+- Connect receipts to budget, returns, warranties, and price comparisons.
+
+Boundary: receipt extraction should preserve source images or source metadata until the user trusts the record.
+
+### Career And Jobs
+
+Purpose: help Oliver apply to jobs with less chaos and more follow-through.
+
+Example uses:
+
+- Track job postings, application status, contacts, deadlines, salary ranges, and follow-ups.
+- Draft tailored resumes and cover letters from reviewed professional material.
+- Prepare for interviews.
+- Keep a roadmap for improving portfolio, skills, references, and outreach.
+- Eventually connect to oliverforral.com as the public professional presence.
+
+Boundary: AI must not invent experience, credentials, employment history, or commitments.
+
+## Six-Horizon Roadmap
+
+### 1 Hour
+
+Goal: make the new vision legible without pretending the whole life system exists.
 
 Deliverables:
 
-- SEO-optimized static marketing page for intrepion.com.
-- Public positioning around dynamic roadmaps.
-- Example roadmap for building Intrepion itself.
-- Product documentation for roadmap phases, pricing, and entitlement rules.
-- AGENTS.md instructions for future coding sessions.
+- Rewrite the homepage around AI-assisted life roadmaps.
+- Show initial life areas.
+- Show a public specimen of how one life area can be organized.
+- Rewrite product documentation for the new model.
 
 Explicit non-goals:
 
-- Production Google login.
-- Billing collection.
-- Real-time support chat.
-- Admin dashboard.
-- Project CRUD.
-- External API integrations.
+- Auth.
+- Billing.
+- Bank imports.
+- Receipt scanning.
+- Job application automation.
+- Browser tracking.
+- External service automation.
 
-Reasoning: auth, billing, support, admin tools, and CRUD are not "basic" if they need to be secure, trustworthy, and maintainable. The first hour should make the product direction legible.
+### 1 Day
 
-## One-Day Target
+Goal: choose the first private prototype area and define its data shape.
 
-Goal: make the roadmap concept usable enough for internal users.
+Candidate first areas:
 
-Deliverables:
+- Debt payoff and financial recovery.
+- Job search.
+- Receipt capture and shopping memory.
+- Language learning, starting with English and Spanish.
 
-- Choose application stack.
-- Scaffold app shell.
-- Add authentication plan and provider configuration notes.
-- Model users, projects, roadmaps, roadmap items, plans, and admin roles.
-- Create seed data for:
-  - intrepion.com
-  - oliverforral.com
-  - karinnaaf.art
-- Add a simple admin-only tutorial-management concept, even if content starts in markdown.
-- Add static tutorial placeholders for:
-  - Registering a domain with Namecheap.
-  - Creating a Neon account and database.
-  - Creating a Google Cloud account and claiming available startup credits.
-  - Creating a GitHub account and repository.
-  - Deploying from GitHub Actions to Google Cloud.
+Recommended first wedge:
 
-User-facing behavior:
-
-- Users can view roadmap examples.
-- Users can see tutorial availability.
-- Paid-plan users can request planned tutorials.
-
-## Owned Example Roadmaps
-
-The first examples should be ambitious enough to show why AI-assisted roadmaps matter, while staying honest about what is reviewed, planned, or missing.
-
-### intrepion.com
-
-Product ambition: an AI-assisted roadmap business that turns user goals into six-horizon roadmap drafts, identifies missing tutorials, and eventually turns repeated tutorial work into reviewed services.
-
-Horizon sketch:
-
-- 1 hour: publish the differentiated homepage and public roadmap specimen.
-- 1 day: model users, projects, roadmaps, plans, tutorials, and tutorial requests.
-- 1 week: define safe service integration patterns for Namecheap, Neon, Google Cloud, and GitHub.
-- 1 month: allow AI-generated tutorial and service drafts with admin review before publishing.
-- 1 year: make roadmap operations repeatable through templates, reviews, collaboration, and public roadmap publishing.
-- 1 decade: build a compounding planning and execution platform with verified guidance, organizational memory, and governed automation.
-
-### oliverforral.com
-
-Product ambition: an AI-assisted software engineer portfolio that starts with proof of work and grows into a reviewed professional avatar for employers, clients, and collaborators.
-
-Horizon sketch:
-
-- 1 hour: publish a simple software engineer portfolio with positioning, strongest projects, contact path, and current availability.
-- 1 day: add case studies, work history, project screenshots, resume content, and a profile summary.
-- 1 week: structure portfolio content so it is AI-readable: projects, skills, decisions, outcomes, constraints, and proof.
-- 1 month: add an AI-assisted Q&A prototype that answers from reviewed portfolio content without inventing experience, claims, or commitments.
-- 1 year: grow the site into a durable professional presence with writing, project updates, services, testimonials, and analytics on visitor questions.
-- 1 decade: build a professional memory and avatar that can explain what Oliver has built, how he thinks, what roles fit, and what work he wants next.
-
-Important boundary: the AI should represent reviewed professional material. It should not invent credentials, speak for Oliver beyond approved facts, or make commitments to employers or clients.
-
-### karinnaaf.art
-
-Product ambition: an AI-assisted artist portfolio that starts with selected work and grows into an artist-approved studio guide for collectors, collaborators, and visitors.
-
-Horizon sketch:
-
-- 1 hour: publish a simple artist portfolio with selected works, artist statement, contact path, and a clear first collection.
-- 1 day: add artwork details such as titles, mediums, dimensions, availability, series notes, process notes, and high-quality images.
-- 1 week: structure the studio archive so it is AI-readable: works, collections, themes, materials, influences, exhibitions, pricing status, and collector questions.
-- 1 month: add an AI-assisted studio guide prototype that answers from artist-approved content without inventing meaning, prices, availability, or biography.
-- 1 year: grow the site into a collector and collaborator hub with collection updates, commissions, newsletters, studio notes, inquiry workflows, and analytics on visitor questions.
-- 1 decade: build a durable studio memory that preserves the evolution of the work, helps visitors explore themes across collections, and supports future exhibitions, licensing, and collector relationships.
-
-Important boundary: the AI should be an artist-approved studio guide, not an automated substitute for the artist's authorship or interpretation.
-
-## One-Week Target
-
-Goal: connect tutorials to real service integration planning.
+Start with job search plus debt payoff, because they are urgent, measurable, and emotionally important.
 
 Deliverables:
 
-- Credential-management design for external services.
-- Admin-managed service definitions.
-- First integration spike for one external service.
-- Tutorial page pattern with a "Help me through this" action for eligible plans.
-- Audit log design for service actions.
-- Clear permission boundary between reading credentials, using credentials, and deleting credentials.
+- Define the shared data model for life areas, roadmaps, records, and reviews.
+- Choose one first life area for a private prototype.
+- Create static examples for all initial life areas.
+- Decide what AI is allowed to draft in the first prototype.
 
-Candidate services:
+### 1 Week
 
-- Namecheap API.
-- Neon API.
-- Google Cloud APIs.
-- GitHub API.
-
-Important constraint: tutorial services should not run destructive or billable actions without explicit user confirmation.
-
-## One-Month Target
-
-Goal: introduce paid workflow depth, team management, and AI-assisted support without losing admin review.
+Goal: build one private, manually editable life-area prototype.
 
 Deliverables:
 
-- AI credential management for users who want to bring their own provider keys.
-- Pro, Business, and Enterprise AI support flow.
-- Business and Enterprise team management.
-- Seat management with bulk discount rules.
-- API access plans with rate-limit tiers.
-- AI-generated tutorial drafts.
-- AI-generated service drafts.
-- Admin review and publishing workflow.
+- Manual record entry.
+- Six-horizon roadmap view.
+- Review summary view.
+- AI-assisted roadmap draft from user-provided context.
+- Export or backup path.
 
-Important constraint: AI can draft instructions and service code, but admins must review before publication or execution.
+Important constraint: manual entry should work before automation. The product should not depend on brittle imports too early.
 
-## One-Year Target
+### 1 Month
 
-Goal: make Intrepion a reliable operating system for project roadmaps.
+Goal: make one or two life areas useful enough for repeated personal use.
+
+Deliverables:
+
+- Receipt/photo upload exploration.
+- Job application tracker.
+- Debt tracker with cautious financial-language boundaries.
+- Language practice review loop.
+- AI summaries that cite the records they used.
+- Clear privacy and deletion rules.
+
+Important constraint: AI should make uncertainty visible. It should ask for missing facts instead of inventing them.
+
+### 1 Year
+
+Goal: make Intrepion a reliable personal operating system.
 
 Possible capabilities:
 
-- Roadmap templates by goal type.
-- Integration marketplace.
-- Versioned roadmaps.
-- Collaboration and comments.
-- Approval workflows.
-- Scheduled reviews.
-- Organization-level governance.
-- Public roadmap publishing.
-- Analytics on roadmap progress and bottlenecks.
+- Multiple life areas working from the same roadmap and record model.
+- Search across records.
+- Recurring reviews.
+- Alerts and reminders.
+- File and receipt storage.
+- Integrations for selected services.
+- Local-first or strong export options.
+- Personal analytics that help the user decide what to do next.
 
-Business target:
+### 1 Decade
 
-- Clear conversion path from Free to Plus or Pro.
-- Business plan for teams that need collaboration, support, and automation.
-- Enterprise plan for organizations with compliance, procurement, and custom integration needs.
-
-## One-Decade Target
-
-Goal: make Intrepion a compounding planning and execution platform.
+Goal: make Intrepion a compounding life memory and planning system.
 
 Possible capabilities:
 
-- Roadmaps that adapt to real outcomes.
-- Service automation that can execute repeatable operational work.
-- Verified tutorial and automation library.
-- Organization memory for decisions, credentials, systems, and processes.
-- Marketplace for expert-reviewed roadmap packs.
-- Cross-project dependency mapping.
-- Governance for AI-generated operational changes.
+- Long-term memory across projects, finances, learning, media, purchases, jobs, and personal goals.
+- AI that understands the user's real history because it is grounded in records.
+- Safe automation for repeatable life admin.
+- Personal agents that act only within explicit permissions.
+- Family or household modes if they become useful.
 
-Strategic risk: the product could become too broad. The durable center should remain dynamic roadmaps, not generic project management, generic chat, generic tutorials, or generic automation.
+Strategic risk: the product could become too broad. The durable center should remain roadmaps, records, reviews, and AI-assisted next actions, not a pile of disconnected trackers.
 
 ## Current Strategic Bet
 
 The strongest initial wedge is:
 
-Build Intrepion in public using Intrepion's own dynamic roadmap.
+Build Intrepion for Oliver's real open loops, using one shared model across life areas.
 
-This makes the marketing page, product demo, tutorial content, and internal planning artifact the same thing.
+If the same structure can help with debt, job search, language learning, receipts, media memory, and projects, the product has a real center. If each area needs a completely different product, the vision is too broad.

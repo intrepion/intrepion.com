@@ -2,148 +2,175 @@
 
 ## Product Thesis
 
-Intrepion helps people turn ambitious goals into dynamic roadmaps across six time horizons:
+Intrepion is an AI-assisted life roadmap system for people who have too many open loops.
 
-- 1 hour
-- 1 day
-- 1 week
-- 1 month
-- 1 year
-- 1 decade
+The product helps a person organize important areas of life into clear roadmaps, supporting records, reviews, and next actions. The core primitive is not a generic task list. It is:
 
-The product should make planning feel concrete, revisable, and connected to execution. The first public example is Intrepion's own roadmap for becoming a useful roadmap business.
+- Life area: a major domain the user wants to manage.
+- Roadmap: a six-horizon plan for that life area.
+- Record: evidence, context, history, receipts, ratings, applications, notes, or progress data attached to the roadmap.
+- Review: a recurring moment where AI and the user turn the records into next actions.
 
-## Target Users
+The first user is Oliver. Intrepion should be useful for his actual life before it tries to become a broad consumer platform.
 
-Start with solo creators, technical founders, and small teams who are trying to launch websites, portfolios, products, or businesses without losing track of what matters now versus later.
+## Life Areas
 
-Initial internal users:
+Initial life areas:
 
-- Oliver Forral: admin and regular user
-- Karinna Forral: regular user
+- Roadmaps: goals, projects, sites, products, portfolios, and long-term plans.
+- Finances: debt payoff, bills, spending decisions, and financial recovery.
+- Media memory: TV shows, movies, YouTube videos, watch history, ratings, and why something mattered at the time.
+- Language learning: human language goals, starting with English and Spanish, plus practice history, vocabulary, listening, speaking, reading, and review loops.
+- Shopping and receipts: price tracking across stores, discounts, coupons, one-time-use offers, receipt capture, and purchase history.
+- Career and jobs: job search roadmaps, applications, tailored resumes, interview preparation, and follow-up tracking.
 
-Initial owned-project examples:
-
-- intrepion.com: the roadmap-management business
-- oliverforral.com: Oliver's portfolio site
-- karinnaaf.art: Karinna's portfolio site
-
-## Core Product Model
-
-Use these concepts consistently:
-
-- User: a person who can own roadmaps, projects, credentials, and support requests.
-- Admin: a user with permission to manage users, tutorials, services, plans, and published content.
-- Project: a real-world goal, site, app, business, portfolio, or initiative.
-- Roadmap: a structured plan for a project across the six fixed time horizons.
-- Roadmap item: a task, decision, tutorial, service, or milestone within a roadmap.
-- Tutorial: human-readable guidance tied to roadmap choices.
-- Service: automation that can perform part of a tutorial through an external API.
-- Plan: an entitlement bundle controlling roadmap limits, support level, tutorial requests, automation, seats, and API access.
+These should not become six unrelated apps. Each area should reuse the same product grammar: roadmap, records, status, review, next action, and AI assistance.
 
 ## Time Horizons
 
 The six time horizons are fixed product language and should not be casually renamed:
 
 - 1 hour: what can create useful progress immediately
-- 1 day: what can make the project coherent and usable
+- 1 day: what can make the area coherent and usable
 - 1 week: what can make the workflow repeatable
-- 1 month: what can make the product valuable enough to charge for
-- 1 year: what can make the business durable
+- 1 month: what can make the system meaningfully useful
+- 1 year: what can make the area durable
 - 1 decade: what can make the work compound
+
+## AI Direction
+
+AI should be central, but bounded. The product should not become a generic chatbot.
+
+AI should help:
+
+- Turn messy goals and records into structured roadmaps.
+- Summarize receipts, financial facts, applications, media history, and learning progress.
+- Identify missing information and unclear assumptions.
+- Suggest next actions for each life area.
+- Draft plans, job materials, language practice, shopping comparisons, and review summaries.
+
+AI should not:
+
+- Pretend uncertain information is true.
+- Give professional financial, legal, medical, or employment guarantees.
+- Make purchases, payments, applications, or external commitments without explicit user confirmation.
+- Delete user records without explicit confirmation.
+- Hide the source of a recommendation when evidence is available.
+
+For high-stakes areas such as debt, finances, employment, and credentials, the product should clearly distinguish organization and planning from professional advice.
+
+## Target User
+
+Start with one honest target user:
+
+- Oliver Forral: a software engineer trying to manage projects, debt, job search, language learning, media memory, shopping decisions, receipts, and long-term personal goals.
+
+Secondary early user:
+
+- Karinna Forral: a regular user whose needs may include art portfolio planning, household records, shopping, receipts, and personal goals.
+
+Do not prematurely design for enterprise teams. If team or business features return later, they should grow from repeated real use.
+
+## Core Product Model
+
+Use these concepts consistently:
+
+- User: a person who owns life areas, roadmaps, records, reviews, credentials, and preferences.
+- Life area: a domain of life the user wants to manage.
+- Roadmap: a structured plan for a life area across the six fixed time horizons.
+- Roadmap item: a task, decision, habit, record request, review, milestone, or automation candidate.
+- Record: a stored fact or artifact, such as a receipt, bill, job application, watched video, rating, vocabulary note, or project note.
+- Source: where a record came from, such as manual entry, upload, photo, email import, browser capture, API, or AI extraction.
+- Review: a periodic check-in that turns records and roadmap status into next actions.
+- Assistant: an AI helper that drafts, summarizes, compares, and asks clarifying questions.
+- Service: an optional automation that performs an external action after explicit confirmation.
+- Plan: an entitlement bundle controlling limits, AI usage, storage, imports, automation, and support.
 
 ## Product Priorities
 
 Build in this order unless there is a clear reason to change:
 
-1. Public positioning and SEO page.
-2. Static example roadmap for Intrepion itself.
-3. Product documentation for pricing, roles, and roadmap behavior.
-4. Authentication and basic user profile.
-5. Projects and roadmaps.
-6. Admin user management.
-7. Billing and plan enforcement.
-8. Tutorial management.
-9. Tutorial request workflow.
-10. External service integrations.
-11. Credential management.
-12. Human support workflow.
-13. AI support and AI-generated tutorials, with admin review before publishing.
+1. Public positioning and SEO page for the new life-roadmap vision.
+2. Static examples showing the initial life areas and their six-horizon roadmaps.
+3. Product documentation for the life-area model, AI boundaries, records, reviews, and plans.
+4. A tiny private prototype for one or two life areas.
+5. Manual record entry for selected life areas.
+6. AI-assisted roadmap drafting from user-provided context.
+7. Receipt/photo upload exploration.
+8. Job search tracker and AI-assisted application workflow.
+9. Finance/debt roadmap tracker with cautious, non-advisory language.
+10. Language learning roadmap and review workflow, starting with English and Spanish.
+11. Media memory tracker.
+12. Shopping, coupon, and price tracking.
+13. External imports, credentials, and automation only after the core model is proven.
 
 ## MVP Exclusions
 
-Do not implement these before the public page, documentation, and core roadmap model are coherent:
+Do not implement these before the public page, documentation, and core model are coherent:
 
 - Real payment collection.
 - Production social login.
-- Live admin chat.
-- External API automation.
-- AI-generated tutorials.
-- Multi-tenant enterprise controls.
+- Bank account aggregation.
+- Automatic bill payment.
+- Automatic job applications.
+- Automatic purchases.
+- Broad browser tracking.
+- Fully automated receipt ingestion.
+- Enterprise team controls.
 - A broad plugin or integration marketplace.
 
-These features are planned, but implementing them too early will distract from validating whether people understand and want dynamic roadmaps.
+These features may matter later, but implementing them too early will distract from proving whether life areas plus AI-assisted roadmaps are useful.
 
 ## Plan Names
 
-Use these exact public plan names:
+Use these exact public plan names unless the product direction changes:
 
 - Free
 - Plus
 - Pro
-- Business
-- Enterprise
+- Life
+- Family
 
-Oliver and Karinna should be able to use paid-plan capabilities without actual payment. Other non-admin users should eventually require payment for paid entitlements.
+The old Business and Enterprise framing is no longer the center. If business plans return later, document why.
 
-## Support Model
+Oliver and Karinna should be able to use paid-plan capabilities without actual payment. Other users should eventually require payment for paid entitlements.
 
-Start with simple, honest support:
+## Sensitive Areas
 
-- Free, Plus, and Pro: automated help, documentation, and support request forms.
-- Business and Enterprise: priority human support during published work hours.
+Treat the following as sensitive:
 
-Avoid promising live chat until there is a real operational process behind it.
+- Financial records, debt, bills, credit cards, bank imports, and payment data.
+- Job applications, resumes, salary targets, employment history, and employer contacts.
+- Receipts, purchase history, store accounts, coupons, and discount codes.
+- Credentials, API keys, OAuth tokens, and uploaded documents.
+- Personal language-learning notes and media history if the user marks them private.
 
-## Tutorial And Automation Rules
-
-Tutorials and services are separate concepts:
-
-- Tutorials explain what to do.
-- Services perform actions through APIs.
-
-Examples of future services:
-
-- Namecheap domain configuration.
-- Neon database setup.
-- Google Cloud project setup and deployment configuration.
-- GitHub repository and GitHub Actions setup.
-
-Any AI-generated tutorial or service must require admin review before publishing or execution.
+Sensitive areas require explicit review before implementation.
 
 ## Technical Direction
 
-This repository is starting as a static marketing surface. Do not introduce a full application framework until the product direction is reviewed.
+This repository is starting as a static marketing and product-spec surface. Do not introduce a full application framework until the product direction is reviewed.
 
 Prefer simple, reviewable artifacts first:
 
-- Static HTML for the first public page.
-- Markdown docs for product and business rules.
+- Static HTML for the public page.
+- Markdown docs for product rules.
 - Clear file names over premature abstraction.
 
 When application work begins, choose the stack based on the first real implementation task, not a hypothetical decade-scale architecture.
 
 ## Writing Style
 
-Use direct, practical language. Avoid vague SaaS phrases like "unlock productivity" unless paired with concrete product behavior.
+Use direct, practical language. Avoid vague phrases like "unlock productivity" unless paired with concrete product behavior.
 
-When writing public copy, make the first example Intrepion's own roadmap. The site should demonstrate the product instead of only describing it.
+Public copy should make the product feel like a practical life system, not a generic AI assistant. It should show how roadmaps, records, reviews, and AI work together.
 
 ## Implementation Standards
 
 - Keep changes small and easy to review.
 - Prefer explicit product rules over hidden assumptions.
-- Do not fake working features in the UI. If a button is not wired up, label it as early access, preview, or planned.
-- Do not add payment, auth, or chat UI that implies production behavior before those systems exist.
-- Keep family/admin exemptions documented separately from public pricing.
-- Treat credentials, billing, and API automation as sensitive areas that need explicit review before implementation.
+- Do not fake working features in the UI.
+- If a button is not wired up, label it as early access, preview, or planned.
+- Do not imply banking, payment, job application, purchase, import, or automation features are live before those systems exist.
+- Keep internal/family exemptions documented separately from public pricing.
+- Treat credentials, finances, employment, billing, and external automation as sensitive areas that need explicit review before implementation.
