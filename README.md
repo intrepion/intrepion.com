@@ -17,6 +17,7 @@ Prototype artifacts:
 
 - `docs/ambitions-prototype.md`: first Ambitions model, examples, and build boundary.
 - `docs/ambition-export-contract.md`: rules for rendering structured Ambition data as Markdown exports.
+- `docs/app-stack-decision.md`: current Flutter, Go, Cloud Run, Neon, and R2 direction.
 - `ambitions.html`: static app-shaped mock for the first Ambitions screen.
 - `ambition-form.html`: static intake form mock for manually filling in one ambition.
 - `docs/ambitions/oliverforral.md`: first real Ambition record.
