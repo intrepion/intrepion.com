@@ -2,17 +2,24 @@
 
 This document defines the first draft of Intrepion's plan and entitlement rules for the AI-assisted life roadmap vision.
 
-Prices are intentionally not final. The goal is to document product boundaries before implementing billing.
+Prices are draft monthly price points. The goal is to document product boundaries before implementing billing.
 
 ## Public Plans
 
-| Plan | Intended User | Life Areas | Records | AI Assistance | Automation |
-| --- | --- | --- | --- | --- | --- |
-| Free | Curious individual | 1 life area | Limited manual records | Limited roadmap drafts | None |
-| Plus | Individual user | 3 life areas | More manual records and uploads | Regular roadmap and review help | None at first |
-| Pro | Power user | Unlimited personal life areas | Higher record and upload limits | Deeper AI summaries and drafts | Early assisted workflows |
-| Life | Serious personal operating system user | Unlimited personal life areas | High limits, richer history, stronger search | Cross-area AI reviews | Selected confirmed automations |
-| Family | Household or couple | Shared and private life areas | Shared household records | Household-aware reviews | Selected confirmed automations |
+| Plan | Draft Price | Intended User | Roadmaps | Records | AI Assistance | Sharing |
+| --- | --- | --- | --- | --- | --- | --- |
+| Free | $0/month | Curious individual | 1 active roadmap per life area | Limited manual records | Limited AI drafts and reviews | Individual only |
+| Plus | $8/month | Serious solo user | More active roadmaps per life area | More records and light uploads | Regular AI reviews | Individual only |
+| Life | $16/month | Personal operating system user | Unlimited personal roadmaps | Higher limits, richer history, stronger search | Cross-area AI reviews | Individual only |
+| Household | $24/month | Couple, roommates, or immediate household | Shared and private roadmaps | Shared household records | Household-aware reviews | 2-5 people |
+| Family | $40/month | Larger household or extended family group | More shared and private roadmaps | Higher shared storage and history | Family-aware reviews | 6-15 people |
+
+Pricing notes:
+
+- Privacy should not be a paywall. Free users should be able to create private roadmaps.
+- Free should make every life area explorable, but shallow.
+- Paid plans should charge for depth: more roadmaps, more records, more AI review volume, uploads, search history, cross-area intelligence, exports, and sharing.
+- Annual pricing can be added later, likely around two months free, but monthly pricing is clearer while the product is still being shaped.
 
 ## Definitions
 
@@ -77,7 +84,7 @@ Admins should still be able to experience the app as regular users so internal l
 
 Plan limits may eventually include:
 
-- Number of life areas.
+- Active roadmaps per life area.
 - Number of records.
 - Upload storage.
 - Receipt/photo extraction volume.
@@ -155,9 +162,9 @@ Initial support levels:
 
 - Free: documentation and automated support flow.
 - Plus: documentation, automated support flow, and support requests.
-- Pro: Plus support plus higher AI usage.
-- Life: Pro support plus higher limits and selected assisted workflows.
-- Family: shared support for household setup.
+- Life: Plus support plus higher limits and selected assisted workflows.
+- Household: shared support for household setup.
+- Family: shared support for larger family setup and permissions.
 
 Avoid promising live chat until there is a real staffing and response-time policy behind it.
 
@@ -167,7 +174,7 @@ Billing should not be implemented until the plan rules are reviewed.
 
 When billing is added:
 
-- Family/internal accounts should not be charged.
+- Founder/internal comp accounts should not be charged.
 - Other users should require payment for paid plans.
 - Failed payment should downgrade or restrict paid entitlements without deleting user data.
 - Plan changes should be auditable.
@@ -178,7 +185,7 @@ When billing is added:
 - What is the first life area to prototype?
 - Should Free include one AI-generated roadmap draft?
 - How should receipt image storage be priced?
-- Should Family be a plan now or later?
+- Should Household and Family launch together, or should Household come first?
 - Should debt tracking be included early, given the sensitivity?
 - What financial disclaimers are required?
 - Which data should be local-first or exportable from day one?

@@ -303,6 +303,20 @@
         margin: 0 0 10px;
       }
 
+      .plan-price {
+        color: var(--ink);
+        display: block;
+        font-size: 24px;
+        font-weight: 900;
+        margin: 0 0 10px;
+      }
+
+      .plan-price span {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
       .step-label {
         color: var(--gold);
         font-size: 12px;
@@ -826,16 +840,18 @@
           <div class="section-heading">
             <h2>Plans for a system that grows with you.</h2>
             <p>
-              Pricing is not open yet. These plan names describe how life areas, records, AI reviews, and household sharing may scale over time.
+              Draft pricing keeps every life area available from the start, then scales by roadmap depth, record history, AI review volume, and sharing.
             </p>
           </div>
           <div class="plan-grid">
             <article class="plan">
               <div class="label">Free</div>
               <h3>Start</h3>
-              <p>For trying one life area.</p>
+              <p class="plan-price">$0 <span>/ month</span></p>
+              <p>For trying the system across life areas.</p>
               <ul>
-                <li>1 life area</li>
+                <li>All life areas</li>
+                <li>1 active roadmap per area</li>
                 <li>Limited manual records</li>
                 <li>Limited AI draft help</li>
               </ul>
@@ -843,41 +859,45 @@
             <article class="plan">
               <div class="label">Plus</div>
               <h3>Organize</h3>
-              <p>For managing a few active areas.</p>
+              <p class="plan-price">$8 <span>/ month</span></p>
+              <p>For deeper solo planning.</p>
               <ul>
-                <li>3 life areas</li>
-                <li>More records and uploads</li>
+                <li>More roadmaps per area</li>
+                <li>More records and light uploads</li>
                 <li>Regular AI reviews</li>
-              </ul>
-            </article>
-            <article class="plan">
-              <div class="label">Pro</div>
-              <h3>Operate</h3>
-              <p>For using Intrepion every week.</p>
-              <ul>
-                <li>Unlimited personal areas</li>
-                <li>Higher record limits</li>
-                <li>Deeper AI summaries</li>
               </ul>
             </article>
             <article class="plan">
               <div class="label">Life</div>
               <h3>Compound</h3>
-              <p>For a serious personal operating system.</p>
+              <p class="plan-price">$16 <span>/ month</span></p>
+              <p>For a personal operating system.</p>
               <ul>
-                <li>Cross-area reviews</li>
-                <li>Richer history</li>
-                <li>Selected assisted workflows</li>
+                <li>Unlimited personal roadmaps</li>
+                <li>Richer history and search</li>
+                <li>Cross-area AI reviews</li>
+              </ul>
+            </article>
+            <article class="plan">
+              <div class="label">Household</div>
+              <h3>Share</h3>
+              <p class="plan-price">$24 <span>/ month</span></p>
+              <p>For couples, roommates, or an immediate household.</p>
+              <ul>
+                <li>2-5 people</li>
+                <li>Shared and private roadmaps</li>
+                <li>Household-aware reviews</li>
               </ul>
             </article>
             <article class="plan">
               <div class="label">Family</div>
-              <h3>Share</h3>
-              <p>For household records and shared planning.</p>
+              <h3>Coordinate</h3>
+              <p class="plan-price">$40 <span>/ month</span></p>
+              <p>For larger family groups with more shared history.</p>
               <ul>
-                <li>Shared and private areas</li>
-                <li>Household records</li>
-                <li>Family review support</li>
+                <li>6-15 people</li>
+                <li>More shared storage</li>
+                <li>Stronger permissions</li>
               </ul>
             </article>
           </div>

@@ -124,7 +124,7 @@ Do not implement these before the public page, documentation, and core model are
 - Automatic purchases.
 - Broad browser tracking.
 - Fully automated receipt ingestion.
-- Enterprise team controls.
+- Large-organization controls.
 - A broad plugin or integration marketplace.
 
 These features may matter later, but implementing them too early will distract from proving whether life areas plus AI-assisted roadmaps are useful.
@@ -135,11 +135,13 @@ Use these exact public plan names unless the product direction changes:
 
 - Free
 - Plus
-- Pro
 - Life
+- Household
 - Family
 
-The old Business and Enterprise framing is no longer the center. If business plans return later, document why.
+The old Pro, Business, and Enterprise framing is no longer the center. If business plans return later, document why.
+
+Privacy should not be a paywall. Free users should be able to create private roadmaps, but with shallow limits such as one active roadmap per life area, limited records, and limited AI usage.
 
 Oliver and Karinna should be able to use paid-plan capabilities without actual payment. Other users should eventually require payment for paid entitlements.
 
