@@ -18,7 +18,7 @@ Prices are intentionally not final. The goal is to document product boundaries b
 
 Life area:
 
-A major domain the user wants to manage, such as finances, job search, language learning, media memory, shopping, receipts, or projects.
+A major domain the user wants to manage, such as career, relationships, food, job search, language learning, fitness, travel, entertainment, shopping, receipts, finances, or projects.
 
 Static roadmap:
 
@@ -30,7 +30,7 @@ A roadmap that can adjust recommendations, review prompts, missing information, 
 
 Record:
 
-A stored fact or artifact attached to a life area. Records may include receipts, job applications, watched videos, ratings, debts, bills, coupon codes, language notes, project notes, and uploaded files.
+A stored fact or artifact attached to a life area. Records may include receipts, job applications, watched videos, people notes, restaurant ratings, recipes, workouts, trips, debts, bills, coupon codes, language notes, project notes, and uploaded files.
 
 AI-assisted roadmap draft:
 
@@ -96,9 +96,13 @@ Sensitive areas require careful product boundaries:
 
 - Finances, credit cards, debt, bills, and bank-like data.
 - Job applications, resumes, salary information, and employment history.
+- Fitness routines, body goals, recovery notes, and injury-related context.
+- Travel documents, itineraries, location history, and identity documents.
+- Private notes about other people, relationship history, contact details, and planned follow-ups.
+- Food preferences, allergies, dietary restrictions, restaurant history, grocery habits, and location history.
 - Receipts, purchases, store accounts, coupons, and discounts.
 - Credentials, API keys, OAuth tokens, and uploaded documents.
-- Private media history or learning notes if the user marks them private.
+- Private entertainment history or learning notes if the user marks them private.
 
 ## AI Safety
 
@@ -111,12 +115,19 @@ Allowed early uses:
 - Identifying missing information and unclear assumptions.
 - Suggesting next actions.
 - Drafting job materials from reviewed professional material.
-- Generating English, Spanish, or other language practice from user goals and known weak spots.
+- Generating language practice from target languages, user goals, known weak spots, and recent review history.
+- Drafting fitness routines from user goals and logged history without medical claims.
+- Summarizing travel plans, packing needs, bookings, budgets, and missing documents.
+- Suggesting thoughtful follow-ups from user-approved relationship notes.
+- Summarizing restaurants, recipes, grocery notes, wait times, parking, prices, and repeat-worthy meals.
 - Extracting receipt fields from uploaded receipt images after the user confirms the result.
 
 Not allowed without explicit review or confirmation:
 
 - Giving professional financial advice.
+- Giving medical advice or treating injuries.
+- Manipulating relationships or pretending to know another person's feelings.
+- Giving medical or nutrition advice from food records.
 - Making payments or purchases.
 - Applying to jobs.
 - Sending messages to employers, stores, banks, or services.

@@ -23,7 +23,7 @@ AI should help draft, summarize, compare, and ask clarifying questions. The prod
 
 Life area:
 
-A major domain the user wants to manage, such as finances, job search, language learning, media memory, shopping, receipts, or personal projects.
+A major domain the user wants to manage, such as career, relationships, food, job search, language learning, fitness, travel, entertainment, shopping, receipts, finances, or personal projects.
 
 Roadmap:
 
@@ -35,7 +35,7 @@ A task, decision, habit, milestone, question, record request, or automation cand
 
 Record:
 
-Evidence or history attached to a life area. Examples include receipts, job applications, watched videos, ratings, debts, bills, coupon codes, language practice notes, project notes, and uploaded files.
+Evidence or history attached to a life area. Examples include receipts, job applications, watched videos, people notes, restaurant ratings, workouts, trips, debts, bills, coupon codes, language practice notes, project notes, and uploaded files.
 
 Review:
 
@@ -51,9 +51,9 @@ An optional automation that performs an external action after explicit user conf
 
 ## Life Areas
 
-### Roadmaps
+### Ambitions
 
-Purpose: manage goals, projects, websites, products, portfolios, and long-term plans.
+Purpose: manage goals, projects, websites, products, portfolios, businesses, creative work, and long-term plans.
 
 Example uses:
 
@@ -77,42 +77,42 @@ Example uses:
 
 Boundary: Intrepion may organize and explain user-provided financial information, but it should not present itself as professional financial advice.
 
-### Media Memory
+### Entertainment
 
-Purpose: remember what Oliver watched, when he watched it, how he ranked it, and what he thought at the time.
-
-Example uses:
-
-- Track TV shows, movies, YouTube videos, courses, talks, and playlists.
-- Record last watched date, progress, rating, notes, and context.
-- Surface unfinished media and changed opinions over time.
-- Turn media history into recommendations or reflection prompts.
-
-### Language Learning
-
-Purpose: turn human language learning into a repeatable roadmap instead of scattered practice. English and Spanish may be the first supported languages, but the model should not be limited to them.
+Purpose: remember what the user watched or listened to, when it happened, how they ranked it, and what they thought at the time.
 
 Example uses:
 
-- Track target languages, vocabulary, phrases, grammar, listening, speaking, reading, and writing practice.
-- Keep a review loop for weak areas.
-- Use AI to generate practice from recent mistakes and goals.
-- Connect media records to language learning when the watched content is in a target language.
+- Track TV shows, movies, YouTube videos, podcasts, games, courses, talks, and playlists.
+- Record last watched or listened date, progress, rating, notes, and context.
+- Surface unfinished entertainment and changed opinions over time.
+- Turn entertainment history into recommendations or reflection prompts.
 
-### Shopping, Prices, Coupons, And Receipts
+### People And Relationships
 
-Purpose: help Oliver compare prices, remember discounts, manage coupons, and keep receipt records so physical receipts can be discarded with confidence.
+Purpose: help the user remember people with more care and less stress.
 
 Example uses:
 
-- Track item prices across stores.
-- Record discounts, coupons, expiration dates, and whether a coupon is one-time use.
-- Mark used coupons.
-- Upload or photograph receipts.
-- Extract store, date, items, totals, and payment method from receipts.
-- Connect receipts to budget, returns, warranties, and price comparisons.
+- Track people, last-seen dates, where the user last saw them, and planned next hangouts.
+- Keep notes about important life events, preferences, interests, and topics to ask about.
+- Create reminders for thoughtful follow-ups, birthdays, milestones, or overdue reconnection.
+- Review who the user has not seen recently and what would be meaningful to remember.
 
-Boundary: receipt extraction should preserve source images or source metadata until the user trusts the record.
+Boundary: this should feel like memory support for being more attentive, not a tool for manipulating people. Private notes about other people are sensitive and should be treated carefully.
+
+### Food And Places
+
+Purpose: remember where the user ate, cooked, shopped, and what was worth repeating.
+
+Example uses:
+
+- Track restaurants, bars, recipes, grocery stores, menu items, ratings, prices, and notes.
+- Remember wait times, parking situations, atmosphere, service pace, and how busy the place felt.
+- Track dishes, substitutions, ingredients, grocery store availability, and what the user would order or cook again.
+- Connect food records to travel, shopping, receipts, budgets, and household planning.
+
+Boundary: food preferences, allergies, dietary restrictions, spending, and location history can be sensitive. The product should avoid medical or nutrition claims unless explicitly reviewed.
 
 ### Career And Jobs
 
@@ -127,6 +127,59 @@ Example uses:
 - Eventually connect to oliverforral.com as the public professional presence.
 
 Boundary: AI must not invent experience, credentials, employment history, or commitments.
+
+### Language Learning
+
+Purpose: turn human language learning into a repeatable roadmap instead of scattered practice.
+
+Example uses:
+
+- Track target languages, vocabulary, phrases, grammar, listening, speaking, reading, and writing practice.
+- Keep a review loop for weak areas.
+- Use AI to generate practice from recent mistakes and goals.
+- Track media practice, conversations, exercises, and review history.
+- Connect entertainment records to language learning when the watched or listened content is in a target language.
+
+### Fitness And Routines
+
+Purpose: turn movement, workouts, recovery, and long-term capability into a repeatable roadmap.
+
+Example uses:
+
+- Track workouts, movement goals, habit streaks, strength, cardio, mobility, and recovery notes.
+- Review what routine is realistic for the user's available time and constraints.
+- Use AI to suggest practice plans from user goals and recent history.
+- Connect fitness routines to travel, work, and energy patterns when useful.
+
+Boundary: Intrepion may support fitness routines and general habit planning, but it should not diagnose, treat injuries, or replace medical advice.
+
+### Travel Planning
+
+Purpose: organize trips before, during, and after travel.
+
+Example uses:
+
+- Track destinations, dates, budgets, bookings, confirmation numbers, travel documents, packing lists, and saved places.
+- Review what is booked, missing, unclear, or time-sensitive.
+- Use AI to summarize trip records, draft packing lists, and surface constraints.
+- Preserve post-trip notes, places visited, costs, and memories.
+
+Boundary: travel documents and location history are sensitive records and should be handled carefully.
+
+### Shopping, Coupons, And Receipts
+
+Purpose: help Oliver compare prices, remember discounts, manage coupons, and keep receipt records so physical receipts can be discarded with confidence.
+
+Example uses:
+
+- Track item prices across stores.
+- Record discounts, coupons, expiration dates, and whether a coupon is one-time use.
+- Mark used coupons.
+- Upload or photograph receipts.
+- Extract store, date, items, totals, and payment method from receipts.
+- Connect receipts to budget, returns, warranties, and price comparisons.
+
+Boundary: receipt extraction should preserve source images or source metadata until the user trusts the record.
 
 ## Six-Horizon Roadmap
 
@@ -157,14 +210,18 @@ Goal: choose the first private prototype area and define its data shape.
 
 Candidate first areas:
 
-- Debt payoff and financial recovery.
 - Job search.
+- People and relationships.
+- Food and places.
+- Language learning.
+- Fitness and routines.
+- Travel planning.
 - Receipt capture and shopping memory.
-- Language learning, starting with English and Spanish.
+- Debt payoff and financial recovery.
 
 Recommended first wedge:
 
-Start with job search plus debt payoff, because they are urgent, measurable, and emotionally important.
+Start with career and job search, because it is marketable, urgent, measurable, and naturally connects to roadmaps, records, AI drafting, and portfolio improvement.
 
 Deliverables:
 
@@ -195,8 +252,12 @@ Deliverables:
 
 - Receipt/photo upload exploration.
 - Job application tracker.
-- Debt tracker with cautious financial-language boundaries.
+- People and relationships review loop.
+- Food and places memory.
 - Language practice review loop.
+- Fitness routine review loop.
+- Travel planning records.
+- Debt tracker with cautious financial-language boundaries.
 - AI summaries that cite the records they used.
 - Clear privacy and deletion rules.
 
@@ -223,7 +284,7 @@ Goal: make Intrepion a compounding life memory and planning system.
 
 Possible capabilities:
 
-- Long-term memory across projects, finances, learning, media, purchases, jobs, and personal goals.
+- Long-term memory across projects, career, relationships, food, finances, learning, fitness, travel, media, purchases, jobs, and personal goals.
 - AI that understands the user's real history because it is grounded in records.
 - Safe automation for repeatable life admin.
 - Personal agents that act only within explicit permissions.
@@ -237,4 +298,4 @@ The strongest initial wedge is:
 
 Build Intrepion for Oliver's real open loops, using one shared model across life areas.
 
-If the same structure can help with debt, job search, language learning, receipts, media memory, and projects, the product has a real center. If each area needs a completely different product, the vision is too broad.
+If the same structure can help with career, relationships, food, language learning, fitness, travel, receipts, entertainment, finances, and projects, the product has a real center. If each area needs a completely different product, the vision is too broad.

@@ -9,6 +9,6 @@ The product idea is to help one person manage important life areas through a sha
 - recurring reviews
 - AI-assisted next actions
 
-Initial life areas include roadmaps, finances and debt, media memory, language learning, shopping and receipts, and job search. English and Spanish may be the first supported languages.
+Initial life areas include ambitions, career and jobs, people and relationships, food and places, language learning, fitness and routines, travel planning, entertainment, shopping and receipts, and finances and debt.
 
 This repository is currently a static marketing and product-spec surface. It intentionally does not implement authentication, billing, banking imports, receipt ingestion, job applications, or external automation yet.
