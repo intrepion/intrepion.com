@@ -18,7 +18,7 @@ Prices are intentionally not final. The goal is to document product boundaries b
 
 Life area:
 
-A major domain the user wants to manage, such as career, relationships, food, job search, language learning, fitness, travel, entertainment, shopping, receipts, finances, or projects.
+A major domain the user wants to manage, such as ambitions, career, relationships, food, language learning, fitness, travel, entertainment, shopping, receipts, or finances.
 
 Static roadmap:
 
@@ -30,7 +30,7 @@ A roadmap that can adjust recommendations, review prompts, missing information, 
 
 Record:
 
-A stored fact or artifact attached to a life area. Records may include receipts, job applications, watched videos, people notes, restaurant ratings, recipes, workouts, trips, debts, bills, coupon codes, language notes, project notes, and uploaded files.
+A stored fact or artifact attached to a life area. Records may include portfolio assets, project notes, domains, receipts, job applications, watched videos, people notes, restaurant ratings, recipes, workouts, trips, debts, bills, coupon codes, language notes, and uploaded files.
 
 AI-assisted roadmap draft:
 

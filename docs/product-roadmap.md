@@ -23,7 +23,7 @@ AI should help draft, summarize, compare, and ask clarifying questions. The prod
 
 Life area:
 
-A major domain the user wants to manage, such as career, relationships, food, job search, language learning, fitness, travel, entertainment, shopping, receipts, finances, or personal projects.
+A major domain the user wants to manage, such as ambitions, career, relationships, food, language learning, fitness, travel, entertainment, shopping, receipts, or finances.
 
 Roadmap:
 
@@ -58,8 +58,8 @@ Purpose: manage goals, projects, websites, products, portfolios, businesses, cre
 Example uses:
 
 - Build intrepion.com.
-- Build oliverforral.com.
-- Build karinnaaf.art.
+- Launch oliverforral.com as a software engineer portfolio.
+- Launch karinnaaf.art as an artist portfolio.
 - Plan a product launch.
 - Keep one-hour action and decade-scale ambition visible together.
 
@@ -210,6 +210,7 @@ Goal: choose the first private prototype area and define its data shape.
 
 Candidate first areas:
 
+- Ambitions.
 - Job search.
 - People and relationships.
 - Food and places.
@@ -221,12 +222,15 @@ Candidate first areas:
 
 Recommended first wedge:
 
-Start with career and job search, because it is marketable, urgent, measurable, and naturally connects to roadmaps, records, AI drafting, and portfolio improvement.
+Start privately with Ambitions, because Oliver and Karinna already have two concrete portfolio launches that need roadmaps: oliverforral.com and karinnaaf.art.
+
+Keep the public homepage's Career specimen for now, because career and job search are more immediately legible as a marketing example. The internal prototype and the public specimen do not need to be the same life area yet.
 
 Deliverables:
 
 - Define the shared data model for life areas, roadmaps, records, and reviews.
-- Choose one first life area for a private prototype.
+- Choose Ambitions as the first private prototype area.
+- Create first Ambitions records for oliverforral.com and karinnaaf.art.
 - Create static examples for all initial life areas.
 - Decide what AI is allowed to draft in the first prototype.
 
@@ -236,6 +240,8 @@ Goal: build one private, manually editable life-area prototype.
 
 Deliverables:
 
+- Ambitions prototype for portfolio launch roadmaps.
+- Separate ambition records for oliverforral.com and karinnaaf.art.
 - Manual record entry.
 - Six-horizon roadmap view.
 - Review summary view.
@@ -250,6 +256,8 @@ Goal: make one or two life areas useful enough for repeated personal use.
 
 Deliverables:
 
+- Portfolio launch review loop for Oliver and Karinna.
+- Portfolio records for domains, hosting, published pages, project/art assets, copy drafts, contact options, and open decisions.
 - Receipt/photo upload exploration.
 - Job application tracker.
 - People and relationships review loop.
@@ -284,7 +292,7 @@ Goal: make Intrepion a compounding life memory and planning system.
 
 Possible capabilities:
 
-- Long-term memory across projects, career, relationships, food, finances, learning, fitness, travel, media, purchases, jobs, and personal goals.
+- Long-term memory across ambitions, career, relationships, food, finances, learning, fitness, travel, entertainment, purchases, jobs, and personal goals.
 - AI that understands the user's real history because it is grounded in records.
 - Safe automation for repeatable life admin.
 - Personal agents that act only within explicit permissions.
@@ -296,6 +304,8 @@ Strategic risk: the product could become too broad. The durable center should re
 
 The strongest initial wedge is:
 
-Build Intrepion for Oliver's real open loops, using one shared model across life areas.
+Build Intrepion for Oliver and Karinna's real portfolio ambitions first, using one shared model that can later extend across life areas.
 
-If the same structure can help with career, relationships, food, language learning, fitness, travel, receipts, entertainment, finances, and projects, the product has a real center. If each area needs a completely different product, the vision is too broad.
+The homepage can still use Career as the clearest marketing specimen. The product prototype should start with Ambitions because it creates immediate personal value: getting oliverforral.com and karinnaaf.art online with explicit records, open decisions, and six-horizon plans.
+
+If the same structure can help with ambitions, career, relationships, food, language learning, fitness, travel, receipts, entertainment, and finances, the product has a real center. If each area needs a completely different product, the vision is too broad.

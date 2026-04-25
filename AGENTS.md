@@ -97,8 +97,8 @@ Build in this order unless there is a clear reason to change:
 1. Public positioning and SEO page for the new life-roadmap vision.
 2. Static examples showing the initial life areas and their six-horizon roadmaps.
 3. Product documentation for the life-area model, AI boundaries, records, reviews, and plans.
-4. A tiny private prototype for one or two life areas.
-5. Manual record entry for selected life areas.
+4. A tiny private Ambitions prototype for launching oliverforral.com and karinnaaf.art.
+5. Manual record entry for ambitions, including domains, portfolio assets, copy drafts, hosting choices, open decisions, and launch tasks.
 6. AI-assisted roadmap drafting from user-provided context.
 7. Receipt/photo upload exploration.
 8. Career/job search tracker and AI-assisted application workflow.
