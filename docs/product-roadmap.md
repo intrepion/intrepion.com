@@ -231,6 +231,7 @@ Deliverables:
 - Define the shared data model for life areas, roadmaps, records, and reviews.
 - Choose Ambitions as the first private prototype area.
 - Create first Ambitions records for oliverforral.com and karinnaaf.art.
+- Create a static Ambitions app-screen mock.
 - Create static examples for all initial life areas.
 - Decide what AI is allowed to draft in the first prototype.
 

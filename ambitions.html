@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Intrepion Ambitions Prototype</title>
+    <meta
+      name="description"
+      content="A static prototype of the first Intrepion Ambitions screen for portfolio launch roadmaps."
+    >
+    <style>
+      :root {
+        --bg: #f7f4ee;
+        --ink: #1e2526;
+        --muted: #65716f;
+        --line: #d8d0c2;
+        --panel: #fffdf8;
+        --panel-strong: #ebe4d6;
+        --green: #335c4a;
+        --blue: #2c5068;
+        --gold: #8f650f;
+        --rose: #8f463e;
+        --shadow: 0 18px 45px rgba(37, 35, 29, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 0;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .shell {
+        min-height: 100vh;
+      }
+
+      .topbar {
+        align-items: center;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 20px;
+        justify-content: space-between;
+        padding: 18px 28px;
+      }
+
+      .brand {
+        display: grid;
+        gap: 3px;
+      }
+
+      .brand strong {
+        font-size: 19px;
+        letter-spacing: 0;
+      }
+
+      .brand span,
+      .topbar nav {
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .topbar nav {
+        display: flex;
+        gap: 16px;
+      }
+
+      .layout {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: 280px minmax(0, 1fr);
+        margin: 0 auto;
+        max-width: 1380px;
+        padding: 24px;
+      }
+
+      .sidebar,
+      .panel,
+      .ambition-card,
+      .roadmap {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow);
+      }
+
+      .sidebar {
+        align-self: start;
+        display: grid;
+        gap: 18px;
+        padding: 18px;
+      }
+
+      .sidebar h2,
+      .panel h2,
+      .roadmap h2 {
+        font-size: 15px;
+        margin: 0;
+        text-transform: uppercase;
+      }
+
+      .ambition-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .ambition-pill {
+        background: var(--bg);
+        border: 1px solid var(--line);
+        display: grid;
+        gap: 4px;
+        padding: 12px;
+        text-decoration: none;
+      }
+
+      .ambition-pill.active {
+        border-color: rgba(51, 92, 74, 0.5);
+        box-shadow: inset 4px 0 0 var(--green);
+      }
+
+      .ambition-pill strong {
+        font-size: 14px;
+      }
+
+      .ambition-pill span,
+      .small,
+      .meta {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .main {
+        display: grid;
+        gap: 18px;
+      }
+
+      .hero {
+        background: var(--green);
+        color: #fffdf8;
+        display: grid;
+        gap: 14px;
+        padding: 28px;
+      }
+
+      .hero p {
+        color: rgba(255, 253, 248, 0.76);
+        margin: 0;
+        max-width: 760px;
+      }
+
+      .hero h1 {
+        font-size: clamp(32px, 5vw, 58px);
+        letter-spacing: 0;
+        line-height: 1;
+        margin: 0;
+        max-width: 880px;
+      }
+
+      .summary-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .panel {
+        display: grid;
+        gap: 12px;
+        padding: 18px;
+      }
+
+      .metric {
+        color: var(--ink);
+        display: block;
+        font-size: 32px;
+        font-weight: 900;
+      }
+
+      .content-grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+      }
+
+      .ambition-card {
+        display: grid;
+        gap: 18px;
+        padding: 22px;
+      }
+
+      .card-header {
+        align-items: start;
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+      }
+
+      .card-header h2 {
+        font-size: 26px;
+        letter-spacing: 0;
+        margin: 0 0 8px;
+      }
+
+      .badge {
+        background: var(--panel-strong);
+        color: var(--green);
+        flex: 0 0 auto;
+        font-size: 12px;
+        font-weight: 900;
+        padding: 8px 10px;
+        text-transform: uppercase;
+      }
+
+      .section-grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .mini-section {
+        background: var(--bg);
+        border: 1px solid var(--line);
+        padding: 14px;
+      }
+
+      .mini-section h3 {
+        font-size: 14px;
+        margin: 0 0 10px;
+      }
+
+      ul {
+        color: var(--muted);
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      li + li {
+        margin-top: 7px;
+      }
+
+      .roadmap {
+        display: grid;
+      }
+
+      .roadmap h2 {
+        padding: 18px 18px 0;
+      }
+
+      .roadmap-row {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 110px minmax(0, 1fr) minmax(220px, 0.7fr);
+        padding: 18px;
+      }
+
+      .roadmap-row + .roadmap-row {
+        border-top: 1px solid var(--line);
+      }
+
+      .roadmap-row.header {
+        background: var(--panel-strong);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .roadmap-row h3 {
+        font-size: 17px;
+        margin: 0 0 6px;
+      }
+
+      .roadmap-row p {
+        color: var(--muted);
+        margin: 0;
+      }
+
+      .side-stack {
+        display: grid;
+        gap: 18px;
+      }
+
+      .review-card {
+        background: var(--blue);
+        color: #fffdf8;
+      }
+
+      .review-card p,
+      .ai-card p {
+        margin: 0;
+      }
+
+      .review-card p {
+        color: rgba(255, 253, 248, 0.78);
+      }
+
+      .ai-card {
+        background: #fff7e1;
+        border-color: #e0c17f;
+      }
+
+      .ai-card h2 {
+        color: var(--gold);
+      }
+
+      .decision {
+        border-left: 4px solid var(--rose);
+        padding-left: 10px;
+      }
+
+      @media (max-width: 980px) {
+        .layout,
+        .content-grid,
+        .summary-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .topbar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .roadmap-row {
+          grid-template-columns: 1fr;
+        }
+
+        .section-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .layout {
+          padding: 14px;
+        }
+
+        .topbar,
+        .hero,
+        .ambition-card,
+        .panel {
+          padding: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <strong>Intrepion</strong>
+          <span>Ambitions prototype</span>
+        </div>
+        <nav aria-label="Prototype navigation">
+          <a href="index.html">Marketing page</a>
+          <a href="docs/ambitions-prototype.md">Model doc</a>
+        </nav>
+      </header>
+
+      <main class="layout">
+        <aside class="sidebar" aria-label="Ambition list">
+          <h2>Ambitions</h2>
+          <div class="ambition-list">
+            <a class="ambition-pill active" href="#oliver">
+              <strong>oliverforral.com</strong>
+              <span>Software engineer portfolio</span>
+            </a>
+            <a class="ambition-pill" href="#karinna">
+              <strong>karinnaaf.art</strong>
+              <span>Artist portfolio</span>
+            </a>
+          </div>
+          <div class="panel">
+            <h2>Prototype Boundary</h2>
+            <p class="small">Manual records, six horizons, open decisions, review prompts, and AI suggestion placeholders. No auth, billing, uploads, real AI, or automation yet.</p>
+          </div>
+        </aside>
+
+        <section class="main">
+          <div class="hero">
+            <p>First private life area</p>
+            <h1>Turn portfolio ambitions into launch roadmaps.</h1>
+            <p>
+              The first Intrepion app screen should prove one thing: whether records, decisions, reviews, and AI-assisted next actions can help two real portfolio sites get online.
+            </p>
+          </div>
+
+          <div class="summary-grid" aria-label="Portfolio launch summary">
+            <div class="panel">
+              <h2>Active Ambitions</h2>
+              <span class="metric">2</span>
+              <p>Both portfolio domains are treated as real launch goals.</p>
+            </div>
+            <div class="panel">
+              <h2>1-Hour Actions</h2>
+              <span class="metric">2</span>
+              <p>Each ambition has a next action small enough to start today.</p>
+            </div>
+            <div class="panel">
+              <h2>Open Decisions</h2>
+              <span class="metric">8</span>
+              <p>Blocked choices are visible instead of scattered in memory.</p>
+            </div>
+            <div class="panel">
+              <h2>AI Status</h2>
+              <span class="metric">Manual</span>
+              <p>Suggestions are placeholders until records are trustworthy.</p>
+            </div>
+          </div>
+
+          <div class="content-grid">
+            <article class="ambition-card" id="oliver">
+              <div class="card-header">
+                <div>
+                  <h2>oliverforral.com</h2>
+                  <p class="meta">Launch a software engineer portfolio that shows Oliver's work, judgment, projects, and direction.</p>
+                </div>
+                <span class="badge">Current Focus</span>
+              </div>
+
+              <div class="section-grid">
+                <section class="mini-section">
+                  <h3>Records Needed</h3>
+                  <ul>
+                    <li>Resume or professional summary.</li>
+                    <li>3-5 projects worth featuring.</li>
+                    <li>Screenshots, links, and technical notes.</li>
+                    <li>Preferred contact method.</li>
+                  </ul>
+                </section>
+                <section class="mini-section">
+                  <h3>Open Decisions</h3>
+                  <ul>
+                    <li>Static portfolio or app-like first version.</li>
+                    <li>Which projects prove engineering judgment.</li>
+                    <li>How to mention the future AI avatar.</li>
+                  </ul>
+                </section>
+                <section class="mini-section">
+                  <h3>Next Review</h3>
+                  <p class="small">What is the smallest honest version of oliverforral.com that can be published this week?</p>
+                </section>
+              </div>
+
+              <section class="roadmap" aria-label="Oliver portfolio roadmap">
+                <h2>Six-Horizon Roadmap</h2>
+                <div class="roadmap-row header">
+                  <span>Horizon</span>
+                  <span>Roadmap item</span>
+                  <span>Review prompt</span>
+                </div>
+                <div class="roadmap-row">
+                  <strong>1 hour</strong>
+                  <div>
+                    <h3>Choose the first portfolio promise.</h3>
+                    <p>Use the resume, current project list, and desired audience.</p>
+                  </div>
+                  <p>What should a visitor understand after 30 seconds?</p>
+                </div>
+                <div class="roadmap-row">
+                  <strong>1 day</strong>
+                  <div>
+                    <h3>Draft the first site outline.</h3>
+                    <p>Define bio, project sections, and contact path.</p>
+                  </div>
+                  <p>What can be published without waiting for perfect polish?</p>
+                </div>
+                <div class="roadmap-row">
+                  <strong>1 week</strong>
+                  <div>
+                    <h3>Publish a simple portfolio.</h3>
+                    <p>Connect DNS, hosting, project copy, and screenshots.</p>
+                  </div>
+                  <p>What is blocking a public link?</p>
+                </div>
+                <div class="roadmap-row">
+                  <strong>1 month</strong>
+                  <div>
+                    <h3>Add stronger proof of work.</h3>
+                    <p>Write case studies and add relevant code or outcome links.</p>
+                  </div>
+                  <p>Which project deserves a deeper write-up?</p>
+                </div>
+              </section>
+            </article>
+
+            <aside class="side-stack">
+              <section class="panel review-card">
+                <h2>Review Prompt</h2>
+                <p>What is the smallest honest version of oliverforral.com that can be published this week?</p>
+              </section>
+              <section class="panel ai-card">
+                <h2>AI Suggestion Placeholder</h2>
+                <p>Draft a homepage outline from Oliver's resume, project notes, and desired audience. Mark missing facts instead of inventing experience.</p>
+              </section>
+              <section class="panel">
+                <h2>Decisions To Resolve</h2>
+                <p class="decision">The AI avatar is a long-term differentiator, but it should not delay a simple first portfolio launch.</p>
+                <p class="decision">The stack should be chosen for the first publishable version, not the decade-scale architecture.</p>
+              </section>
+            </aside>
+          </div>
+
+          <article class="ambition-card" id="karinna">
+            <div class="card-header">
+              <div>
+                <h2>karinnaaf.art</h2>
+                <p class="meta">Launch an artist portfolio for artwork, collections, biography, contact, and future updates.</p>
+              </div>
+              <span class="badge">Second Launch</span>
+            </div>
+
+            <div class="section-grid">
+              <section class="mini-section">
+                <h3>Records Needed</h3>
+                <ul>
+                  <li>Artwork images.</li>
+                  <li>Titles, media, dates, and dimensions.</li>
+                  <li>Artist statement or biography draft.</li>
+                  <li>Preferred contact method.</li>
+                </ul>
+              </section>
+              <section class="mini-section">
+                <h3>Open Decisions</h3>
+                <ul>
+                  <li>Gallery, portfolio, catalog, or artist homepage.</li>
+                  <li>Which works should be public first.</li>
+                  <li>Whether pricing or availability belongs in version one.</li>
+                </ul>
+              </section>
+              <section class="mini-section">
+                <h3>Next Review</h3>
+                <p class="small">What is the smallest beautiful version of karinnaaf.art that can be published this week?</p>
+              </section>
+            </div>
+
+            <section class="roadmap" aria-label="Karinna artist portfolio roadmap">
+              <h2>Six-Horizon Roadmap</h2>
+              <div class="roadmap-row header">
+                <span>Horizon</span>
+                <span>Roadmap item</span>
+                <span>Review prompt</span>
+              </div>
+              <div class="roadmap-row">
+                <strong>1 hour</strong>
+                <div>
+                  <h3>Pick the first public collection.</h3>
+                  <p>Use artwork photos, titles, notes, and favorites.</p>
+                </div>
+                <p>Which pieces should represent the first version?</p>
+              </div>
+              <div class="roadmap-row">
+                <strong>1 day</strong>
+                <div>
+                  <h3>Draft the first artist-site structure.</h3>
+                  <p>Choose the initial pages, contact flow, and collection groupings.</p>
+                </div>
+                <p>What page structure feels natural for the artwork?</p>
+              </div>
+              <div class="roadmap-row">
+                <strong>1 week</strong>
+                <div>
+                  <h3>Publish a simple gallery or portfolio.</h3>
+                  <p>Prepare optimized images, captions, DNS, and hosting.</p>
+                </div>
+                <p>What is blocking a public link?</p>
+              </div>
+              <div class="roadmap-row">
+                <strong>1 month</strong>
+                <div>
+                  <h3>Add richer artwork context.</h3>
+                  <p>Add process notes, series descriptions, and availability rules.</p>
+                </div>
+                <p>What would make the site feel more like Karinna's work?</p>
+              </div>
+            </section>
+          </article>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
