@@ -33,8 +33,21 @@ export default defineConfig({
 Astro uses file-based routing. Inside the `src/pages/` directory, create your main application views:
 
 - `index.astro` (Home)
-- `projects.astro` (Gallery/Projects)
-- `about.astro` (About Me)
+- `projects.astro` (Products/Projects/Services/Features - *Note: might be duplicated in Flutter for logged-in experience*)
+- `blog/index.astro` (Blog)
+- `about.astro` (About)
+- `faq.astro` (FAQ)
+- `testimonials.astro` (Testimonials)
+- `contact.astro` (Contact)
+- `press-kit.astro` (Press Kit)
+- `privacy-policy.astro` (Privacy Policy)
+- `terms-and-conditions.astro` (Terms and Conditions)
+- `accessibility-statement.astro` (Accessibility Statement)
+- `returns-and-refunds.astro` (Returns and Refunds)
+- `shipping-information.astro` (Shipping Information)
+- `sitemap.xml.ts` (Sitemap)
+- `robots.txt.ts` (Robots.txt)
+- `404.astro` (Page Not Found)
 
 ## Step 4: Fetching Data at Build Time
 
