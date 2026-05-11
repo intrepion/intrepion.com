@@ -7,7 +7,7 @@ In this tutorial, we build the internal Content Management System (CMS) client u
 From the root of your project, initialize the Flutter web project. Flutter's `create` command will generate the directory for us:
 
 ```bash
-flutter create client --platforms web,macos,windows
+flutter create client --platforms android,ios,linux,macos,web,windows
 cd client
 ```
 
