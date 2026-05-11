@@ -33,19 +33,20 @@ Create these directories:
 mkdir marketing client api
 ```
 
-## Step 3: Add a Root Workspace File (Optional but recommended)
+## Step 3: Add a Root Workspace File
 
-If you plan to use a tool like `Make`, `Just`, or npm workspaces to run commands across all three environments, you can set that up now. For instance, a simple `Makefile` at the root can be very helpful:
+Since we have multiple environments, using a task runner like `just` is highly recommended. Create a `justfile` at the root of your project to manage your development commands:
 
-```makefile
-.PHONY: dev-marketing dev-api dev-client
-
+```just
+# Run the Astro marketing site
 dev-marketing:
 	cd marketing && npm run dev
 
+# Run the Go ConnectRPC backend
 dev-api:
 	cd api && go run cmd/server/main.go
 
+# Run the Flutter CMS client
 dev-client:
 	cd client && flutter run -d chrome
 ```
