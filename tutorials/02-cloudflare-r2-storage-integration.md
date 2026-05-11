@@ -6,7 +6,7 @@ Storing images directly in a database or serving them from your Go backend can b
 
 1. Log into your Cloudflare dashboard.
 2. Navigate to **R2**.
-3. Create a new bucket (e.g., `portfolio-assets`).
+3. Create a new bucket (e.g., `application-assets`).
 4. In the bucket settings, attach a Custom Domain (e.g., `cdn.yourdomain.com`). This is how your Astro site will load the images efficiently.
 
 ## Step 2: Generate API Tokens

@@ -12,8 +12,8 @@ In this first tutorial, we will set up the fundamental structure for your monore
 First, create a new directory for your project and initialize Git:
 
 ```bash
-mkdir portfolio-cms
-cd portfolio-cms
+mkdir application-cms
+cd application-cms
 git init
 ```
 

@@ -32,15 +32,15 @@ Create a service in Flutter to talk to your Go backend:
 import 'package:connectrpc/connect.dart';
 import 'package:http/http.dart' as http;
 // Import your generated code
-import 'gen/portfolio/v1/portfolio.pb.dart';
-import 'gen/portfolio/v1/portfolio.connect.dart';
+import 'gen/application/v1/application.pb.dart';
+import 'gen/application/v1/application.connect.dart';
 
 final transport = Transport(
   baseUrl: 'https://api.yourdomain.com',
   httpClient: http.Client(),
 );
 
-final client = PortfolioServiceClient(transport);
+final client = ApplicationServiceClient(transport);
 
 Future<void> fetchProjects() async {
   final request = GetProjectsRequest();

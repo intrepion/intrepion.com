@@ -30,28 +30,28 @@ export default defineConfig({
 
 ## Step 3: Structuring Your Pages
 
-Astro uses file-based routing. Inside the `src/pages/` directory, create your main portfolio views:
+Astro uses file-based routing. Inside the `src/pages/` directory, create your main application views:
 
 - `index.astro` (Home)
-- `portfolio.astro` (Gallery/Projects)
+- `projects.astro` (Gallery/Projects)
 - `about.astro` (About Me)
 
 ## Step 4: Fetching Data at Build Time
 
 To avoid hitting your Go backend dynamically when a user visits your site (saving on GCP egress costs), Astro can fetch data from your Go API (or directly from Neon DB) during the build process.
 
-Inside `src/pages/portfolio.astro`:
+Inside `src/pages/projects.astro`:
 
 ```astro
 ---
 // This runs DURING THE BUILD, not in the browser!
-const response = await fetch('https://api.yourdomain.com/portfolio-items');
+const response = await fetch('https://api.yourdomain.com/application-items');
 const projects = await response.json();
 ---
 
 <html>
   <body>
-    <h1>My Portfolio</h1>
+    <h1>My Projects</h1>
     <ul>
       {projects.map((project) => (
         <li>

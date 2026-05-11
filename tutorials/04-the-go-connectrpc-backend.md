@@ -9,7 +9,7 @@ From the root of your project, create the `api` directory and initialize your Go
 ```bash
 mkdir api
 cd api
-go mod init github.com/yourusername/portfolio-cms/api
+go mod init github.com/yourusername/application-cms/api
 ```
 
 ## Step 2: Install Dependencies
@@ -29,14 +29,14 @@ go get github.com/aws/aws-sdk-go-v2/service/s3
 
 ## Step 3: Define Your Protobuf Service
 
-Create a directory for your protocol buffers (e.g., `proto/portfolio/v1/portfolio.proto`):
+Create a directory for your protocol buffers (e.g., `proto/application/v1/application.proto`):
 
 ```protobuf
 syntax = "proto3";
 
-package portfolio.v1;
+package application.v1;
 
-option go_package = "github.com/yourusername/portfolio-cms/api/gen/portfolio/v1";
+option go_package = "github.com/yourusername/application-cms/api/gen/application/v1";
 
 message GetProjectsRequest {}
 
@@ -51,7 +51,7 @@ message GetProjectsResponse {
   repeated Project projects = 1;
 }
 
-service PortfolioService {
+service ApplicationService {
   rpc GetProjects(GetProjectsRequest) returns (GetProjectsResponse) {}
 }
 ```
@@ -77,31 +77,31 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	portfoliov1 "github.com/yourusername/portfolio-cms/api/gen/portfolio/v1"
-	"github.com/yourusername/portfolio-cms/api/gen/portfolio/v1/portfoliov1connect"
+	applicationv1 "github.com/yourusername/application-cms/api/gen/application/v1"
+	"github.com/yourusername/application-cms/api/gen/application/v1/applicationv1connect"
 )
 
-type PortfolioServer struct{
+type ApplicationServer struct{
 	db *pgxpool.Pool
 }
 
-func (s *PortfolioServer) GetProjects(ctx context.Context, req *connect.Request[portfoliov1.GetProjectsRequest]) (*connect.Response[portfoliov1.GetProjectsResponse], error) {
+func (s *ApplicationServer) GetProjects(ctx context.Context, req *connect.Request[applicationv1.GetProjectsRequest]) (*connect.Response[applicationv1.GetProjectsResponse], error) {
 	rows, err := s.db.Query(ctx, "SELECT id, title, description, image_url FROM projects")
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	defer rows.Close()
 
-	var projects []*portfoliov1.Project
+	var projects []*applicationv1.Project
 	for rows.Next() {
-		var p portfoliov1.Project
+		var p applicationv1.Project
 		if err := rows.Scan(&p.Id, &p.Title, &p.Description, &p.ImageUrl); err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		projects = append(projects, &p)
 	}
 
-	return connect.NewResponse(&portfoliov1.GetProjectsResponse{
+	return connect.NewResponse(&applicationv1.GetProjectsResponse{
 		Projects: projects,
 	}), nil
 }
@@ -120,7 +120,7 @@ func main() {
 	defer dbpool.Close()
 
 	mux := http.NewServeMux()
-	path, handler := portfoliov1connect.NewPortfolioServiceHandler(&PortfolioServer{db: dbpool})
+	path, handler := applicationv1connect.NewApplicationServiceHandler(&ApplicationServer{db: dbpool})
 	mux.Handle(path, handler)
 
 	fmt.Println("Starting server on :8080")

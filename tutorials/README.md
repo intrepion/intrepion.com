@@ -1,6 +1,6 @@
-# Building a Portfolio and CMS System
+# Building an Application and CMS System
 
-Welcome to the tutorial series for building a scalable portfolio and CMS system! This architecture is designed to be simple, maintainable, and cost-effective while allowing room to grow into a more complex, AI-assisted system in the future.
+Welcome to the tutorial series for building a scalable application and CMS system! This architecture is designed to be simple, maintainable, and cost-effective while allowing room to grow into a more complex, AI-assisted system in the future.
 
 ## Tech Stack Overview
 
@@ -18,7 +18,7 @@ This guide is broken down into 6 step-by-step tutorials:
    Initialize your monorepo and set up your root `justfile` for managing commands.
 
 2. [Tutorial 2: Cloudflare R2 Storage Integration](./02-cloudflare-r2-storage-integration.md)
-   Integrate Cloudflare R2 to store and serve portfolio assets and images via CDN.
+   Integrate Cloudflare R2 to store and serve application assets and images via CDN.
 
 3. [Tutorial 3: Database Integration (Neon Postgres)](./03-database-integration-neon-postgres.md)
    Set up your serverless Postgres database for managing CMS data.
