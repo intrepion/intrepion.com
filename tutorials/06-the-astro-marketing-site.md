@@ -33,7 +33,7 @@ export default defineConfig({
 Astro uses file-based routing. Inside the `src/pages/` directory, create your main application views:
 
 - `index.astro` (Home)
-- `offerings.astro` (Products/Projects/Services/Features - *Note: might be duplicated in Flutter for logged-in experience*)
+- `offerings.astro` (Features/Pricing/Products/Projects/Services - *Note: might be duplicated in Flutter for logged-in experience*)
 - `blog/index.astro` (Blog)
 - `about.astro` (About)
 - `faq.astro` (FAQ)
