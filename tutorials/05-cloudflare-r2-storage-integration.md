@@ -56,7 +56,7 @@ presignedReq, err := presignClient.PresignPutObject(ctx, &s3.PutObjectInput{
     Key:    aws.String("image-123.jpg"),
 }, s3.WithPresignExpires(15 * time.Minute))
 
-// Return presignedReq.URL to your Flutter app
+// Return presignedReq.URL to your Flutter client
 ```
 
 ## Next Steps

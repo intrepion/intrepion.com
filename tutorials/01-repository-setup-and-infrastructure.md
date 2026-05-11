@@ -7,7 +7,7 @@ In this first tutorial, we will set up the fundamental structure for your monore
 - Git installed
 - Node.js & npm (for Astro)
 - Go (for the backend)
-- Flutter SDK (for the CMS app)
+- Flutter SDK (for the CMS client)
 
 ## Step 1: Initialize the Monorepo
 
@@ -24,13 +24,13 @@ git init
 We will separate our concerns into three main directories, as agreed upon in our architecture review:
 
 1. `/marketing`: The Astro static site.
-2. `/app`: The Flutter web CMS.
+2. `/client`: The Flutter web CMS.
 3. `/api`: The Go ConnectRPC backend.
 
 Create these directories:
 
 ```bash
-mkdir marketing app api
+mkdir marketing client api
 ```
 
 ## Step 3: Add a Root Workspace File (Optional but recommended)
@@ -38,7 +38,7 @@ mkdir marketing app api
 If you plan to use a tool like `Make`, `Just`, or npm workspaces to run commands across all three environments, you can set that up now. For instance, a simple `Makefile` at the root can be very helpful:
 
 ```makefile
-.PHONY: dev-marketing dev-api dev-app
+.PHONY: dev-marketing dev-api dev-client
 
 dev-marketing:
 	cd marketing && npm run dev
@@ -46,8 +46,8 @@ dev-marketing:
 dev-api:
 	cd api && go run cmd/server/main.go
 
-dev-app:
-	cd app && flutter run -d chrome
+dev-client:
+	cd client && flutter run -d chrome
 ```
 
 ## Next Steps

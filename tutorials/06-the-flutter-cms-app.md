@@ -4,10 +4,10 @@ In this final tutorial, we build the internal Content Management System (CMS) us
 
 ## Step 1: Initialize Flutter
 
-Navigate to the `/app` directory and initialize Flutter:
+Navigate to the `/client` directory and initialize Flutter:
 
 ```bash
-cd app
+cd client
 flutter create . --platforms web,macos,windows
 ```
 

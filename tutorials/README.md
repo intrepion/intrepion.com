@@ -15,7 +15,7 @@ Welcome to the tutorial series for building a scalable portfolio and CMS system!
 This guide is broken down into 6 step-by-step tutorials:
 
 1. [Tutorial 1: Repository Setup & Infrastructure](./01-repository-setup-and-infrastructure.md)
-   Learn how to structure your monorepo and organize the `/marketing`, `/app`, and `/api` directories.
+   Learn how to structure your monorepo and organize the `/marketing`, `/client`, and `/api` directories.
 
 2. [Tutorial 2: The Astro Marketing Site](./02-the-astro-marketing-site.md)
    Set up Astro for the static marketing site, ensuring perfect SEO and fast loading times.
