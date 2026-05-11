@@ -5,9 +5,7 @@ In this first tutorial, we will set up the fundamental structure for your monore
 ## Prerequisites
 
 - Git installed
-- Node.js & npm (for Astro)
-- Go (for the backend)
-- Flutter SDK (for the CMS client)
+- `just` command runner installed
 
 ## Step 1: Initialize the Monorepo
 
@@ -19,40 +17,19 @@ cd portfolio-cms
 git init
 ```
 
-## Step 2: Create the Directory Structure
+## Step 2: Add a Root Workspace File
 
-We will separate our concerns into three main directories, as agreed upon in our architecture review:
-
-1. `/marketing`: The Astro static site.
-2. `/client`: The Flutter web CMS.
-3. `/api`: The Go ConnectRPC backend.
-
-Create these directories:
-
-```bash
-mkdir marketing client api
-```
-
-## Step 3: Add a Root Workspace File
-
-Since we have multiple environments, using a task runner like `just` is highly recommended. Create a `justfile` at the root of your project to manage your development commands:
+Since we have multiple environments (marketing, client, api), using a task runner like `just` is highly recommended. We will add specific commands to this file as we build out the sub-projects, but for now, let's create a base `justfile` at the root:
 
 ```just
-# Run the Astro marketing site
-dev-marketing:
-	cd marketing && npm run dev
-
-# Run the Go ConnectRPC backend
-dev-api:
-	cd api && go run cmd/server/main.go
-
-# Run the Flutter CMS client
-dev-client:
-	cd client && flutter run -d chrome
+default:
+    just --list
 ```
+
+This ensures that running `just` without arguments will simply print out the available commands once we add them.
 
 ## Next Steps
 
-With the folder structure in place, we are ready to start building the user-facing portion of the system. 
+With the root repository initialized, we are ready to set up the infrastructure for our media assets.
 
-Proceed to [Tutorial 2: The Astro Marketing Site](./02-the-astro-marketing-site.md).
+Proceed to [Tutorial 2: Cloudflare R2 Storage Integration](./02-cloudflare-r2-storage-integration.md).

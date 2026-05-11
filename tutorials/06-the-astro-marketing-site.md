@@ -1,14 +1,14 @@
-# Tutorial 2: The Astro Marketing Site
+# Tutorial 6: The Astro Marketing Site
 
 Astro is a fantastic framework for building content-rich websites. By default, it generates static HTML, which means perfect SEO and blazing fast load times.
 
 ## Step 1: Initialize Astro
 
-Navigate to your `/marketing` directory and create a new Astro project:
+From the root of your project, run the Astro initialization command, which will create the `marketing` directory for you:
 
 ```bash
+npm create astro@latest marketing
 cd marketing
-npm create astro@latest ./
 ```
 
 During the setup, choose the "Empty" or "Blog" template depending on your preference. Install dependencies when prompted.
@@ -38,7 +38,7 @@ Astro uses file-based routing. Inside the `src/pages/` directory, create your ma
 
 ## Step 4: Fetching Data at Build Time
 
-To avoid hitting your Go backend dynamically when a user visits your site (saving on GCP egress costs), Astro can fetch data from your Go API or Neon DB during the build process.
+To avoid hitting your Go backend dynamically when a user visits your site (saving on GCP egress costs), Astro can fetch data from your Go API (or directly from Neon DB) during the build process.
 
 Inside `src/pages/portfolio.astro`:
 
@@ -56,6 +56,7 @@ const projects = await response.json();
       {projects.map((project) => (
         <li>
           <h2>{project.title}</h2>
+          <!-- These URLs come from Cloudflare R2 -->
           <img src={project.imageUrl} alt={project.title} />
         </li>
       ))}
@@ -64,8 +65,24 @@ const projects = await response.json();
 </html>
 ```
 
-## Next Steps
+## Step 5: Update the Justfile
 
-Your marketing site is ready to be styled and deployed (e.g., to Cloudflare Pages or Vercel). Next, we will set up the backend that serves the data.
+Append the run command to your root `justfile`:
 
-Proceed to [Tutorial 3: The Go ConnectRPC Backend](./03-the-go-connectrpc-backend.md).
+```just
+# Run the Astro marketing site
+dev-marketing:
+    cd marketing && npm run dev
+```
+
+## Step 6: Deployment
+
+Your marketing site is ready to be styled and deployed to Cloudflare Pages (or Vercel). Cloudflare Pages connects directly to your GitHub repo and can automatically rebuild the site whenever you update your code.
+
+## Conclusion
+
+You now have a fully functioning, highly scalable architecture!
+- **Marketing Site (Astro):** Perfect SEO, zero runtime backend cost.
+- **Backend (Go + ConnectRPC):** Strongly typed, running efficiently on GCP.
+- **Database & Storage (Neon + R2):** Fast, scalable, and extremely cheap.
+- **CMS (Flutter):** A robust tool to manage your data natively across web, desktop, and mobile.
