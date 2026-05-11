@@ -33,7 +33,7 @@ export default defineConfig({
 Astro uses file-based routing. Inside the `src/pages/` directory, create your main application views:
 
 - `index.astro` (Home)
-- `projects.astro` (Products/Projects/Services/Features - *Note: might be duplicated in Flutter for logged-in experience*)
+- `offerings.astro` (Products/Projects/Services/Features - *Note: might be duplicated in Flutter for logged-in experience*)
 - `blog/index.astro` (Blog)
 - `about.astro` (About)
 - `faq.astro` (FAQ)
@@ -53,24 +53,24 @@ Astro uses file-based routing. Inside the `src/pages/` directory, create your ma
 
 To avoid hitting your Go backend dynamically when a user visits your site (saving on GCP egress costs), Astro can fetch data from your Go API (or directly from Neon DB) during the build process.
 
-Inside `src/pages/projects.astro`:
+Inside `src/pages/offerings.astro`:
 
 ```astro
 ---
 // This runs DURING THE BUILD, not in the browser!
-const response = await fetch('https://api.yourdomain.com/application-items');
-const projects = await response.json();
+const response = await fetch('https://api.yourdomain.com/application-offerings');
+const offerings = await response.json();
 ---
 
 <html>
   <body>
-    <h1>My Projects</h1>
+    <h1>My Offerings</h1>
     <ul>
-      {projects.map((project) => (
+      {offerings.map((offering) => (
         <li>
-          <h2>{project.title}</h2>
+          <h2>{offering.title}</h2>
           <!-- These URLs come from Cloudflare R2 -->
-          <img src={project.imageUrl} alt={project.title} />
+          <img src={offering.imageUrl} alt={offering.title} />
         </li>
       ))}
     </ul>
