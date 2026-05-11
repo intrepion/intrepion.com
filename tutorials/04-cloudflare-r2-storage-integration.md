@@ -1,4 +1,4 @@
-# Tutorial 2: Cloudflare R2 Storage Integration
+# Tutorial 4: Cloudflare R2 Storage Integration
 
 Storing images directly in a database or serving them from your Go backend can be inefficient and incur egress fees. Instead, we use Cloudflare R2, an S3-compatible object storage service with zero egress fees, served automatically via Cloudflare's CDN.
 
@@ -22,4 +22,4 @@ Keep these credentials handy; we will use them in the Go backend tutorial to gen
 
 With our media storage ready, we need a place to store our structured project data (titles, descriptions, CDN links).
 
-Proceed to [Tutorial 3: Database Integration (Neon Postgres)](./03-database-integration-neon-postgres.md).
+Proceed to [Tutorial 5: Database Integration (Neon Postgres)](./05-database-integration-neon-postgres.md).

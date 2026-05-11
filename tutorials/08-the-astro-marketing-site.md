@@ -1,4 +1,4 @@
-# Tutorial 6: The Astro Marketing Site
+# Tutorial 8: The Astro Marketing Site
 
 Astro is a fantastic framework for building content-rich websites. By default, it generates static HTML, which means perfect SEO and blazing fast load times.
 

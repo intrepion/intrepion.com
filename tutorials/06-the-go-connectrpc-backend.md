@@ -1,4 +1,4 @@
-# Tutorial 4: The Go ConnectRPC Backend
+# Tutorial 6: The Go ConnectRPC Backend
 
 In this tutorial, we will set up the Go backend using ConnectRPC. ConnectRPC is a lightweight framework that allows you to build APIs using Protocol Buffers, exposing them as standard HTTP/JSON or gRPC endpoints.
 
@@ -152,4 +152,4 @@ When deploying to Google Cloud Run, it will automatically handle HTTPS for you. 
 
 With the backend functioning, it's time to build the admin interface to manage our projects.
 
-Proceed to [Tutorial 5: The Flutter CMS Client](./05-the-flutter-cms-client.md).
+Proceed to [Tutorial 7: The Flutter CMS Client](./07-the-flutter-cms-client.md).

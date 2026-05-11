@@ -12,22 +12,28 @@ Welcome to the tutorial series for building a scalable application and CMS syste
 
 ## Tutorial Series
 
-This guide is broken down into 6 step-by-step tutorials:
+This guide is broken down into 8 step-by-step tutorials:
 
-1. [Tutorial 1: Repository Setup & Infrastructure](./01-repository-setup-and-infrastructure.md)
+1. [Tutorial 1: Git and GitHub Setup](./01-git-and-github-setup.md)
+   Learn how to install Git and create a GitHub account to host your code.
+
+2. [Tutorial 2: SSH Key Configuration](./02-ssh-key-configuration.md)
+   Set up an SSH key to securely push and pull code without entering your password.
+
+3. [Tutorial 3: Repository Setup & Infrastructure](./03-repository-setup-and-infrastructure.md)
    Initialize your monorepo and set up your root `justfile` for managing commands.
 
-2. [Tutorial 2: Cloudflare R2 Storage Integration](./02-cloudflare-r2-storage-integration.md)
+4. [Tutorial 4: Cloudflare R2 Storage Integration](./04-cloudflare-r2-storage-integration.md)
    Integrate Cloudflare R2 to store and serve application assets and images via CDN.
 
-3. [Tutorial 3: Database Integration (Neon Postgres)](./03-database-integration-neon-postgres.md)
+5. [Tutorial 5: Database Integration (Neon Postgres)](./05-database-integration-neon-postgres.md)
    Set up your serverless Postgres database for managing CMS data.
 
-4. [Tutorial 4: The Go ConnectRPC Backend](./04-the-go-connectrpc-backend.md)
+6. [Tutorial 6: The Go ConnectRPC Backend](./06-the-go-connectrpc-backend.md)
    Initialize the Go backend, connect to the database and CDN, and set up your ConnectRPC endpoints.
 
-5. [Tutorial 5: The Flutter CMS Client](./05-the-flutter-cms-client.md)
+7. [Tutorial 7: The Flutter CMS Client](./07-the-flutter-cms-client.md)
    Build the admin interface using Flutter Web, connecting it securely to your Go backend.
 
-6. [Tutorial 6: The Astro Marketing Site](./06-the-astro-marketing-site.md)
+8. [Tutorial 8: The Astro Marketing Site](./08-the-astro-marketing-site.md)
    Set up Astro for the static marketing site, fetching data from your backend and generating perfect static pages.

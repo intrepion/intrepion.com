@@ -1,4 +1,4 @@
-# Tutorial 3: Database Integration (Neon Postgres)
+# Tutorial 5: Database Integration (Neon Postgres)
 
 Neon provides a fully managed, serverless Postgres database. It's perfect for our use case because it scales to zero when not in use and is incredibly fast to start up.
 
@@ -28,4 +28,4 @@ CREATE TABLE projects (
 
 Now that we have both our CDN for files and our Database for structured data, it's time to build the API that connects them.
 
-Proceed to [Tutorial 4: The Go ConnectRPC Backend](./04-the-go-connectrpc-backend.md).
+Proceed to [Tutorial 6: The Go ConnectRPC Backend](./06-the-go-connectrpc-backend.md).

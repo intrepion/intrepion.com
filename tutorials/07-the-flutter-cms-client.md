@@ -1,4 +1,4 @@
-# Tutorial 5: The Flutter CMS Client
+# Tutorial 7: The Flutter CMS Client
 
 In this tutorial, we build the internal Content Management System (CMS) client using Flutter. Flutter allows us to compile to the Web right now, and to desktop/mobile later if needed.
 
@@ -83,4 +83,4 @@ flutter build web
 
 Now that we can manage our content, we need to build the public-facing site that users will actually see.
 
-Proceed to [Tutorial 6: The Astro Marketing Site](./06-the-astro-marketing-site.md).
+Proceed to [Tutorial 8: The Astro Marketing Site](./08-the-astro-marketing-site.md).
