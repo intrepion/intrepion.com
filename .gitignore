@@ -109,3 +109,21 @@ MobileBackups.trash
 tmbootpicker.efi
 
 #### END https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Global/macOS.gitignore
+
+# Local application dependencies, generated builds, credentials and private data.
+node_modules/
+target/
+dist/
+.astro/
+.wrangler/
+.env
+.env.*
+!.env.example
+.dev.vars
+test-results/
+playwright-report/
+coverage/
+*.sqlite
+*.sqlite3
+*.sql.age
+server/wrangler.production.json

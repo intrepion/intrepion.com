@@ -1,0 +1,23 @@
+syntax = "proto3";
+package life.v1;
+
+service TaskService {
+  rpc ListTasks(Empty) returns (TaskList);
+  // The caller keeps a random ID until acknowledged, making retries safe.
+  rpc CreateTask(Task) returns (Task);
+  // revision rejects stale edits; repeating an acknowledged value is safe.
+  rpc UpdateTask(Task) returns (Task);
+  rpc DeleteTask(TaskId) returns (Empty);
+}
+
+message Empty {}
+message TaskId { string id = 1; }
+message Task {
+  string id = 1;
+  string title = 2;
+  string notes = 3;
+  bool completed = 4;
+  uint32 revision = 5;
+  uint64 created_order = 6;
+}
+message TaskList { repeated Task tasks = 1; }

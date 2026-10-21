@@ -1,2 +1,23 @@
 # intrepion.com
-intrepion.com
+
+A personal task app as the first MVP of a future Life OS. The initial delivery is a Rust API and an Astro/TypeScript web client; other clients and AI agents are deferred.
+
+- [Agreed MVP plan and delivery gates](docs/mvp-plan.md)
+- [Domain glossary](GLOSSARY.md)
+- [Hosting comparison](docs/hosting-assessment.md)
+- [GitHub-only backup monitoring plan](docs/monitoring-assessment.md)
+- [Workers/ConnectRPC/D1 feasibility results](docs/experiments/0001-workers-connect-d1.md)
+- [Native Axum/D1 feasibility results](docs/experiments/0002-native-axum-d1.md)
+- [Run the isolated local experiment](experiments/workers-connect-d1/README.md)
+- [Run the native Axum/D1 experiment](experiments/native-axum-d1/README.md)
+- [Review the MVP wireframes](design/mvp-1/wireframes.html) ([image overview](design/mvp-1/wireframes-overview.png))
+- [Review the visual mockups](design/mvp-1/mockups.html) ([desktop](design/mvp-1/mockup-desktop.png), [mobile](design/mvp-1/mockup-mobile.png))
+- [Run and review the standalone Astro prototype](prototype/README.md)
+- [Run the production Rust API](server/README.md) and [Astro client](web/README.md)
+- [Deployment, backups, monitoring, and remaining launch checks](docs/operations.md)
+
+Wireframes (Q35), mockups (Q36), and prototype interactions (Q37) are approved. The separate Rust/Axum API and Astro client implement the task workflow, durable D1 storage, Google owner sessions, and local development authentication. GitHub Actions definitions cover CI, manual deployment of a passing revision, encrypted backups, and an independent backup-age check. Hosted validation and account configuration remain launch gates; nothing has been deployed.
+
+For the production application's local development stack, install Rust, Node and `protoc`, run `npm ci` and `npm --prefix web ci` once, then `npm run dev` and open <http://127.0.0.1:4322>. The server uses local D1 and development login; task data survives restarts.
+
+The separate prototype remains server-free: run `npm --prefix prototype ci` once, then `npm --prefix prototype run dev` and open <http://127.0.0.1:4321>. Its synthetic data resets on reload. Prototype application code is not shared with production. Themes, AI, other login methods, and the reserved Android/iOS/CLI/desktop clients remain later-MVP work.

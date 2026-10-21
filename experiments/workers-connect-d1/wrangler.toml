@@ -1,0 +1,13 @@
+name = "workers-connect-d1-experiment"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-10-20"
+workers_dev = false
+
+[build]
+command = "worker-build --release --no-opt -- --offline --locked"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "experiment-local-only"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

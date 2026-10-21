@@ -1,0 +1,51 @@
+name: CI
+on:
+  push:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      ASTRO_TELEMETRY_DISABLED: "1"
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .node-version
+      - name: Install build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          rustup show
+      - run: npm ci
+      - run: npm --prefix web ci
+      - name: Check generated client
+        run: |
+          npm run generate
+          git diff --exit-code -- web/src/gen
+      - run: cargo fmt --all --check
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo clippy --locked --all-targets --features dev-auth -- -D warnings
+      - run: cargo test --locked
+      - run: cargo build --locked --release
+      - name: Build production container without development login
+        run: docker build -f server/Dockerfile -t intrepion-server:ci .
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: node scripts/backups.test.mjs
+      - run: npm --prefix web run check
+      - run: npm --prefix web run test:unit
+      - run: npm --prefix web run build
+      - run: npm run test:integration
+      # Owner policy: coverage and browser E2E are deliberately local-only.

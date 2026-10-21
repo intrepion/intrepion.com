@@ -1,0 +1,11 @@
+*
+!Cargo.toml
+!Cargo.lock
+!rust-toolchain.toml
+!proto/
+!proto/**
+!server/
+!server/**
+server/local/.wrangler
+server/local/.dev.vars
+server/.env*

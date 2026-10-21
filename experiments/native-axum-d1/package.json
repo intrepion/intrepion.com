@@ -1,0 +1,14 @@
+{
+  "name": "native-axum-d1-experiment",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:migrate": "node ../workers-connect-d1/node_modules/wrangler/bin/wrangler.js d1 migrations apply DB --local",
+    "db:dev": "node ../workers-connect-d1/node_modules/wrangler/bin/wrangler.js dev --local --ip 127.0.0.1 --port 8791",
+    "dev": "EXPERIMENT_LOCAL_ONLY=true cargo run --offline --locked",
+    "test:integration": "EXPERIMENT_API_URL=http://127.0.0.1:8790 node --import ../workers-connect-d1/node_modules/tsx/dist/loader.mjs --test ../workers-connect-d1/client/*.test.ts ../workers-connect-d1/client/deadline.probe.ts",
+    "probe:persistence": "EXPERIMENT_API_URL=http://127.0.0.1:8790 node --import ../workers-connect-d1/node_modules/tsx/dist/loader.mjs ../workers-connect-d1/client/persistence.ts",
+    "probe:recovery": "EXPERIMENT_WRANGLER_JS=../workers-connect-d1/node_modules/wrangler/bin/wrangler.js node ../workers-connect-d1/scripts/recovery.mjs",
+    "probe:upstream-down": "node scripts/upstream-failure.mjs"
+  }
+}

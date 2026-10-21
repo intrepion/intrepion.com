@@ -1,0 +1,26 @@
+name: Backup age watchdog
+on:
+  schedule:
+    - cron: "43 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    if: vars.OPERATIONS_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    environment: operations
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .node-version
+      - name: Require a verified archive no older than 24 hours
+        env:
+          B2_KEY_ID: ${{ secrets.B2_WATCHDOG_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_WATCHDOG_KEY }}
+          B2_BUCKET_ID: ${{ vars.B2_BUCKET_ID }}
+        run: node scripts/backups.mjs check

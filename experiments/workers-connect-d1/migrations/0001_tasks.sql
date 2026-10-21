@@ -1,0 +1,7 @@
+CREATE TABLE tasks (
+    sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    notes TEXT NOT NULL DEFAULT '',
+    completed INTEGER NOT NULL DEFAULT 0 CHECK (completed IN (0, 1))
+) STRICT;

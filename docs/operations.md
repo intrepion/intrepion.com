@@ -1,0 +1,69 @@
+# MVP 1 operations and launch
+
+Q37 approves the prototype and authorizes separate production implementation. The repository now contains that implementation and CI/CD definitions. The repository is public, with pull requests, issues, discussions, wiki, and automatic merging disabled. No cloud service, GitHub secret, domain, Google client, or paid plan has been provisioned or changed by this work. Local checks are evidence about local behavior, not a launched service.
+
+## Local implementation evidence
+
+Verified locally: the release binary and static website build; Rust formatting and Clippy (normal and development-auth builds), ESLint, TypeScript/Astro, Prettier, generated-client reproducibility, and Actionlint pass. Three Rust tests, two client model tests, two backup tests, six real-HTTP/local-D1 integration workflows, and six local browser workflows pass. The browser workflows cover durable task operations, confirmation focus, draft protection, lost-response retries, session expiry, and mobile/plaintext rendering. Local client model coverage is available and was exercised; it is not a whole-application coverage claim. A real age encrypt/decrypt round trip restored the schema successfully in isolated SQLite.
+
+The owner reports that `sudo docker build -f server/Dockerfile -t intrepion-server:local .` succeeded, clearing the local container-build verification blocker. The agent's account still lacks direct Docker socket access; the successful privileged build does not change those permissions. CI includes a production container build, but that job and the other GitHub workflows have not been executed on GitHub yet. Cloud deployment, real Google login, B2 operations, notification delivery, restored tasks through a hosted API, and account limits remain unverified. Public RSA fixtures used in tests are intentionally non-secret and have no provider access.
+
+## Before enabling cloud workflows
+
+- Verify that the selected Render, Pages, D1, and B2 accounts operate without a payment method or with provider-enforced zero-dollar caps. Do not use trials. Keep the $0 recurring target and $10 hard ceiling; adding any paid service still requires approval.
+- Use Render's free Docker web service with repository root context, `server/Dockerfile`, no disk, `/health/live`, and automatic deploys **disabled**. Configure the server environment from `server/.env.example`. The Docker build omits `dev-auth`.
+- Create the D1 database and static Pages direct-upload project. Do not enable Pages Git integration or automatic production deployments. Set custom HTTPS web/API domains under the same site so session cookies work reliably. Verify real D1 REST authentication, string parameter behavior, limits, and write acknowledgments.
+- Configure a Google web client for the exact web origin. Verify the owner identity's stable `sub` privately and configure it as `GOOGLE_OWNER_SUB`. Test the owner, a different Google account, cancellation, expiry, logout, and Google MFA/recovery. Never authorize by an email address or the OAuth consent screen's test-user list.
+- Create a private B2 bucket. Verify no-card operation and zero-dollar caps for storage and Class A/B/C transactions. Leave event notifications off because the agreed assessment found Class D charges uncappable. Restrict application keys to this bucket and `daily/` prefix; use a separate read/list watchdog key. Keep the age private key offline in independent recovery storage and test its recovery. Only the public age recipient goes into Actions variables.
+- Test an offsite upload, download, actual decryption, and restore into an isolated database. Verify a saved task through the API after restoring. Do not restore unreviewed data into the live database. Test alert emails by deliberately failing each workflow, then fix and rerun it. A skipped job is not a successful operational check.
+
+Only after the relevant setup checks pass, set the **repository** variable `OPERATIONS_ENABLED=true`. Run the backup and watchdog manually and verify private failure-email delivery. Set `LAUNCH_CHECKS_COMPLETE=true` only after all launch checks, including backup/restore, owner-only login, spending controls, and repository participation settings, have passed. The two variables deliberately default to disabled; their presence in the code does not certify any provider setting.
+
+## GitHub configuration
+
+The `CI` workflow runs on every push and every pull request targeting `main`, on standard Linux runners. It builds the API and client, checks formatting, Clippy, ESLint, TypeScript/Astro, generated-code drift, unit tests, backup behavior, and generated-client integration tests. E2E and coverage remain local. It needs no cloud secrets and uploads no artifacts or caches.
+
+Configure these variables and secrets in the indicated environments. The two enablement variables above must be repository variables, because job conditions evaluate before environment variables become available.
+
+| Location | Variables | Secrets |
+| --- | --- | --- |
+| `production` environment | `API_ORIGIN`, `CLOUDFLARE_ACCOUNT_ID`, `D1_DATABASE_ID`, `PAGES_PROJECT`, `RENDER_SERVICE_ID` | `D1_MIGRATION_TOKEN`, `PAGES_DEPLOY_TOKEN`, `RENDER_API_KEY` |
+| `operations` environment | `CLOUDFLARE_ACCOUNT_ID`, `D1_DATABASE_ID`, `B2_BUCKET_ID`, `AGE_RECIPIENT` | `D1_BACKUP_TOKEN`, `B2_BACKUP_KEY_ID`, `B2_BACKUP_KEY`, `B2_WATCHDOG_KEY_ID`, `B2_WATCHDOG_KEY` |
+
+Use the narrowest provider permissions that support each operation. The running API's D1 token belongs only in Render, never in the static client. Configure Actions failure email notifications privately. No workflow creates public issues, comments, or artifacts for alerts.
+
+Disable unsolicited pull requests, issues, discussions, wiki, and commit comments using available repository controls; invite collaborators individually. Set required `CI / checks` branch protection on `main` and restrict administrative bypass to the owner. Disable auto-merge and unneeded Actions write permissions. The participation document states invitation-only contributions and reserved reuse rights. It cannot enforce permissions by itself, and public visibility still allows GitHub features such as forks under its platform terms. No open-source license has been added.
+
+## Deployment and rollback
+
+Use **Deploy → Run workflow** on `main` with a full commit SHA. The gate requires the latest push-CI run for that exact `main` revision to have succeeded, then checks that it is an ancestor of current `main`. The workflow checks out that SHA, builds the static client, applies additive D1 migrations, requests the same Render commit, waits for a confirmed live deployment, and uploads the corresponding static assets. Environment approval rules may be added if desired; deployment itself always requires a manual workflow trigger.
+
+For initial provisioning, Render may attempt a first deployment; keep the service unexposed or suspended until the launch checks pass. Disable auto-deploys explicitly: choosing a commit through Render's API does not disable them. Inspect provider dashboards if a deployment times out before retrying. Partial deployment can leave a new API with the previous web client, so maintain backward-compatible RPC/schema changes. A rollback uses another passing revision; it does not automatically reverse migrations or restore deleted tasks. There are no destructive down migrations in this MVP.
+
+## Backup and recovery
+
+Daily backup runs at 04:17 UTC. It exports D1 privately, restores the SQL into isolated in-memory SQLite for integrity/schema checks, encrypts with age, uploads to B2, downloads and hashes the encrypted archive, then writes and reads back a verification marker. Only after those checks does it prune versions under its exact daily backup paths older than the current UTC day plus six prior days. It never stores plaintext exports as GitHub artifacts. A 20 MiB export ceiling forces a storage-budget review before larger backups are accepted.
+
+The separate watchdog runs hourly at minute 43. It fails when no verified marker exists, the recorded snapshot is older than 24 hours or invalid, provider access fails, or the referenced archive's metadata does not match. The watchdog has no D1 credential and cannot write or prune backups. Configure bucket retention and audit historical versions as an additional precaution, using settings consistent with seven daily backups. Do not apply object lock that prevents the agreed expiration policy.
+
+Daily checks establish that plaintext SQL restores and uploaded ciphertext matches. They do not decrypt on GitHub: the private age key stays offline. Before launch and after backup-process changes, download an archive privately and run:
+
+```sh
+umask 077
+age -d -i /private/path/recovery.age-key -o /private/path/restore.sql /private/path/database.sql.age
+node scripts/backups.mjs verify-sql /private/path/restore.sql
+```
+
+Restore into a new isolated local or D1 database, delete restored sessions and login challenges, and verify task operations before changing the running service's database ID. Deleting sessions prevents recovery from reviving old sessions. Keep credentials and plaintext out of logs and version control; remove temporary exports after the drill. Do not overwrite the live database without an explicit recovery decision.
+
+The recovery objectives remain 24-hour data loss and restoration within one day, as best-effort targets. Native GitHub emails only report jobs that actually execute. Shared scheduler delays, disabled schedules, or a GitHub outage can prevent both jobs and their alerts; this is the accepted MVP blind spot. No Sentry or external heartbeat monitor is included.
+
+## Measurements and migration review
+
+Keep a private monthly ledger of actual/forecast cost and provider usage against current free allowances. Review it at least weekly during launch. Record D1 rows read/written and storage from Cloudflare, Render instance hours and availability/cold starts, Pages usage, B2 storage/transactions, and Actions/storage use. Provider quotas and spending caps must be rechecked during account setup and whenever plans change; an estimated allowance is not an enforced cap.
+
+Export sanitized JSON application logs privately and run `node scripts/metrics.mjs < /private/path/server.jsonl` for request counts, API p95 and server-error rates. Exclude startup periods from the input when assessing warm p95. The application logs no task contents, identities, cookies, tokens, raw URLs, SQL, or provider response bodies. `node scripts/probe.mjs https://api.intrepion.com` records a content-free process-availability and first-response-time sample; after at least 15 idle minutes it can measure Render wake-up delay. It does not establish D1 availability or continuous uptime. Collect real owner task-RPC samples for database-inclusive latency.
+
+Investigate forecast cost above $8/month, any allowance at 80%, warm API p95 above 500 ms, server errors above 1% with meaningful request counts, or backup age above 24 hours. Small samples are labeled in metric output. These thresholds prompt investigation and a migration/spending decision; they never automatically buy services or migrate data.
+
+Implementation references: [Google ID-token verification](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token), [Google SDK JavaScript API](https://developers.google.com/identity/gsi/web/reference/js-reference), [Render commit deployment API](https://api-docs.render.com/reference/create-deploy), [Pages CI direct upload](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/), [B2 authorization](https://www.backblaze.com/apidocs/b2-authorize-account), [B2 file versions](https://www.backblaze.com/apidocs/b2-list-file-versions), and [B2 lifecycle rules](https://www.backblaze.com/docs/cloud-storage-lifecycle-rules). Provider-side behavior still needs a live launch rehearsal.

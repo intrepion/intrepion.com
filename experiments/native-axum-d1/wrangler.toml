@@ -1,0 +1,10 @@
+name = "native-d1-local-bridge"
+main = "local-d1.mjs"
+compatibility_date = "2026-10-20"
+workers_dev = false
+
+[[d1_databases]]
+binding = "DB"
+database_name = "native-experiment-local-only"
+database_id = "00000000-0000-0000-0000-000000000001"
+migrations_dir = "../workers-connect-d1/migrations"

@@ -1,0 +1,68 @@
+name: Deploy
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Full commit SHA on main with passing CI
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main' && vars.LAUNCH_CHECKS_COMPLETE == 'true'
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 20
+    env:
+      DEPLOY_SHA: ${{ inputs.revision }}
+      ASTRO_TELEMETRY_DISABLED: "1"
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .node-version
+      - name: Verify passing CI for the exact main revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/deploy-gate.mjs
+          git merge-base --is-ancestor "$DEPLOY_SHA" origin/main
+          git checkout --detach "$DEPLOY_SHA"
+      - run: npm ci
+      - run: npm --prefix web ci
+      - name: Build static client
+        env:
+          PUBLIC_API_ORIGIN: ${{ vars.API_ORIGIN }}
+        run: |
+          test -n "$PUBLIC_API_ORIGIN"
+          npm --prefix web run build
+      - name: Apply database migrations
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.D1_MIGRATION_TOKEN }}
+          D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
+        run: |
+          node scripts/cloud-config.mjs
+          ./node_modules/.bin/wrangler d1 migrations apply DB --remote --config server/wrangler.production.json
+      - name: Deploy and confirm API revision
+        env:
+          RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: node scripts/deploy.mjs
+      - name: Upload static client
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+          PAGES_PROJECT: ${{ vars.PAGES_PROJECT }}
+        run: |
+          test -n "$PAGES_PROJECT"
+          ./node_modules/.bin/wrangler pages deploy web/dist --project-name "$PAGES_PROJECT" --branch main --commit-hash "$DEPLOY_SHA"

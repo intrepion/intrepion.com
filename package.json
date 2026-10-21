@@ -1,0 +1,35 @@
+{
+  "name": "intrepion",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "protoc -I proto --plugin=protoc-gen-es=./node_modules/.bin/protoc-gen-es --es_out=web/src/gen --es_opt=target=ts proto/life/v1/tasks.proto",
+    "db:migrate": "wrangler d1 migrations apply DB --local --config server/local/wrangler.toml",
+    "db:dev": "wrangler dev --local --config server/local/wrangler.toml --ip 127.0.0.1 --port 8791",
+    "dev": "node scripts/dev.mjs",
+    "test:integration": "node scripts/integration.mjs",
+    "test:rpc": "tsx --test server/tests/rpc.test.ts",
+    "lint": "eslint web/src web/tests scripts server/tests server/local/*.mjs --ignore-pattern '**/gen/**'",
+    "format": "prettier --write .github scripts server/local server/tests proto web/src web/tests web/*.mjs web/*.ts web/*.json package.json tsconfig.json",
+    "format:check": "prettier --check .github scripts server/local server/tests proto web/src web/tests web/*.mjs web/*.ts web/*.json package.json tsconfig.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@bufbuild/protoc-gen-es": "^2.0.0",
+    "@eslint/js": "^10.0.0",
+    "@types/node": "^26.0.0",
+    "eslint": "^10.0.0",
+    "globals": "^17.0.0",
+    "prettier": "^3.0.0",
+    "prettier-plugin-astro": "^0.14.0",
+    "tsx": "^4.0.0",
+    "typescript": "^6.0.0",
+    "typescript-eslint": "^8.0.0",
+    "wrangler": "^4.0.0"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.0.0",
+    "@connectrpc/connect": "^2.0.0",
+    "@connectrpc/connect-web": "^2.0.0"
+  }
+}

@@ -1,0 +1,44 @@
+name: Daily encrypted backup
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: database-backup
+  cancel-in-progress: false
+jobs:
+  backup:
+    if: vars.OPERATIONS_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    environment: operations
+    timeout-minutes: 15
+    env:
+      B2_KEY_ID: ${{ secrets.B2_BACKUP_KEY_ID }}
+      B2_APPLICATION_KEY: ${{ secrets.B2_BACKUP_KEY }}
+      B2_BUCKET_ID: ${{ vars.B2_BUCKET_ID }}
+      AGE_RECIPIENT: ${{ vars.AGE_RECIPIENT }}
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .node-version
+      - run: npm ci
+      - run: sudo apt-get update && sudo apt-get install -y age
+      - name: Export, restore-check, encrypt and verify offsite
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.D1_BACKUP_TOKEN }}
+          D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
+        run: |
+          umask 077
+          node scripts/cloud-config.mjs
+          ./node_modules/.bin/wrangler d1 export DB --remote --config server/wrangler.production.json --output "$RUNNER_TEMP/intrepion.sql"
+          node scripts/backups.mjs create "$RUNNER_TEMP/intrepion.sql"
+      - name: Remove temporary private export
+        if: always()
+        run: rm -f "$RUNNER_TEMP/intrepion.sql"

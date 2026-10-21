@@ -1,0 +1,10 @@
+**/node_modules
+**/target
+**/dist
+**/.astro
+**/.wrangler
+**/gen
+**/package-lock.json
+proto/**
+prototype/**
+experiments/**

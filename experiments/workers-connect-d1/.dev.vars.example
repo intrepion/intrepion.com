@@ -1,0 +1,2 @@
+# Synthetic identity for this local experiment only. Wrangler does not deploy .dev.vars.
+EXPERIMENT_LOCAL_ONLY=true

@@ -1,0 +1,62 @@
+---
+import "../styles/prototype.css";
+// Vite resolves the approved local asset for dev and static builds alike.
+import googleMark from "../../../design/mvp-1/assets/google-g.png?url";
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="color-scheme" content="light" />
+    <title>Tasks · local prototype</title>
+  </head>
+  <body>
+    <aside class="review-tools" aria-label="Prototype review controls">
+      <div class="review-summary">
+        <div><strong>Prototype</strong><span>Simulated sign-in · synthetic data resets on reload</span></div>
+        <button type="button" id="reset-demo" class="review-button">Reset demo</button>
+      </div>
+      <details>
+        <summary>Review scenarios</summary>
+        <div class="review-options">
+          <label for="scenario">Screen
+            <select id="scenario">
+              <option value="signed-out">Signed out</option>
+              <option value="list">Sample task list</option>
+              <option value="empty">Empty list</option>
+              <option value="denied">Access denied</option>
+              <option value="loading">Cold start / loading</option>
+              <option value="load-error">List unavailable</option>
+              <option value="expired">Expired session</option>
+            </select>
+          </label>
+          <button type="button" id="apply-scenario" class="review-button">Show scenario</button>
+          <button type="button" id="finish-loading" class="review-button" hidden>Finish loading</button>
+          <label for="next-action">Next task action
+            <select id="next-action">
+              <option value="success">Succeeds</option>
+              <option value="failure">Fails before saving</option>
+              <option value="lost-response">Saves, but response is lost</option>
+            </select>
+          </label>
+          <label for="latency">Response delay
+            <select id="latency"><option value="300">Normal</option><option value="1800">Slow</option></select>
+          </label>
+          <label class="review-check"><input type="checkbox" id="cancel-signin" />Cancel next sign-in</label>
+        </div>
+        <p class="walkthrough">Try: sign in → create a task → complete and reopen it → edit → cancel a deletion. To review recovery, choose a failure for the next action and retry.</p>
+        <details><summary>Inspect simulated state</summary><pre id="state-inspector"></pre></details>
+      </details>
+    </aside>
+    <main id="app" class="application" data-google-mark={googleMark}>
+      <noscript>This local prototype needs JavaScript to simulate task interactions.</noscript>
+    </main>
+    <p id="announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+    <dialog id="confirmation" aria-labelledby="confirmation-title" aria-describedby="confirmation-description"></dialog>
+    <script>
+      import "../scripts/app";
+    </script>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "workers-connect-d1-experiment",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate:ts": "mkdir -p client/generated && protoc -I proto --plugin=protoc-gen-es=./node_modules/.bin/protoc-gen-es --es_out=client/generated --es_opt=target=ts proto/experiment/v1/task.proto",
+    "typecheck": "tsc --noEmit",
+    "dev": "wrangler dev --local --ip 127.0.0.1 --port 8787",
+    "test:integration": "tsx --test client/*.test.ts",
+    "test:deadlines": "tsx --test client/deadline.probe.ts",
+    "probe:persistence": "node --import tsx client/persistence.ts",
+    "probe:recovery": "node scripts/recovery.mjs"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.0.0",
+    "@connectrpc/connect": "^2.0.0",
+    "@connectrpc/connect-web": "^2.0.0"
+  },
+  "devDependencies": {
+    "@bufbuild/protoc-gen-es": "^2.0.0",
+    "@types/node": "^26.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^6.0.0",
+    "wrangler": "^4.0.0"
+  }
+}

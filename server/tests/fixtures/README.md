@@ -1,0 +1,1 @@
+These are public RSA signing fixtures for offline identity-verification tests. The private key has no access to Google or any deployed application. Never use it as an application credential. Production verification downloads Google's public JWKS from the fixed HTTPS endpoint.

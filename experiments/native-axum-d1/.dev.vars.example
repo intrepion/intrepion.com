@@ -1,0 +1,2 @@
+# Local bridge only; never use a real Cloudflare API token here.
+EXPERIMENT_LOCAL_ONLY=true

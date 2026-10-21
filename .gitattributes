@@ -1,0 +1,3 @@
+# Preserve the canonical protoc output, including its trailing blank line.
+web/src/gen/** whitespace=-blank-at-eof
+experiments/workers-connect-d1/client/generated/** whitespace=-blank-at-eof

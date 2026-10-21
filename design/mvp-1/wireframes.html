@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MVP 1 — wireframes for review</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #202020; background: #eee; font: 15px/1.5 system-ui, sans-serif; }
+    header.review, main, footer { max-width: 1250px; margin: auto; padding: 28px; }
+    h1 { margin: 8px 0; font-size: 30px; }
+    h2 { font-size: 18px; margin: 0 0 12px; }
+    h3 { margin: 0 0 16px; font-size: 23px; }
+    p { margin: 8px 0; }
+    a { color: inherit; text-underline-offset: 3px; }
+    nav { display: flex; gap: 8px 20px; flex-wrap: wrap; margin-top: 20px; }
+    .label { text-transform: uppercase; letter-spacing: .08em; font: 12px/1.6 monospace; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+    section { scroll-margin-top: 20px; min-width: 0; }
+    .screen { background: white; border: 2px solid #333; min-height: 390px; padding: 24px; }
+    .bar { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #aaa; padding-bottom: 16px; margin-bottom: 24px; gap: 12px; }
+    .bar strong { font-size: 19px; }
+    .muted { color: #626262; font-size: 13px; }
+    .button { display: inline-block; border: 1px solid #333; padding: 8px 14px; font-size: 14px; white-space: nowrap; }
+    .primary { color: white; background: #333; }
+    .actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 22px; }
+    .center { max-width: 360px; margin: 50px auto; text-align: center; }
+    .center .button { margin-top: 16px; }
+    .row { display: flex; align-items: flex-start; gap: 12px; padding: 15px 0; border-bottom: 1px solid #ccc; }
+    .box { width: 19px; height: 19px; border: 1px solid #333; flex: 0 0 19px; margin-top: 3px; text-align: center; line-height: 17px; }
+    .row-content { flex: 1; min-width: 0; }
+    .row .tools { font-size: 12px; text-decoration: underline; white-space: nowrap; }
+    .done { text-decoration: line-through; color: #666; }
+    .group { margin-top: 24px; font-size: 14px; }
+    .note { margin-top: 10px; padding: 12px; border-left: 2px dashed #777; font-size: 13px; }
+    .field-label { display: block; font-weight: 600; margin: 18px 0 6px; }
+    .field { border: 1px solid #777; min-height: 44px; padding: 10px; }
+    .notes { min-height: 96px; }
+    .banner { border: 1px dashed #444; padding: 12px; margin: 18px 0; }
+    .placeholder { border: 1px dashed #999; background: #f4f4f4; padding: 17px; margin: 14px 0; color: #666; }
+    .overlay { background: #ddd; display: grid; place-items: center; min-height: 390px; }
+    .dialog { background: white; border: 2px solid #333; padding: 24px; width: 95%; max-width: 370px; }
+    .mobile { max-width: 350px; margin: auto; padding: 18px; min-height: 480px; }
+    .mobile .bar { align-items: flex-start; }
+    .mobile .row .tools { display: block; margin-top: 8px; }
+    .mobile .actions .button { flex: 1; text-align: center; }
+    .account { border-top: 1px solid #ccc; margin-top: 28px; padding-top: 12px; display: flex; justify-content: space-between; font-size: 12px; }
+    footer { border-top: 1px solid #bbb; margin-top: 30px; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } header.review, main, footer { padding: 20px; } .screen { padding: 18px; } }
+    @media print { body { background: white; } nav { display: none; } section { break-inside: avoid; } .grid { gap: 25px; } }
+  </style>
+</head>
+<body>
+<header class="review">
+  <div class="label">Design gate 1 / wireframes / awaiting owner review</div>
+  <h1>A small, personal task list</h1>
+  <p>Review layout, actions, and transitions. These are static grayscale screens, not mockups or a working prototype.</p>
+  <p class="muted">All names and tasks are synthetic. No external assets, network requests, real login, or saved data.</p>
+  <nav aria-label="Wireframe index">
+    <a href="#signin">01 Sign in</a><a href="#denied">02 Access denied</a><a href="#empty">03 Empty list</a>
+    <a href="#list">04 Task list</a><a href="#create">05 New task</a><a href="#edit">06 Edit task</a>
+    <a href="#delete">07 Delete</a><a href="#loading">08 Starting</a><a href="#save-error">09 Save error</a>
+    <a href="#load-error">10 Load error</a><a href="#mobile-list">11 Mobile list</a><a href="#mobile-edit">12 Mobile edit</a>
+  </nav>
+</header>
+<main class="grid">
+  <section id="signin"><h2>01 — Sign in</h2><div class="screen">
+    <div class="center"><div class="label">Tasks</div><h3>Your list, in one place.</h3><p>Sign in to view and manage your tasks.</p><div class="button primary">Continue with Google</div><p class="muted">Access is limited to the owner.</p></div>
+  </div><div class="note">Google sign-in → list loading → empty or populated list. Signing out returns here and hides task data. A cancelled sign-in returns here with “Sign-in was cancelled. Try again.”</div></section>
+
+  <section id="denied"><h2>02 — Account without access</h2><div class="screen">
+    <div class="center"><div class="label">Tasks</div><h3>This account doesn't have access.</h3><p>Try signing in with your approved Google account.</p><div class="button primary">Try another Google account</div></div>
+  </div><div class="note">No tasks or owner identity are shown. There is no registration or invitation request. An expired session returns to sign-in; do not show an access-denied page for a temporary service failure.</div></section>
+
+  <section id="empty"><h2>03 — First list / after deleting the last task</h2><div class="screen">
+    <div class="bar"><strong>Tasks</strong><span class="button primary">+ New task</span></div>
+    <div class="center"><h3>No tasks yet.</h3><p>Add something you want to get done.</p></div>
+    <div class="account"><span>owner@example.invalid</span><span>Sign out</span></div>
+  </div><div class="note">One consistent New task action in the header. The empty state appears only after the list has loaded successfully.</div></section>
+
+  <section id="list"><h2>04 — List, complete, and reopen</h2><div class="screen">
+    <div class="bar"><div><strong>Tasks</strong><div class="muted">2 open</div></div><span class="button primary">+ New task</span></div>
+    <div class="row"><span class="box"></span><div class="row-content"><strong>Plan the weekend</strong><div class="muted">Look up a nearby walking route.</div></div><span class="tools">Edit · Delete</span></div>
+    <div class="row"><span class="box"></span><div class="row-content"><strong>Water the plants</strong></div><span class="tools">Edit · Delete</span></div>
+    <div class="group">Completed · 1</div>
+    <div class="row"><span class="box">✓</span><div class="row-content"><span class="done">Return library books</span></div><span class="tools">Edit · Delete</span></div>
+    <div class="account"><span>owner@example.invalid</span><span>Sign out</span></div>
+  </div><div class="note">Checkbox → complete/reopen after confirmation from the server; show a pending indicator and disable repeat actions while waiting. Incomplete first, newest-created first within each state. Titles and short notes wrap; Edit opens the full notes. No manual sorting, search, or filters.</div></section>
+
+  <section id="create"><h2>05 — New task</h2><div class="screen">
+    <div class="bar"><strong>New task</strong><span>Back to tasks</span></div>
+    <span class="field-label">Title</span><div class="field muted">What needs doing?</div><div class="muted">Required · 0 / 200 characters</div>
+    <span class="field-label">Notes <span class="muted">(optional)</span></span><div class="field notes"></div><div class="muted">Plain text · up to 10,000 characters</div>
+    <div class="actions"><span class="button">Cancel</span><span class="button primary">Save task</span></div>
+  </div><div class="note">Dedicated form view, consistent on desktop and mobile. Save success → list with the new task. Empty/whitespace title → inline “Enter a title.” Invalid input stays in the form. Unsaved changes require confirmation before leaving.</div></section>
+
+  <section id="edit"><h2>06 — Edit a task</h2><div class="screen">
+    <div class="bar"><strong>Edit task</strong><span>Back to tasks</span></div>
+    <span class="field-label">Title</span><div class="field">Plan the weekend</div><div class="muted">16 / 200 characters</div>
+    <span class="field-label">Notes <span class="muted">(optional)</span></span><div class="field notes">Look up a nearby walking route.</div>
+    <div class="actions"><span class="button">Cancel</span><span class="button primary">Save changes</span></div>
+  </div><div class="note">Same layout and validation as New task. Save success → list; Cancel → unchanged task. During save, keep entered text visible, show “Saving…”, and disable repeat save. Editing preserves creation order and completion state.</div></section>
+
+  <section id="delete"><h2>07 — Confirm permanent deletion</h2><div class="screen overlay"><div class="dialog">
+    <h3>Delete this task?</h3><p><strong>Plan the weekend</strong></p><p>This permanently deletes the task.</p><div class="actions"><span class="button">Cancel</span><span class="button primary">Delete task</span></div>
+  </div></div><div class="note">Cancel is the initial keyboard focus. Confirm success → refreshed list. Failure keeps the task and displays “Couldn't delete this task. Try again.” No trash or undo. The other list actions remain behind the dialog.</div></section>
+
+  <section id="loading"><h2>08 — Opening the list / cold start</h2><div class="screen">
+    <div class="bar"><strong>Tasks</strong></div><div class="center"><div class="placeholder">Loading indicator</div><h3>Opening your list…</h3><p>This can take about a minute after a period of inactivity.</p></div>
+  </div><div class="note">Do not show an empty list or enable task writes while the initial list is loading. Normal short loads use the indicator; show the longer-delay explanation only if needed. Failed authentication returns to sign-in; a failed request offers Retry.</div></section>
+
+  <section id="save-error"><h2>09 — Save could not be confirmed</h2><div class="screen">
+    <div class="bar"><strong>Edit task</strong><span>Back to tasks</span></div>
+    <div class="banner">We couldn't confirm that your changes were saved. Your text is still here.</div>
+    <span class="field-label">Title</span><div class="field">Plan a longer walk</div>
+    <span class="field-label">Notes <span class="muted">(optional)</span></span><div class="field notes">Bring water and check the weather.</div>
+    <div class="actions"><span class="button">Cancel</span><span class="button primary">Try saving again</span></div>
+  </div><div class="note">Keep the draft intact. No success indication until the server confirms the result. A retried creation must not duplicate a task after an ambiguous response. Navigation/sign-out with a dirty draft requires a discard confirmation.</div></section>
+
+  <section id="load-error"><h2>10 — List unavailable / connection failure</h2><div class="screen">
+    <div class="bar"><strong>Tasks</strong></div><div class="center"><h3>Couldn't load your tasks.</h3><p>Check your connection and try again.</p><span class="button primary">Retry</span></div>
+    <div class="account"><span>owner@example.invalid</span><span>Sign out</span></div>
+  </div><div class="note">No offline editing in MVP 1. A failed completion change retains its last confirmed state and shows a retry message on that row. A session-expiry message preserves the draft where feasible but never presents it as saved.</div></section>
+
+  <section id="mobile-list"><h2>11 — Narrow-screen task list</h2><div class="screen mobile">
+    <div class="bar"><div><strong>Tasks</strong><div class="muted">2 open</div></div><span class="button primary">+ New task</span></div>
+    <div class="row"><span class="box"></span><div class="row-content"><strong>Plan the weekend</strong><div class="muted">Look up a nearby walking route.</div><span class="tools">Edit &nbsp; · &nbsp; Delete</span></div></div>
+    <div class="row"><span class="box"></span><div class="row-content"><strong>Water the plants</strong><span class="tools">Edit &nbsp; · &nbsp; Delete</span></div></div>
+    <div class="group">Completed · 1</div><div class="row"><span class="box">✓</span><div class="row-content"><span class="done">Return library books</span><span class="tools">Edit &nbsp; · &nbsp; Delete</span></div></div>
+    <div class="account"><span>owner@example.invalid</span><span>Sign out</span></div>
+  </div><div class="note">Same information and actions, one column. Edit/Delete sit below each title to avoid squeezing text. Later mockups establish touch-target sizes, spacing, and responsive breakpoints.</div></section>
+
+  <section id="mobile-edit"><h2>12 — Narrow-screen form / discard changes</h2><div class="screen mobile">
+    <div class="bar"><strong>Edit task</strong><span>Back</span></div>
+    <span class="field-label">Title</span><div class="field">Plan the weekend</div><div class="muted">16 / 200 characters</div>
+    <span class="field-label">Notes <span class="muted">(optional)</span></span><div class="field notes">Look up a nearby walking route.</div>
+    <div class="actions"><span class="button">Cancel</span><span class="button primary">Save changes</span></div>
+    <div class="banner"><strong>Discard your changes?</strong><p>Your unsaved edits will be lost.</p><div class="actions"><span class="button">Keep editing</span><span class="button">Discard</span></div></div>
+  </div><div class="note">The discard dialog is an alternate overlay state, shown here for review. The same confirmation applies on desktop. Keep editing returns focus to the form; Discard returns to the unchanged list.</div></section>
+</main>
+<footer><strong>Approval scope:</strong> screens, information hierarchy, available actions, confirmation steps, and failure states. Fonts, colors, icons, detailed spacing, and animation belong to mockups. Clickable task behavior belongs to the separate local prototype.</footer>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "intrepion-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev --host 127.0.0.1 --port 4322",
+    "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview --host 127.0.0.1 --port 4322",
+    "check": "ASTRO_TELEMETRY_DISABLED=1 astro check",
+    "test:unit": "tsx --test tests/model.test.ts",
+    "test:e2e": "playwright test",
+    "coverage": "node ../scripts/coverage.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.0.0",
+    "@bufbuild/protobuf": "^2.0.0",
+    "@connectrpc/connect": "^2.0.0",
+    "@connectrpc/connect-web": "^2.0.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.0",
+    "@playwright/test": "^1.0.0",
+    "@types/node": "^26.0.0",
+    "c8": "^10.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^6.0.0"
+  }
+}
