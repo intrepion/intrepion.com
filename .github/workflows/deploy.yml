@@ -63,6 +63,9 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.PAGES_DEPLOY_TOKEN }}
           PAGES_PROJECT: ${{ vars.PAGES_PROJECT }}
+          PAGES_REDIRECT_PROJECT: ${{ vars.PAGES_REDIRECT_PROJECT }}
         run: |
           test -n "$PAGES_PROJECT"
           ./node_modules/.bin/wrangler pages deploy web/dist --project-name "$PAGES_PROJECT" --branch main --commit-hash "$DEPLOY_SHA"
+          test -n "$PAGES_REDIRECT_PROJECT"
+          ./node_modules/.bin/wrangler pages deploy web/redirect-www --project-name "$PAGES_REDIRECT_PROJECT" --branch main --commit-hash "$DEPLOY_SHA"
