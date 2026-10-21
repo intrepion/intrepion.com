@@ -67,7 +67,8 @@ export class B2 {
     const parsed = new URL(url);
     if (
       parsed.protocol !== "https:" ||
-      !parsed.hostname.endsWith(".backblazeb2.com")
+      (!parsed.hostname.endsWith(".backblazeb2.com") &&
+        !parsed.hostname.endsWith(".backblaze.com"))
     )
       throw new Error("Unexpected backup provider URL.");
     const response = await this.request(url, {

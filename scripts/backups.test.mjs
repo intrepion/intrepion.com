@@ -1,8 +1,44 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
-import { createBackup, checkBackup } from "./backups.mjs";
+import { B2, createBackup, checkBackup } from "./backups.mjs";
 import { readFile } from "node:fs/promises";
 const sql = await readFile("server/migrations/0001_initial.sql");
+test("B2 accepts its documented upload host and blocks redirects and unrelated destinations", async () => {
+  const uploadUrl =
+    "https://pod-000-1005-03.backblaze.com/b2api/v4/b2_upload_file";
+  const requests = [];
+  const store = new B2(
+    {
+      apiInfo: { storageApi: { apiUrl: "https://api001.backblazeb2.com" } },
+      authorizationToken: "test-account-token",
+    },
+    "test-bucket",
+    async (url, options) => {
+      requests.push({ url, options });
+      return Response.json(
+        requests.length === 1
+          ? { uploadUrl, authorizationToken: "test-upload-token" }
+          : { fileId: "uploaded" },
+      );
+    },
+  );
+  assert.equal(
+    (await store.upload("daily/test", Buffer.from("synthetic"))).fileId,
+    "uploaded",
+  );
+  assert.equal(requests[1].url, uploadUrl);
+  assert.equal(requests[1].options.headers.authorization, "test-upload-token");
+  assert.ok(requests.every(({ options }) => options.redirect === "error"));
+  for (const url of [
+    "http://pod-000-1005-03.backblaze.com/upload",
+    "https://backblaze.com.attacker.test/upload",
+    "https://attackerbackblazeb2.com/upload",
+    "https://unrelated.test/upload",
+  ]) {
+    await assert.rejects(store.fetch(url), /Unexpected backup provider URL/);
+  }
+  assert.equal(requests.length, 2);
+});
 class Storage {
   files = [];
   data = new Map();
