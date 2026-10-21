@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: "17 4 * * *"
   workflow_dispatch:
+    inputs:
+      test_failure:
+        description: Fail immediately to test the owner's failure notification
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -21,6 +26,11 @@ jobs:
       AGE_RECIPIENT: ${{ vars.AGE_RECIPIENT }}
       WRANGLER_SEND_METRICS: "false"
     steps:
+      - name: Test failure notification delivery
+        if: github.event_name == 'workflow_dispatch' && inputs.test_failure
+        run: |
+          echo "Controlled notification test; no backup operation attempted."
+          exit 1
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
