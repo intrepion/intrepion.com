@@ -394,13 +394,16 @@ async function authenticate(path: string, nonce: string, credential = "") {
     authenticated = true;
     await loadTasks();
   } catch (error) {
+    const accessDenied = error instanceof HttpError && error.status === 403;
     status(
-      error instanceof HttpError && error.status === 403
+      accessDenied
         ? "This account does not have access"
         : "Sign-in could not be completed",
-      error instanceof HttpError
-        ? error.message
-        : "Please check your connection and try again.",
+      accessDenied
+        ? "Try signing in with your approved Google account."
+        : error instanceof HttpError
+          ? error.message
+          : "Please check your connection and try again.",
     );
     text("retry-load", "Try signing in again");
   } finally {
