@@ -14,9 +14,9 @@ A personal task app as the first MVP of a future Life OS. The initial delivery i
 - [Review the visual mockups](design/mvp-1/mockups.html) ([desktop](design/mvp-1/mockup-desktop.png), [mobile](design/mvp-1/mockup-mobile.png))
 - [Run and review the standalone Astro prototype](prototype/README.md)
 - [Run the production Rust API](server/README.md) and [Astro client](web/README.md)
-- [Deployment, backups, monitoring, and remaining launch checks](docs/operations.md)
+- [Deployment, backups, monitoring, and launch evidence](docs/operations.md)
 
-Wireframes (Q35), mockups (Q36), and prototype interactions (Q37) are approved. The separate Rust/Axum API and Astro client implement the task workflow, durable D1 storage, Google owner sessions, and local development authentication. GitHub Actions definitions cover CI, manual deployment of a passing revision, encrypted backups, and an independent backup-age check. Hosted validation and account configuration remain launch gates; nothing has been deployed.
+Wireframes (Q35), mockups (Q36), and prototype interactions (Q37) are approved. The separate Rust/Axum API and Astro client implement the task workflow, durable D1 storage, Google owner sessions, and local development authentication. GitHub Actions definitions cover CI, manual deployment of a passing revision, encrypted backups, and an independent backup-age check. MVP 1 is live at [intrepion.com](https://intrepion.com) with Google owner-only access. Hosted task persistence, encrypted offsite recovery through the API, and private failure-email delivery passed. See the operations record for the deployed revision, timing samples, and accepted free-hosting limits.
 
 For the production application's local development stack, install Rust, Node and `protoc`, run `npm ci` and `npm --prefix web ci` once, then `npm run dev` and open <http://127.0.0.1:4322>. The server uses local D1 and development login; task data survives restarts.
 
