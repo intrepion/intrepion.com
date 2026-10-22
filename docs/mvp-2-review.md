@@ -35,3 +35,17 @@ Final local verification: 27 API integration tests, 22 browser tests, 6 Rust uni
 Hosted B2 scope/lifecycle checks, isolated hosted D1 transaction/recovery proof and the stopped-service migration remain release requirements. Local emulators do not prove those provider behaviors. See `mvp-2-release.md`; the live MVP 1 was not changed by this implementation work.
 
 Initial totals: Standards—1 hard violation and 2 maintenance judgments; Spec—3 behavior findings. The worst Standards issue was the rejected edit changing concurrency state; the worst Spec issue was incomplete conflict comparison. Both axes' findings were corrected and independently rechecked.
+
+## Hosted recovery correction
+
+The launch drill found that hosted D1 rejects explicit transaction wrappers in generated recovery SQL. The local D1 emulator accepted that same import, so it did not expose the incompatibility. Correction `4a082ac` removes only the exported transaction wrapper; replay and integrity checking still complete in an isolated local transaction before any output is produced. A regression enforces the hosted restriction using SQLite's statement authorizer. It failed before the correction and passed afterward, while allowing SQL-looking text to remain ordinary data.
+
+### Standards follow-up
+
+The independent reviewer found no documented-standard violations or actionable smells. The correction preserves isolated import and verification. The regression exercises the agreed encrypted-recovery boundary without matching against user text. Findings: **0**; worst issue: **none**.
+
+### Spec follow-up
+
+The independent reviewer found no missing requirements, incorrect behavior or scope creep. Q37 replay and integrity guarantees remain intact; isolated import and verification are still required before reopening the application. Findings: **0**; worst issue: **none**.
+
+All three encryption/recovery tests and lint passed. The corrected SQL also imported into a new isolated hosted D1 database. The normal production API read and created synthetic data against that restored database and rejected reuse of an erased identity. Restored sessions were cleared; integrity and all six migrations were checked. The temporary database and plaintext files were removed. These are completed hosted recovery checks, not a claim that final public-client deployment has finished.
