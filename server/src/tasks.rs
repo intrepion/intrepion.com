@@ -93,7 +93,7 @@ impl TaskService for Tasks {
         self.authorize(&ctx).await?;
         let task = request.to_owned_message();
         validate(&task)?;
-        self.0.db.query::<serde_json::Value>("INSERT INTO tasks(owner_sub,id,title,notes,completed) VALUES(?,?,?,?,?) ON CONFLICT(owner_sub,id) DO NOTHING", &[self.0.config.owner_sub.clone(),task.id.clone(),task.title.clone(),task.notes.clone(),i32::from(task.completed).to_string()]).await?;
+        self.0.db.query::<serde_json::Value>("INSERT INTO tasks(owner_sub,id,title,notes,completed) SELECT ?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM retired_task_ids WHERE owner_sub=? AND id=?) ON CONFLICT(owner_sub,id) DO NOTHING", &[self.0.config.owner_sub.clone(),task.id.clone(),task.title.clone(),task.notes.clone(),i32::from(task.completed).to_string(),self.0.config.owner_sub.clone(),task.id.clone()]).await?;
         let stored = self.get(&task.id).await?;
         if stored.title != task.title
             || stored.notes != task.notes
@@ -137,13 +137,38 @@ impl TaskService for Tasks {
         if !valid_id(request.id) {
             return Err(ConnectError::invalid_argument("Invalid task ID."));
         }
-        self.0
+        if request.revision == 0 {
+            return Err(ConnectError::failed_precondition(
+                "Reload the application before deleting this task; its current revision is required.",
+            ));
+        }
+        let deleted = self
+            .0
             .db
             .query::<serde_json::Value>(
-                "DELETE FROM tasks WHERE owner_sub=? AND id=?",
-                &[self.0.config.owner_sub.clone(), request.id.to_string()],
+                "DELETE FROM tasks WHERE owner_sub=? AND id=? AND revision=? RETURNING id",
+                &[
+                    self.0.config.owner_sub.clone(),
+                    request.id.to_string(),
+                    request.revision.to_string(),
+                ],
             )
             .await?;
+        if deleted.is_empty() {
+            let remaining = self
+                .0
+                .db
+                .query::<serde_json::Value>(
+                    "SELECT id FROM tasks WHERE owner_sub=? AND id=?",
+                    &[self.0.config.owner_sub.clone(), request.id.to_string()],
+                )
+                .await?;
+            if !remaining.is_empty() {
+                return Err(ConnectError::failed_precondition(
+                    "This task changed in another window. Reload the list and review it before deleting.",
+                ));
+            }
+        }
         Response::ok(Empty::default())
     }
 }

@@ -11,7 +11,11 @@ service TaskService {
 }
 
 message Empty {}
-message TaskId { string id = 1; }
+message TaskId {
+  string id = 1;
+  // Deletion must acknowledge the last observed revision; zero requires a reload.
+  uint32 revision = 2;
+}
 message Task {
   string id = 1;
   string title = 2;

@@ -7,12 +7,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = tokio::net::TcpListener::bind(config.bind).await?;
     eprintln!(
         "{}",
-        serde_json::json!({"event":"startup","development":config.local})
+        serde_json::json!({"event":"startup","development":config.local,"render_proxy":config.trust_render_proxy})
     );
-    axum::serve(listener, app(Auth::new(config, db)?))
-        .with_graceful_shutdown(async {
-            let _ = tokio::signal::ctrl_c().await;
-        })
-        .await?;
+    axum::serve(
+        listener,
+        app(Auth::new(config, db)?).into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .with_graceful_shutdown(async {
+        let _ = tokio::signal::ctrl_c().await;
+    })
+    .await?;
     Ok(())
 }

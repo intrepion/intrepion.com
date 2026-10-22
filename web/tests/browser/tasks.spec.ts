@@ -175,3 +175,82 @@ test("mobile task text remains literal and the layout stays within the viewport"
     ),
   ).toBe(true);
 });
+
+test("a lost create response cannot resurrect a task deleted in another tab", async ({
+  page,
+  context,
+}) => {
+  await signIn(page);
+  const title = "Deleted after lost create response";
+  await draft(page, title);
+  await page.route(
+    "**/life.v1.TaskService/CreateTask",
+    async (route) => {
+      await route.fetch();
+      await route.abort("failed");
+    },
+    { times: 1 },
+  );
+  await page.getByRole("button", { name: "Save task", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Try saving again", exact: true }),
+  ).toBeEnabled();
+  const other = await context.newPage();
+  await other.goto("/");
+  await taskRow(other, title)
+    .getByRole("button", { name: "Delete task:" })
+    .click();
+  await other.getByRole("button", { name: "Delete task", exact: true }).click();
+  await expect(taskRow(other, title)).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Try saving again", exact: true })
+    .click();
+  await expect(
+    page
+      .locator("#save-error")
+      .getByText(
+        "This task no longer exists. Reload the list; your draft is still here.",
+        { exact: true },
+      ),
+  ).toBeVisible();
+  await expect(page.getByLabel("Title", { exact: true })).toHaveValue(title);
+  await other.reload();
+  await expect(
+    other.getByRole("button", { name: "New task", exact: true }),
+  ).toBeEnabled();
+  await expect(taskRow(other, title)).toHaveCount(0);
+});
+
+test("stale-tab deletion cannot discard a newer edit", async ({
+  page,
+  context,
+}) => {
+  await signIn(page);
+  const title = "Before stale-tab deletion";
+  await draft(page, title);
+  await page.getByRole("button", { name: "Save task", exact: true }).click();
+  await expect(taskRow(page, title)).toBeVisible();
+  const other = await context.newPage();
+  await other.goto("/");
+  await expect(taskRow(other, title)).toBeVisible();
+  await taskRow(page, title)
+    .getByRole("button", { name: "Edit task:" })
+    .click();
+  await page.getByLabel("Title", { exact: true }).fill("Keep the newer edit");
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect(taskRow(page, "Keep the newer edit")).toBeVisible();
+  await taskRow(other, title)
+    .getByRole("button", { name: "Delete task:" })
+    .click();
+  await other.getByRole("button", { name: "Delete task", exact: true }).click();
+  await expect(
+    other
+      .locator("#list-error")
+      .getByText(
+        "This task changed in another window. Reload the list and review it before deleting.",
+        { exact: true },
+      ),
+  ).toBeVisible();
+  await page.reload();
+  await expect(taskRow(page, "Keep the newer edit")).toBeVisible();
+});

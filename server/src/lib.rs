@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod config;
 pub mod db;
+mod login_limit;
 mod tasks;
 pub mod proto {
     connectrpc::include_generated!();
@@ -66,6 +67,75 @@ mod tests {
     use super::*;
     use tower::ServiceExt;
     #[tokio::test]
+    async fn one_caller_cannot_exhaust_another_callers_login_allowance() {
+        for trust_render_proxy in [false, true] {
+            let config = crate::config::Config {
+                bind: "127.0.0.1:8788".parse().unwrap(),
+                web_origin: "https://intrepion.com".into(),
+                db_url: "http://127.0.0.1:1/query".into(),
+                db_token: "unused-test-token".into(),
+                google_client_id: "client".into(),
+                owner_sub: "owner".into(),
+                local: false,
+                trust_render_proxy,
+            };
+            let db =
+                crate::db::Database::new(config.db_url.clone(), config.db_token.clone()).unwrap();
+            let router = app(crate::auth::Auth::new(config, db).unwrap());
+            for attempt in 0..31 {
+                let response = router
+                    .clone()
+                    .oneshot(
+                        Request::builder()
+                            .method("POST")
+                            .uri("/auth/google")
+                            .header("content-type", "application/json")
+                            .header("origin", "https://intrepion.com")
+                            .header(
+                                "x-forwarded-for",
+                                if trust_render_proxy {
+                                    "198.51.100.1".to_string()
+                                } else {
+                                    format!("198.51.100.{}", attempt + 1)
+                                },
+                            )
+                            .extension(axum::extract::ConnectInfo(
+                                "192.0.2.1:1234".parse::<std::net::SocketAddr>().unwrap(),
+                            ))
+                            .body(axum::body::Body::from(r#"{"nonce":"","credential":""}"#))
+                            .unwrap(),
+                    )
+                    .await
+                    .unwrap();
+                assert_eq!(
+                    response.status(),
+                    if attempt < 30 {
+                        axum::http::StatusCode::UNAUTHORIZED
+                    } else {
+                        axum::http::StatusCode::TOO_MANY_REQUESTS
+                    }
+                );
+            }
+            let response = router
+                .oneshot(
+                    Request::builder()
+                        .method("POST")
+                        .uri("/auth/google")
+                        .header("content-type", "application/json")
+                        .header("origin", "https://intrepion.com")
+                        .header("x-forwarded-for", "198.51.100.2")
+                        .extension(axum::extract::ConnectInfo(
+                            "192.0.2.2:1234".parse::<std::net::SocketAddr>().unwrap(),
+                        ))
+                        .body(axum::body::Body::from(r#"{"nonce":"","credential":""}"#))
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
+        }
+    }
+    #[tokio::test]
     async fn normal_build_does_not_expose_development_login() {
         let config = crate::config::Config {
             bind: "127.0.0.1:8788".parse().unwrap(),
@@ -75,6 +145,7 @@ mod tests {
             google_client_id: "client".into(),
             owner_sub: "owner".into(),
             local: false,
+            trust_render_proxy: false,
         };
         let db = crate::db::Database::new(config.db_url.clone(), config.db_token.clone()).unwrap();
         let response = app(crate::auth::Auth::new(config, db).unwrap())

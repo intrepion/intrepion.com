@@ -45,6 +45,7 @@ jobs:
         run: |
           test -n "$PUBLIC_API_ORIGIN"
           npm --prefix web run build
+          test -s web/dist/_headers
       - name: Apply database migrations
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}

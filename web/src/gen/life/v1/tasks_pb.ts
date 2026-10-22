@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file life/v1/tasks.proto.
  */
 export const file_life_v1_tasks: GenFile = /*@__PURE__*/
-  fileDesc("ChNsaWZlL3YxL3Rhc2tzLnByb3RvEgdsaWZlLnYxIgcKBUVtcHR5IhQKBlRhc2tJZBIKCgJpZBgBIAEoCSJsCgRUYXNrEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg0KBW5vdGVzGAMgASgJEhEKCWNvbXBsZXRlZBgEIAEoCBIQCghyZXZpc2lvbhgFIAEoDRIVCg1jcmVhdGVkX29yZGVyGAYgASgEIigKCFRhc2tMaXN0EhwKBXRhc2tzGAEgAygLMg0ubGlmZS52MS5UYXNrMsQBCgtUYXNrU2VydmljZRIuCglMaXN0VGFza3MSDi5saWZlLnYxLkVtcHR5GhEubGlmZS52MS5UYXNrTGlzdBIqCgpDcmVhdGVUYXNrEg0ubGlmZS52MS5UYXNrGg0ubGlmZS52MS5UYXNrEioKClVwZGF0ZVRhc2sSDS5saWZlLnYxLlRhc2saDS5saWZlLnYxLlRhc2sSLQoKRGVsZXRlVGFzaxIPLmxpZmUudjEuVGFza0lkGg4ubGlmZS52MS5FbXB0eWIGcHJvdG8z");
+  fileDesc("ChNsaWZlL3YxL3Rhc2tzLnByb3RvEgdsaWZlLnYxIgcKBUVtcHR5IiYKBlRhc2tJZBIKCgJpZBgBIAEoCRIQCghyZXZpc2lvbhgCIAEoDSJsCgRUYXNrEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg0KBW5vdGVzGAMgASgJEhEKCWNvbXBsZXRlZBgEIAEoCBIQCghyZXZpc2lvbhgFIAEoDRIVCg1jcmVhdGVkX29yZGVyGAYgASgEIigKCFRhc2tMaXN0EhwKBXRhc2tzGAEgAygLMg0ubGlmZS52MS5UYXNrMsQBCgtUYXNrU2VydmljZRIuCglMaXN0VGFza3MSDi5saWZlLnYxLkVtcHR5GhEubGlmZS52MS5UYXNrTGlzdBIqCgpDcmVhdGVUYXNrEg0ubGlmZS52MS5UYXNrGg0ubGlmZS52MS5UYXNrEioKClVwZGF0ZVRhc2sSDS5saWZlLnYxLlRhc2saDS5saWZlLnYxLlRhc2sSLQoKRGVsZXRlVGFzaxIPLmxpZmUudjEuVGFza0lkGg4ubGlmZS52MS5FbXB0eWIGcHJvdG8z");
 
 /**
  * @generated from message life.v1.Empty
@@ -33,6 +33,13 @@ export type TaskId = Message<"life.v1.TaskId"> & {
    * @generated from field: string id = 1;
    */
   id: string;
+
+  /**
+   * Deletion must acknowledge the last observed revision; zero requires a reload.
+   *
+   * @generated from field: uint32 revision = 2;
+   */
+  revision: number;
 };
 
 /**

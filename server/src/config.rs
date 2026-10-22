@@ -10,6 +10,7 @@ pub struct Config {
     pub google_client_id: String,
     pub owner_sub: String,
     pub local: bool,
+    pub trust_render_proxy: bool,
 }
 
 impl Config {
@@ -65,6 +66,9 @@ impl Config {
             google_client_id,
             owner_sub,
             local,
+            // Render supplies this reserved environment variable. Never enable
+            // forwarded-header trust for local or directly exposed deployments.
+            trust_render_proxy: !local && env::var("RENDER").as_deref() == Ok("true"),
         })
     }
 }

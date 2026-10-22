@@ -79,7 +79,7 @@ test("owner writes survive an API restart and a session re-login", async () => {
     )?.notes,
     "Local D1",
   );
-  await client.deleteTask({ id: task.id }, owner);
+  await client.deleteTask({ id: task.id, revision: task.revision }, owner);
 });
 
 test("create, update and delete retries are idempotent and stale edits do not overwrite data", async () => {
@@ -113,8 +113,14 @@ test("create, update and delete retries are idempotent and stale edits do not ov
       .completed,
     false,
   );
-  await client.deleteTask({ id: created.id }, owner);
-  await client.deleteTask({ id: created.id }, owner);
+  await client.deleteTask(
+    { id: created.id, revision: updated.revision + 1 },
+    owner,
+  );
+  await client.deleteTask(
+    { id: created.id, revision: updated.revision + 1 },
+    owner,
+  );
   assert.equal(
     (await client.listTasks({}, owner)).tasks.some((t) => t.id === created.id),
     false,
@@ -156,8 +162,11 @@ test("server enforces Unicode limits, plaintext and incomplete-first creation or
     (await client.listTasks({}, owner)).tasks.map((t) => t.id),
     [first.id, second.id],
   );
-  await client.deleteTask({ id: first.id }, owner);
-  await client.deleteTask({ id: second.id }, owner);
+  await client.deleteTask({ id: first.id, revision: first.revision }, owner);
+  await client.deleteTask(
+    { id: second.id, revision: second.revision + 1 },
+    owner,
+  );
 });
 
 test("sessions require origin and CSRF, logout revokes the cookie, and arbitrary Google credentials fail", async () => {
@@ -213,4 +222,67 @@ test("cross-origin responses expose only the configured origin and never cache p
         "true",
       );
   }
+});
+
+test("retrying a committed create after deletion never resurrects the task", async () => {
+  const owner = await login();
+  const request = {
+    id: crypto.randomUUID(),
+    title: "Deleted during lost response",
+  };
+  const created = await client.createTask(request, owner);
+  await client.deleteTask(
+    { id: created.id, revision: created.revision },
+    owner,
+  );
+  await stop(server);
+  server = start("target/debug/intrepion-server", [], { env: localEnv });
+  await ready(`${baseUrl}/health/live`);
+  await assert.rejects(
+    client.createTask(request, owner),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.NotFound,
+  );
+  assert.equal(
+    (await client.listTasks({}, owner)).tasks.some(
+      (task) => task.id === created.id,
+    ),
+    false,
+  );
+});
+
+test("stale deletion preserves a newer edit and a confirmed delete can be retried", async () => {
+  const owner = await login();
+  const created = await client.createTask(
+    { id: crypto.randomUUID(), title: "Before concurrent edit" },
+    owner,
+  );
+  const updated = await client.updateTask(
+    { ...created, title: "Newer edit" },
+    owner,
+  );
+  await assert.rejects(
+    client.deleteTask({ id: created.id }, owner),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.FailedPrecondition,
+  );
+  await assert.rejects(
+    client.deleteTask({ id: created.id, revision: created.revision }, owner),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.FailedPrecondition,
+  );
+  assert.equal(
+    (await client.listTasks({}, owner)).tasks.find(
+      (task) => task.id === created.id,
+    )?.title,
+    updated.title,
+  );
+  await client.deleteTask(
+    { id: updated.id, revision: updated.revision },
+    owner,
+  );
+  await client.deleteTask(
+    { id: updated.id, revision: updated.revision },
+    owner,
+  );
 });

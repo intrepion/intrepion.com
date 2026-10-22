@@ -26,7 +26,8 @@ let config: { google_client_id: string; development: boolean };
 type Editor = { id: string; original?: Task; fields: Fields };
 let editor: Editor | undefined;
 type Action =
-  { kind: "create" | "update"; task: Task } | { kind: "delete"; id: string };
+  | { kind: "create" | "update"; task: Task }
+  | { kind: "delete"; id: string; revision: number };
 let pending: Action | undefined;
 let googleScript: Promise<void> | undefined;
 
@@ -141,7 +142,7 @@ function row(task: Task): HTMLElement {
         task.title,
       )
     )
-      await mutate({ kind: "delete", id: task.id });
+      await mutate({ kind: "delete", id: task.id, revision: task.revision });
   });
   actions.append(edit, remove);
   article.append(toggle, copy, actions);
@@ -270,7 +271,10 @@ async function mutate(action: Action) {
   show("list-error", false);
   try {
     if (action.kind === "delete") {
-      await api.tasks.deleteTask({ id: action.id }, { timeoutMs: 90000 });
+      await api.tasks.deleteTask(
+        { id: action.id, revision: action.revision },
+        { timeoutMs: 90000 },
+      );
       tasks = tasks.filter((task) => task.id !== action.id);
     } else {
       const saved = await (action.kind === "create"

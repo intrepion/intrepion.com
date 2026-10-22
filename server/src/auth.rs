@@ -1,7 +1,7 @@
-use crate::{config::Config, db::Database};
+use crate::{config::Config, db::Database, login_limit::LoginLimiter};
 use axum::{
     Json,
-    extract::State,
+    extract::{ConnectInfo, State},
     http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response},
 };
@@ -9,6 +9,7 @@ use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode, decode_header, jw
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
+    net::{IpAddr, SocketAddr},
     sync::Arc,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
@@ -20,7 +21,7 @@ pub struct Auth {
     pub db: Database,
     http: reqwest::Client,
     keys: Mutex<Option<(Instant, Duration, JwkSet)>>,
-    login_limit: Mutex<(Instant, u32)>,
+    login_limit: Mutex<LoginLimiter>,
 }
 
 #[derive(Deserialize)]
@@ -41,6 +42,7 @@ pub struct Session {
     pub expires_at: u64,
 }
 
+#[derive(Debug)]
 pub struct AuthError(pub StatusCode, pub &'static str);
 impl IntoResponse for AuthError {
     fn into_response(self) -> Response {
@@ -60,6 +62,18 @@ fn unauthorized() -> AuthError {
 }
 fn forbidden() -> AuthError {
     AuthError(StatusCode::FORBIDDEN, "This account does not have access.")
+}
+fn render_client_ip(headers: &HeaderMap) -> Result<IpAddr, AuthError> {
+    // Only Render's public edge is trusted to supply the original caller first.
+    headers
+        .get("x-forwarded-for")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.split(',').next())
+        .and_then(|value| value.trim().parse().ok())
+        .ok_or(AuthError(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Sign-in service temporarily unavailable.",
+        ))
 }
 pub fn now() -> u64 {
     SystemTime::now()
@@ -96,7 +110,7 @@ impl Auth {
                 .redirect(reqwest::redirect::Policy::none())
                 .build()?,
             keys: Mutex::new(None),
-            login_limit: Mutex::new((Instant::now(), 0)),
+            login_limit: Mutex::new(LoginLimiter::new()),
         }))
     }
     fn name(&self, kind: &str) -> String {
@@ -139,18 +153,19 @@ impl Auth {
         }
         Ok(session)
     }
-    async fn limit_login(&self) -> Result<(), AuthError> {
+    async fn limit_login(&self, headers: &HeaderMap, peer: IpAddr) -> Result<(), AuthError> {
+        let caller = if self.config.trust_render_proxy {
+            render_client_ip(headers)?
+        } else {
+            peer
+        };
         let mut limit = self.login_limit.lock().await;
-        if limit.0.elapsed() >= Duration::from_secs(60) {
-            *limit = (Instant::now(), 0);
-        }
-        if limit.1 >= 30 {
+        if !limit.allow(caller) {
             return Err(AuthError(
                 StatusCode::TOO_MANY_REQUESTS,
                 "Too many sign-in attempts. Try again in a minute.",
             ));
         }
-        limit.1 += 1;
         Ok(())
     }
     async fn consume_challenge(&self, headers: &HeaderMap, nonce: &str) -> Result<(), AuthError> {
@@ -270,10 +285,11 @@ pub async fn configuration(State(auth): State<SharedAuth>) -> Json<serde_json::V
 }
 pub async fn challenge(
     State(auth): State<SharedAuth>,
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
 ) -> Result<Response, AuthError> {
     auth.check_origin(&headers)?;
-    auth.limit_login().await?;
+    auth.limit_login(&headers, peer.ip()).await?;
     let nonce = secret();
     auth.db
         .query::<serde_json::Value>(
@@ -295,11 +311,12 @@ pub async fn challenge(
 }
 pub async fn login(
     State(auth): State<SharedAuth>,
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
     Json(login): Json<Login>,
 ) -> Result<Response, AuthError> {
     auth.check_origin(&headers)?;
-    auth.limit_login().await?;
+    auth.limit_login(&headers, peer.ip()).await?;
     auth.consume_challenge(&headers, &login.nonce).await?;
     auth.verify_google(&login.credential, &login.nonce).await?;
     auth.issue_session().await
@@ -307,12 +324,14 @@ pub async fn login(
 #[cfg(feature = "dev-auth")]
 pub async fn development_login(
     State(auth): State<SharedAuth>,
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
     Json(login): Json<Login>,
 ) -> Result<Response, AuthError> {
     if !auth.config.local {
         return Err(forbidden());
     }
+    auth.limit_login(&headers, peer.ip()).await?;
     auth.consume_challenge(&headers, &login.nonce).await?;
     auth.issue_session().await
 }
@@ -367,6 +386,21 @@ fn verify_identity(
 mod tests {
     use super::*;
     use jsonwebtoken::{EncodingKey, Header, encode, jwk::Jwk};
+    #[test]
+    fn render_caller_requires_one_valid_edge_supplied_address() {
+        let mut headers = HeaderMap::new();
+        assert!(render_client_ip(&headers).is_err());
+        headers.insert("x-forwarded-for", "not-an-ip, 192.0.2.1".parse().unwrap());
+        assert!(render_client_ip(&headers).is_err());
+        headers.insert(
+            "x-forwarded-for",
+            "198.51.100.1, 192.0.2.1".parse().unwrap(),
+        );
+        assert_eq!(
+            render_client_ip(&headers).unwrap(),
+            "198.51.100.1".parse::<IpAddr>().unwrap()
+        );
+    }
     #[test]
     fn google_identity_requires_signature_audience_issuer_expiry_nonce_and_exact_owner() {
         // Public test fixture only. Never use this key outside the test suite.
