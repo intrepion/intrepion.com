@@ -4,7 +4,7 @@ import { readFile, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync, constants } from "node:sqlite";
 import { B2, encrypt, verifySql } from "./backups.mjs";
 import { recoverArchive, readErasureLedger } from "./recovery.mjs";
 const databaseId = "00000000-0000-0000-0000-000000000001";
@@ -96,6 +96,15 @@ test("encrypted recovery reapplies later collection and item erasures before pro
     });
     verifySql(output);
     const restored = new DatabaseSync(":memory:");
+    // Hosted D1 rejects explicit transactions. Enforce that documented import
+    // restriction at SQLite's statement boundary; string contents stay data.
+    restored.setAuthorizer((action) =>
+      [constants.SQLITE_TRANSACTION, constants.SQLITE_SAVEPOINT].includes(
+        action,
+      )
+        ? constants.SQLITE_DENY
+        : constants.SQLITE_OK,
+    );
     try {
       restored.exec(output.toString());
       assert.deepEqual(

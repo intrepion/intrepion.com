@@ -181,7 +181,9 @@ function dump(db) {
       "SELECT type,name,sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY rowid",
     )
     .all();
-  const output = ["PRAGMA foreign_keys=OFF;", "BEGIN TRANSACTION;"];
+  // D1 manages the import transaction itself and rejects explicit BEGIN/COMMIT.
+  // Recovery is imported only into a new isolated database, verified before use.
+  const output = ["PRAGMA foreign_keys=OFF;"];
   for (const entry of schema.filter((row) => row.type === "table"))
     output.push(`${entry.sql};`);
   for (const table of schema.filter((row) => row.type === "table")) {
@@ -211,7 +213,7 @@ function dump(db) {
   }
   for (const entry of schema.filter((row) => row.type !== "table"))
     output.push(`${entry.sql};`);
-  output.push("COMMIT;", "PRAGMA foreign_keys=ON;");
+  output.push("PRAGMA foreign_keys=ON;");
   const bytes = Buffer.from(output.join("\n"));
   if (bytes.length > MAX_BYTES)
     throw new Error("Recovery output exceeds the MVP size budget.");
