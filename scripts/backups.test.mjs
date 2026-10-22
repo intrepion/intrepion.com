@@ -127,3 +127,33 @@ test("a corrupt upload cannot publish a verified marker or prune older backups",
     true,
   );
 });
+
+test("MVP 2 backups require erasure guards and valid collection relationships", async () => {
+  const current = Buffer.concat([
+    sql,
+    ...(await Promise.all(
+      [
+        "0003_everyday_collections",
+        "0004_list_items_and_sections",
+        "0005_migrate_personal_tasks",
+        "0006_erasure_protocol",
+      ].map((name) => readFile(`server/migrations/${name}.sql`)),
+    )),
+  ]);
+  assert.doesNotThrow(() => verifySql(current));
+  assert.throws(() =>
+    verifySql(
+      Buffer.concat([current, Buffer.from("\nDROP TRIGGER no_retired_item;")]),
+    ),
+  );
+  assert.throws(() =>
+    verifySql(
+      Buffer.concat([
+        current,
+        Buffer.from(
+          "\nPRAGMA foreign_keys=OFF; INSERT INTO list_items(owner_sub,collection_id,id,title,position) VALUES('owner','missing-parent','orphan','Bad restore',0);",
+        ),
+      ]),
+    ),
+  );
+});

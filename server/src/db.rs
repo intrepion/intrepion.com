@@ -8,6 +8,20 @@ pub struct Database {
     token: String,
 }
 
+#[derive(serde::Serialize)]
+pub struct Statement {
+    pub sql: String,
+    pub params: Vec<String>,
+}
+impl Statement {
+    pub fn new(sql: &str, params: Vec<String>) -> Self {
+        Self {
+            sql: sql.into(),
+            params,
+        }
+    }
+}
+
 impl Database {
     pub fn new(url: String, token: String) -> Result<Self, reqwest::Error> {
         Ok(Self {
@@ -41,6 +55,33 @@ impl Database {
         sql: &str,
         params: &[String],
     ) -> Result<Vec<T>, connectrpc::ConnectError> {
+        let body = self
+            .send(serde_json::json!({"sql":sql,"params":params}))
+            .await?;
+        decode(body).ok_or_else(|| connectrpc::ConnectError::internal("Database request failed."))
+    }
+
+    pub async fn batch(
+        &self,
+        statements: &[Statement],
+    ) -> Result<Vec<Vec<serde_json::Value>>, connectrpc::ConnectError> {
+        let start = Instant::now();
+        let result = match self.send(serde_json::json!({"batch":statements})).await {
+            Ok(body) => decode_batch(body, statements.len())
+                .ok_or_else(|| connectrpc::ConnectError::internal("Database transaction failed.")),
+            Err(error) => Err(error),
+        };
+        eprintln!(
+            "{}",
+            serde_json::json!({"event":"database","duration_ms":start.elapsed().as_millis(),"ok":result.is_ok()})
+        );
+        result
+    }
+
+    async fn send(
+        &self,
+        payload: serde_json::Value,
+    ) -> Result<serde_json::Value, connectrpc::ConnectError> {
         let unavailable = || {
             connectrpc::ConnectError::unavailable(
                 "Database temporarily unavailable. Retry the same action.",
@@ -52,7 +93,7 @@ impl Database {
             .http
             .post(&self.url)
             .bearer_auth(&self.token)
-            .json(&serde_json::json!({"sql":sql,"params":params}))
+            .json(&payload)
             .send()
             .await
             .map_err(|_| unavailable())?;
@@ -62,12 +103,17 @@ impl Database {
         if !response.status().is_success() {
             return Err(failed());
         }
-        let body: serde_json::Value = response.json().await.map_err(|_| failed())?;
-        decode(body).ok_or_else(failed)
+        response.json().await.map_err(|_| failed())
     }
 }
 
 fn decode<T: DeserializeOwned>(body: serde_json::Value) -> Option<Vec<T>> {
+    decode_batch(body, 1)?.pop()
+}
+fn decode_batch<T: DeserializeOwned>(
+    body: serde_json::Value,
+    expected: usize,
+) -> Option<Vec<Vec<T>>> {
     if !body.get("success")?.as_bool()?
         || body
             .get("errors")
@@ -77,16 +123,20 @@ fn decode<T: DeserializeOwned>(body: serde_json::Value) -> Option<Vec<T>> {
         return None;
     }
     let results = body.get("result")?.as_array()?;
-    if results.len() != 1 {
+    if results.len() != expected || expected == 0 {
         return None;
     }
-    let statement = &results[0];
-    if !statement.get("success")?.as_bool()?
-        || statement.get("error").is_some_and(|error| !error.is_null())
-    {
-        return None;
-    }
-    serde_json::from_value(statement.get("results")?.clone()).ok()
+    results
+        .iter()
+        .map(|statement| {
+            if !statement.get("success")?.as_bool()?
+                || statement.get("error").is_some_and(|error| !error.is_null())
+            {
+                return None;
+            }
+            serde_json::from_value(statement.get("results")?.clone()).ok()
+        })
+        .collect()
 }
 
 #[cfg(test)]

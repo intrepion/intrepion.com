@@ -1,5 +1,6 @@
 import { Code, ConnectError, createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
+import { ListService } from "../gen/life/v1/lists_pb";
 import { TaskService } from "../gen/life/v1/tasks_pb";
 
 export class HttpError extends Error {
@@ -19,21 +20,20 @@ export function needsLogin(error: unknown): boolean {
 export class Api {
   csrf = "";
   readonly tasks;
+  readonly lists;
   constructor(readonly origin: string) {
-    this.tasks = createClient(
-      TaskService,
-      createConnectTransport({
-        baseUrl: origin,
-        fetch: (input, init) =>
-          fetch(input, { ...init, credentials: "include" }),
-        interceptors: [
-          (next) => async (request) => {
-            request.header.set("x-csrf-token", this.csrf);
-            return next(request);
-          },
-        ],
-      }),
-    );
+    const transport = createConnectTransport({
+      baseUrl: origin,
+      fetch: (input, init) => fetch(input, { ...init, credentials: "include" }),
+      interceptors: [
+        (next) => async (request) => {
+          request.header.set("x-csrf-token", this.csrf);
+          return next(request);
+        },
+      ],
+    });
+    this.tasks = createClient(TaskService, transport);
+    this.lists = createClient(ListService, transport);
   }
   async request<T>(path: string, body?: unknown): Promise<T> {
     const response = await fetch(this.origin + path, {

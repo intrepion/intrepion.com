@@ -1,0 +1,97 @@
+---
+import "../styles/everyday.css";
+import googleMark from "../../../design/mvp-1/assets/google-g.png?url";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="color-scheme" content="light" />
+    <title>Everyday lists · local prototype</title>
+  </head>
+  <body>
+    <aside class="review-tools" aria-label="Prototype review controls">
+      <div class="review-top">
+        <div>
+          <strong>MVP 2 · Prototype</strong><p>
+            Do these everyday workflows feel right? Synthetic data, simulated
+            sign-in, no server. Reload resets everything.
+          </p>
+        </div><button id="reset-demo" type="button">Reset demo</button>
+      </div>
+      <details>
+        <summary>Review scenarios and simulated state</summary>
+        <div class="review-options">
+          <label
+            >Scenario<select id="scenario"
+              ><option value="shopping">Shopping</option><option value="travel"
+                >Travel</option
+              ><option value="cooking">Cooking</option><option value="empty"
+                >Empty lists</option
+              ><option value="recovery">Archive and Trash</option><option
+                value="loading">Cold start / loading</option
+              ><option value="unavailable">List unavailable</option><option
+                value="expired">Expire session (keep draft)</option
+              ><option value="denied">Access denied</option></select
+            ></label
+          >
+          <button id="show-scenario" type="button">Show scenario</button>
+          <label
+            >Next save<select id="next-result"
+              ><option value="success">Succeeds</option><option value="failure"
+                >Fails before saving</option
+              ><option value="lost">Saves, response lost</option><option
+                value="conflict">Another tab changes this collection</option
+              ><option value="expired">Session expires before saving</option
+              ></select
+            ></label
+          >
+          <label
+            >Response delay<select id="delay"
+              ><option value="200">Normal</option><option value="1600"
+                >Slow</option
+              ></select
+            ></label
+          >
+        </div>
+        <p class="walkthrough">
+          Shopping: check Milk, reset purchases. Travel: start two runs,
+          customize one. Cooking: check steps, finish and reopen. Recovery: view
+          history, trash, restore, then erase. Select a next-save outcome to
+          explore retry or conflict behavior.
+        </p>
+        <details>
+          <summary>Inspect simulated state</summary><pre id="state-inspector">
+          </pre>
+        </details>
+        <p>
+          <a href="/">MVP 1 prototype</a> · All prototype code is throwaway and separate
+          from production.
+        </p>
+      </details>
+    </aside>
+    <main id="everyday-app" data-google-mark={googleMark}>
+      <noscript>Enable JavaScript to try this local prototype.</noscript>
+    </main>
+    <p
+      id="announcement"
+      class="sr-only"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+    </p>
+    <dialog
+      id="everyday-dialog"
+      aria-labelledby="dialog-title"
+      aria-describedby="dialog-description"
+    >
+    </dialog>
+    <script>
+      import "../scripts/everyday";
+    </script>
+  </body>
+</html>

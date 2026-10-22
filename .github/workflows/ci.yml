@@ -25,7 +25,7 @@ jobs:
       - name: Install build prerequisites
         run: |
           sudo apt-get update
-          sudo apt-get install -y protobuf-compiler cmake
+          sudo apt-get install -y protobuf-compiler cmake age
           rustup show
       - run: npm ci
       - run: npm --prefix web ci
@@ -44,6 +44,7 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: node scripts/backups.test.mjs
+      - run: npm run test:recovery
       - run: node --test scripts/probe.test.mjs
       - run: npm --prefix web run check
       - run: npm --prefix web run test:unit

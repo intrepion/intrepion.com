@@ -52,6 +52,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.D1_MIGRATION_TOKEN }}
           D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
         run: |
+          node scripts/mvp2-deploy-preflight.mjs
           node scripts/cloud-config.mjs
           ./node_modules/.bin/wrangler d1 migrations apply DB --remote --config server/wrangler.production.json
       - name: Deploy and confirm API revision

@@ -1,6 +1,7 @@
 import { create } from "@bufbuild/protobuf";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { TaskSchema, type Task } from "../gen/life/v1/tasks_pb";
+import { Everyday } from "./everyday";
 import { Api, HttpError, needsLogin } from "../lib/api";
 import { ordered, validate, type Fields } from "../lib/model";
 
@@ -58,16 +59,26 @@ function setBusy(value: boolean) {
   get("app").setAttribute("aria-busy", String(value));
   get("app")
     .querySelectorAll<
-      HTMLButtonElement | HTMLInputElement | HTMLTextAreaElement
-    >("button,input,textarea")
+      | HTMLButtonElement
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | HTMLSelectElement
+    >("button,input,textarea,select")
     .forEach((element) => {
-      element.disabled = value;
+      if (value && !element.disabled) {
+        element.dataset.busyDisabled = "true";
+        element.disabled = true;
+      } else if (!value && element.dataset.busyDisabled) {
+        element.disabled = false;
+        delete element.dataset.busyDisabled;
+      }
     });
 }
-function view(name: "status" | "list" | "editor") {
-  for (const candidate of ["status", "list", "editor"])
+function view(name: "status" | "list" | "editor" | "everyday") {
+  for (const candidate of ["status", "list", "editor", "everyday"])
     show(`${candidate}-view`, candidate === name);
   show("account", authenticated);
+  show("main-nav", authenticated);
 }
 function status(title: string, description: string, loading = false) {
   view("status");
@@ -130,21 +141,26 @@ function row(task: Task): HTMLElement {
   edit.addEventListener("click", () => openEditor(task));
   const remove = document.createElement("button");
   remove.className = "quiet delete";
-  remove.textContent = "Delete";
-  remove.setAttribute("aria-label", `Delete task: ${task.title}`);
+  remove.textContent = "Move to Trash";
+  remove.setAttribute("aria-label", `Move task to Trash: ${task.title}`);
   remove.addEventListener("click", async () => {
     if (
       await confirm(
-        "Delete this task?",
-        "This permanently removes the task. You cannot undo this action.",
-        "Delete task",
+        "Move this task to Trash?",
+        "Its history is retained. You can restore this task from Trash.",
+        "Move to Trash",
         "Cancel",
         task.title,
       )
     )
       await mutate({ kind: "delete", id: task.id, revision: task.revision });
   });
-  actions.append(edit, remove);
+  const history = document.createElement("button");
+  history.className = "quiet";
+  history.textContent = "History";
+  history.setAttribute("aria-label", `Task history: ${task.title}`);
+  history.addEventListener("click", () => void everyday.taskHistory(task.id));
+  actions.append(edit, history, remove);
   article.append(toggle, copy, actions);
   return article;
 }
@@ -223,6 +239,7 @@ async function confirm(
       "close",
       () => {
         if (previous?.isConnected) previous.focus();
+        text("confirm-task", "");
         resolve(dialog.returnValue === "accept");
       },
       { once: true },
@@ -253,6 +270,7 @@ async function leaveEditor() {
 }
 function expired() {
   authenticated = false;
+  everyday.suspend();
   api.csrf = "";
   status(
     "Your session has expired",
@@ -285,7 +303,7 @@ async function mutate(action: Action) {
     pending = undefined;
     editor = undefined;
     renderList();
-    announce(action.kind === "delete" ? "Task deleted." : "Task saved.");
+    announce(action.kind === "delete" ? "Task moved to Trash." : "Task saved.");
     get("list-view").querySelector<HTMLElement>("h1")?.focus();
   } catch (error) {
     if (needsLogin(error)) {
@@ -310,7 +328,9 @@ async function loadTasks() {
     tasks = ordered(
       (await api.tasks.listTasks({}, { timeoutMs: 90000 })).tasks,
     );
-    if (editor) {
+    if (everyday.active) {
+      everyday.resume();
+    } else if (editor) {
       renderEditor();
       focus("title");
     } else {
@@ -470,7 +490,7 @@ get("task-form").addEventListener("submit", (event) => {
 get("sign-out").addEventListener("click", async () => {
   if (busy) return;
   if (
-    dirty() &&
+    (dirty() || everyday.dirty()) &&
     !(await confirm(
       "Discard your changes?",
       "Signing out discards this unsaved draft.",
@@ -487,6 +507,7 @@ get("sign-out").addEventListener("click", async () => {
     editor = undefined;
     pending = undefined;
     tasks = [];
+    everyday.reset();
     window.google?.accounts.id.disableAutoSelect();
     await signInView();
   } catch (error) {
@@ -495,6 +516,7 @@ get("sign-out").addEventListener("click", async () => {
       editor = undefined;
       pending = undefined;
       tasks = [];
+      everyday.reset();
       await signInView();
     } else {
       announce("Sign-out could not be confirmed. Try again.");
@@ -510,6 +532,53 @@ get("sign-out").addEventListener("click", async () => {
   }
 });
 window.addEventListener("beforeunload", (event) => {
-  if (dirty() || busy) event.preventDefault();
+  if (dirty() || everyday.dirty() || busy) event.preventDefault();
+});
+const everyday = new Everyday(get("everyday-view"), api, {
+  show: () => view("everyday"),
+  busy: setBusy,
+  expired,
+  confirm,
+  announce,
+});
+async function navigateEveryday(
+  kind: "shopping" | "checklists" | "archive" | "trash",
+) {
+  if (busy) return;
+  if (
+    dirty() &&
+    !(await confirm(
+      "Discard your changes?",
+      "Your unsaved changes will be lost.",
+      "Discard changes",
+      "Keep editing",
+    ))
+  )
+    return;
+  if (!(await everyday.leave())) return;
+  editor = undefined;
+  pending = undefined;
+  await everyday.open(kind);
+}
+get("nav-archive").addEventListener(
+  "click",
+  () => void navigateEveryday("archive"),
+);
+get("nav-trash").addEventListener(
+  "click",
+  () => void navigateEveryday("trash"),
+);
+get("nav-checklists").addEventListener(
+  "click",
+  () => void navigateEveryday("checklists"),
+);
+get("nav-shopping").addEventListener(
+  "click",
+  () => void navigateEveryday("shopping"),
+);
+get("nav-tasks").addEventListener("click", async () => {
+  if (busy || !(await everyday.leave())) return;
+  everyday.reset();
+  await leaveEditor();
 });
 void loadTasks();

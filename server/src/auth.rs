@@ -19,6 +19,7 @@ pub type SharedAuth = Arc<Auth>;
 pub struct Auth {
     pub config: Config,
     pub db: Database,
+    pub(crate) erasure_ledger: Option<crate::erasure_ledger::ErasureLedger>,
     http: reqwest::Client,
     keys: Mutex<Option<(Instant, Duration, JwkSet)>>,
     login_limit: Mutex<LoginLimiter>,
@@ -101,10 +102,35 @@ fn cookie<'a>(headers: &'a HeaderMap, name: &str) -> Option<&'a str> {
 }
 
 impl Auth {
+    pub async fn authorize_rpc(
+        &self,
+        ctx: &connectrpc::RequestContext,
+    ) -> Result<(), connectrpc::ConnectError> {
+        self.session(ctx.headers(), true)
+            .await
+            .map(|_| ())
+            .map_err(|error| match error.0 {
+                StatusCode::UNAUTHORIZED => {
+                    connectrpc::ConnectError::unauthenticated("Please sign in again.")
+                }
+                StatusCode::FORBIDDEN => connectrpc::ConnectError::permission_denied(
+                    "Owner session and CSRF token required.",
+                ),
+                _ => connectrpc::ConnectError::unavailable(
+                    "Session service temporarily unavailable.",
+                ),
+            })
+    }
     pub fn new(config: Config, db: Database) -> Result<SharedAuth, reqwest::Error> {
+        let erasure_ledger = config
+            .erasure_ledger
+            .clone()
+            .map(crate::erasure_ledger::ErasureLedger::new)
+            .transpose()?;
         Ok(Arc::new(Self {
             config,
             db,
+            erasure_ledger,
             http: reqwest::Client::builder()
                 .timeout(Duration::from_secs(8))
                 .redirect(reqwest::redirect::Policy::none())
@@ -280,7 +306,7 @@ impl Auth {
 
 pub async fn configuration(State(auth): State<SharedAuth>) -> Json<serde_json::Value> {
     Json(
-        serde_json::json!({"google_client_id":auth.config.google_client_id,"development":auth.config.local}),
+        serde_json::json!({"google_client_id":auth.config.google_client_id,"development":auth.config.local,"erasure_storage_configured":auth.erasure_ledger.is_some(),"schema_version":2}),
     )
 }
 pub async fn challenge(

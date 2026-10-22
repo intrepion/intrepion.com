@@ -50,6 +50,65 @@ export function verifySql(sql) {
         );
       }
     }
+    if (
+      db
+        .prepare(
+          "SELECT 1 FROM sqlite_master WHERE type='table' AND name='collections'",
+        )
+        .get()
+    ) {
+      for (const query of [
+        "SELECT owner_sub,id,kind,title,notes,completed,archived,trashed,finished,revision,sequence,source_id,source_title,last_operation FROM collections LIMIT 1",
+        "SELECT owner_sub,collection_id,id,title,notes,quantity,section_id,completed,trashed,position FROM list_items LIMIT 1",
+        "SELECT owner_sub,collection_id,id,title,position FROM list_sections LIMIT 1",
+        "SELECT owner_sub,collection_id,operation_id,target_id,target_title,action,occurred_at,before_json,after_json FROM collection_history LIMIT 1",
+        "SELECT owner_sub,operation_id,collection_id,fingerprint,erased_scope FROM collection_operations LIMIT 1",
+        "SELECT kind,id FROM retired_list_ids LIMIT 1",
+        "SELECT owner_sub,collection_id,operation_id,fingerprint,expected_revision,target_id,scope FROM erasure_intents LIMIT 1",
+      ])
+        db.prepare(query).all();
+      for (const name of [
+        "no_retired_collection",
+        "no_retired_item",
+        "no_retired_section",
+        "intent_requires_unused_operation",
+        "receipt_requires_matching_intent",
+        "tasks_replaced_insert",
+        "tasks_replaced_update",
+        "tasks_replaced_delete",
+        "distinct_collection_identity",
+        "distinct_item_identity",
+        "distinct_section_identity",
+      ]) {
+        if (
+          !db
+            .prepare(
+              "SELECT 1 FROM sqlite_master WHERE type='trigger' AND name=?",
+            )
+            .get(name)
+        )
+          throw new Error(
+            "Backup is missing MVP 2 erasure or migration protection.",
+          );
+      }
+      if (
+        db.prepare("PRAGMA foreign_key_check").all().length ||
+        db.prepare("SELECT 1 FROM tasks LIMIT 1").get() ||
+        db
+          .prepare(
+            "SELECT 1 FROM list_items i WHERE trashed=0 AND section_id<>'' AND NOT EXISTS(SELECT 1 FROM list_sections s WHERE s.owner_sub=i.owner_sub AND s.collection_id=i.collection_id AND s.id=i.section_id) LIMIT 1",
+          )
+          .get() ||
+        db
+          .prepare(
+            "SELECT 1 FROM retired_list_ids r WHERE (kind='collection' AND EXISTS(SELECT 1 FROM collections WHERE id=r.id)) OR (kind='item' AND EXISTS(SELECT 1 FROM list_items WHERE id=r.id)) OR (kind='section' AND EXISTS(SELECT 1 FROM list_sections WHERE id=r.id)) LIMIT 1",
+          )
+          .get()
+      )
+        throw new Error(
+          "Backup contains invalid MVP 2 relationships or resurrected content.",
+        );
+    }
   } finally {
     db.close();
   }

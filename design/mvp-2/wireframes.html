@@ -1,0 +1,1375 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MVP 2 Everyday lists — wireframes</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #eee;
+        color: #222;
+        font:
+          15px/1.5 system-ui,
+          sans-serif;
+      }
+      header,
+      main,
+      footer {
+        max-width: 1320px;
+        margin: auto;
+        padding: 28px;
+      }
+      h1 {
+        font-size: 32px;
+        line-height: 1.2;
+      }
+      h2 {
+        font-size: 19px;
+      }
+      h3 {
+        font-size: 24px;
+        margin: 0 0 12px;
+      }
+      h4 {
+        font-size: 15px;
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 6px;
+        margin: 24px 0 4px;
+      }
+      p {
+        margin: 8px 0;
+      }
+      a {
+        color: inherit;
+        text-underline-offset: 3px;
+      }
+      header nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 20px;
+        margin-top: 24px;
+      }
+      header nav a {
+        font-size: 13px;
+      }
+      .eyebrow {
+        font: 12px monospace;
+        text-transform: uppercase;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 30px;
+      }
+      .board {
+        min-width: 0;
+        scroll-margin-top: 16px;
+      }
+      .screen {
+        background: white;
+        border: 2px solid #444;
+        min-height: 440px;
+        overflow-wrap: anywhere;
+      }
+      .brand {
+        padding: 16px 20px;
+        border-bottom: 1px solid #aaa;
+        font-weight: 700;
+      }
+      .brand small {
+        font-weight: 400;
+        display: inline-block;
+        margin-left: 10px;
+      }
+      .app-nav {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 12px 20px;
+        gap: 8px;
+        border-bottom: 1px solid #aaa;
+      }
+      .nav-item {
+        padding: 6px 10px;
+        border: 1px solid transparent;
+      }
+      .selected {
+        border-color: #444;
+        font-weight: 700;
+        background: #eee;
+      }
+      .content {
+        padding: 20px;
+      }
+      .utility {
+        padding: 14px 20px;
+        border-top: 1px solid #aaa;
+        font-size: 12px;
+      }
+      .heading {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .button {
+        display: inline-block;
+        border: 1px solid #555;
+        background: #f6f6f6;
+        padding: 9px 12px;
+        min-height: 42px;
+        font-size: 13px;
+        max-width: 100%;
+        text-align: center;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 16px 0;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        padding: 14px 0;
+        border-bottom: 1px solid #ccc;
+      }
+      .row-content {
+        min-width: 0;
+        flex: 1;
+      }
+      .check {
+        border: 1px solid #555;
+        width: 22px;
+        height: 22px;
+        flex-shrink: 0;
+        text-align: center;
+      }
+      .muted,
+      .tools {
+        font-size: 13px;
+        color: #555;
+      }
+      .tools {
+        display: block;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .field-label {
+        font-weight: 600;
+        margin: 18px 0 6px;
+      }
+      .field {
+        border: 1px solid #777;
+        padding: 12px;
+        min-height: 46px;
+      }
+      .banner {
+        border: 1px dashed #555;
+        background: #f5f5f5;
+        padding: 12px;
+        margin: 16px 0;
+      }
+      .note {
+        font-size: 13px;
+        border-left: 2px dashed #888;
+        padding: 10px 12px;
+        margin-top: 10px;
+      }
+      .mobile {
+        width: 360px;
+        max-width: 100%;
+        margin: auto;
+      }
+      .mobile .content {
+        padding: 16px;
+      }
+      .mobile .actions .button {
+        flex: 1 1 115px;
+      }
+      .tabs {
+        border-bottom: 1px solid #aaa;
+        padding: 12px 0;
+        margin-bottom: 12px;
+      }
+      .compare {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .compare > div {
+        border: 1px solid #aaa;
+        padding: 12px;
+        min-width: 0;
+      }
+      .skeleton {
+        background: #eee;
+        border: 1px dashed #aaa;
+        padding: 32px 16px;
+        color: #555;
+      }
+      hr {
+        border: 0;
+        border-top: 1px solid #bbb;
+        margin: 24px 0;
+      }
+      footer {
+        border-top: 1px solid #aaa;
+      }
+      @media (max-width: 850px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        header,
+        main,
+        footer {
+          padding: 18px;
+        }
+      }
+      @media (max-width: 400px) {
+        .compare {
+          grid-template-columns: 1fr;
+        }
+        .brand {
+          padding: 12px;
+        }
+        .app-nav {
+          padding: 10px;
+          gap: 4px;
+        }
+        .content {
+          padding: 14px;
+        }
+      }
+      @media print {
+        header nav {
+          display: none;
+        }
+        .board {
+          break-inside: avoid;
+        }
+        body {
+          background: white;
+        }
+        .grid {
+          display: block;
+        }
+        .board {
+          margin-bottom: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="eyebrow">Design gate 1 · Approved by owner</div>
+      <h1>Everyday lists</h1>
+      <p>
+        Shopping, travel, and cooking: reusable lists with a recoverable
+        history.
+      </p>
+      <p>
+        Static grayscale wireframes. Review structure, actions, and transitions;
+        controls pictured inside screens are illustrative. Use the index links
+        to navigate.
+      </p>
+      <p>
+        All examples are synthetic. No scripts, external assets, login, server,
+        or saved data.
+      </p>
+      <nav aria-label="Wireframe index">
+        <a href="#shopping-index">01 Shopping lists</a
+        ><a href="#shopping-detail">02 Shopping: check and reuse</a
+        ><a href="#shopping-mobile">03 Shopping on a phone</a
+        ><a href="#item-form">04 Create/edit details and items</a
+        ><a href="#template-index">05 Checklist templates</a
+        ><a href="#template-edit">06 Cooking template</a
+        ><a href="#start-run">07 Start an independent run</a
+        ><a href="#run-index">08 Active and finished runs</a
+        ><a href="#active-run">09 Use and customize a run</a
+        ><a href="#run-mobile">10 Cooking run on a phone</a
+        ><a href="#finish-run">11 Finish and reopen</a
+        ><a href="#organize">12 Sections and ordering</a
+        ><a href="#tasks">13 Existing personal tasks</a
+        ><a href="#history">14 History: current and previous values</a
+        ><a href="#archive">15 Archive</a
+        ><a href="#trash">16 Trash and restoration</a
+        ><a href="#confirmations">17 Trash, archive, and reset confirmations</a
+        ><a href="#erase">18 Permanent erasure: scope warning</a
+        ><a href="#empty">19 Empty states</a
+        ><a href="#loading-error">20 Loading and connection failure</a
+        ><a href="#conflict">21 Save conflict and retained draft</a
+        ><a href="#session-validation"
+          >22 Sign-in, validation, and leaving a form</a
+        >
+      </nav>
+    </header>
+    <main class="grid">
+      <section class="board" id="shopping-index">
+        <h2>01 — Shopping lists</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item selected">Shopping</span
+            ><span class="nav-item">Checklists</span>
+          </div>
+          <div class="content">
+            <div class="heading">
+              <h3>Shopping</h3>
+              <span class="button">New shopping list</span>
+            </div>
+            <div class="row">
+              <div class="row-content">
+                <strong>Groceries</strong>
+                <p class="muted">6 needed · 3 purchased</p>
+                <span class="tools"
+                  >Open · Edit details · Archive · Move to Trash</span
+                >
+              </div>
+            </div>
+            <div class="row">
+              <div class="row-content">
+                <strong>Hardware</strong>
+                <p class="muted">2 needed</p>
+                <span class="tools"
+                  >Open · Edit details · Archive · Move to Trash</span
+                >
+              </div>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Lists sort alphabetically. Open a list to work with items. New
+          shopping list uses screen 04 with a name and optional collection
+          notes.
+        </p>
+      </section>
+      <section class="board" id="shopping-detail">
+        <h2>02 — Shopping: check and reuse</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item selected">Shopping</span
+            ><span class="nav-item">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Groceries</h3>
+            <p>For the weekend · Collection notes</p>
+            <div class="actions">
+              <span class="button">Edit details</span
+              ><span class="button">History</span
+              ><span class="button">Archive</span
+              ><span class="button">Move to Trash</span>
+            </div>
+            <div class="actions">
+              <span class="button">Add item</span
+              ><span class="button">Add section</span
+              ><span class="button">Organize</span>
+            </div>
+            <h4>Produce · Section menu</h4>
+            <div class="row">
+              <span class="check"></span>
+              <div class="row-content">
+                <strong>Apples</strong>
+                <p class="muted">6 · For lunchboxes</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <div class="row">
+              <span class="check">✓</span>
+              <div class="row-content">
+                <strong>Carrots</strong>
+                <p class="muted">1 bag · Purchased</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <h4>Dairy · Section menu</h4>
+            <div class="row">
+              <span class="check"></span>
+              <div class="row-content">
+                <strong>Milk</strong>
+                <p class="muted">2 cartons · Oat milk</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <div class="row">
+              <span class="check">✓</span>
+              <div class="row-content">
+                <strong>Yogurt</strong>
+                <p class="muted">1 tub · Purchased</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <h4>Unsectioned</h4>
+            <div class="row">
+              <span class="check"></span>
+              <div class="row-content">
+                <strong>Batteries</strong>
+                <p class="muted">AA · 1 pack</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <div class="actions">
+              <span class="button">Mark all purchased items as needed</span>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Check/uncheck saves after server acknowledgement. Needed items precede
+          purchased items within each section; underlying manual positions
+          survive status changes. Bulk reset opens screen 17.
+        </p>
+      </section>
+      <section class="board" id="shopping-mobile">
+        <h2>03 — Shopping on a phone</h2>
+        <article class="screen mobile">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item selected">Shopping</span
+            ><span class="nav-item">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Groceries</h3>
+            <p>For the weekend · Collection notes</p>
+            <div class="actions">
+              <span class="button">Edit details</span
+              ><span class="button">History</span
+              ><span class="button">Archive</span
+              ><span class="button">Move to Trash</span>
+            </div>
+            <div class="actions">
+              <span class="button">Add item</span
+              ><span class="button">Add section</span
+              ><span class="button">Organize</span>
+            </div>
+            <h4>Produce · Section menu</h4>
+            <div class="row">
+              <span class="check"></span>
+              <div class="row-content">
+                <strong>Apples</strong>
+                <p class="muted">6 · For lunchboxes</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <div class="row">
+              <span class="check">✓</span>
+              <div class="row-content">
+                <strong>Carrots</strong>
+                <p class="muted">1 bag · Purchased</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <h4>Dairy · Section menu</h4>
+            <div class="row">
+              <span class="check"></span>
+              <div class="row-content">
+                <strong>Milk</strong>
+                <p class="muted">2 cartons · Oat milk</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <div class="row">
+              <span class="check">✓</span>
+              <div class="row-content">
+                <strong>Yogurt</strong>
+                <p class="muted">1 tub · Purchased</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <h4>Unsectioned</h4>
+            <div class="row">
+              <span class="check"></span>
+              <div class="row-content">
+                <strong>Batteries</strong>
+                <p class="muted">AA · 1 pack</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <div class="actions">
+              <span class="button">Mark all purchased items as needed</span>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Phone layout stacks actions and wraps names/quantities. Purchased
+          items stay visible in their section. Controls must be usable by touch
+          and keyboard; no swipe-only actions.
+        </p>
+      </section>
+      <section class="board" id="item-form">
+        <h2>04 — Create/edit details and items</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item selected">Shopping</span
+            ><span class="nav-item">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Edit shopping item</h3>
+            <div class="field-label">Name *</div>
+            <div class="field">Milk</div>
+            <p class="muted">Required · up to 200 characters</p>
+            <div class="field-label">Quantity (optional)</div>
+            <div class="field">2 cartons</div>
+            <p class="muted">Free text · up to 100 characters</p>
+            <div class="field-label">Notes (optional)</div>
+            <div class="field">Oat milk</div>
+            <p class="muted">Plain text · up to 10,000 characters</p>
+            <div class="field-label">Section</div>
+            <div class="field">Dairy</div>
+            <p class="muted">Choose an existing section or Unsectioned</p>
+            <div class="actions">
+              <span class="button">Cancel</span
+              ><span class="button">Save item</span>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Dedicated forms on desktop and phone. Checklist items omit Quantity;
+          task forms retain Title and Notes. Collection forms use Name and
+          Notes. Whitespace-only required fields show inline errors. Leaving a
+          changed form asks whether to discard its draft.
+        </p>
+      </section>
+      <section class="board" id="template-index">
+        <h2>05 — Checklist templates</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item">Shopping</span
+            ><span class="nav-item selected">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Checklists</h3>
+            <div class="tabs"><strong>Templates</strong> · Runs</div>
+            <div class="actions"><span class="button">New template</span></div>
+            <div class="row">
+              <div class="row-content">
+                <strong>Camping packing</strong>
+                <p class="muted">12 items · 3 sections</p>
+                <span class="tools"
+                  >Open · Start run · Archive · Move to Trash</span
+                >
+              </div>
+            </div>
+            <div class="row">
+              <div class="row-content">
+                <strong>Pasta dinner</strong>
+                <p class="muted">7 items · 2 sections</p>
+                <span class="tools"
+                  >Open · Start run · Archive · Move to Trash</span
+                >
+              </div>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Templates sort alphabetically. No automatic recipe import, template
+          duplication, or conversion of a run back into a template. Empty
+          templates may be saved, but cannot start a run.
+        </p>
+      </section>
+      <section class="board" id="template-edit">
+        <h2>06 — Cooking template</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item">Shopping</span
+            ><span class="nav-item selected">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Pasta dinner</h3>
+            <p>
+              Serves our usual table. Quantities are written into ingredient
+              titles or notes.
+            </p>
+            <div class="actions">
+              <span class="button">Edit details</span
+              ><span class="button">Start run</span
+              ><span class="button">History</span
+              ><span class="button">Archive</span
+              ><span class="button">Move to Trash</span>
+            </div>
+            <div class="actions">
+              <span class="button">Add item</span
+              ><span class="button">Add section</span
+              ><span class="button">Organize</span>
+            </div>
+            <h4>Ingredients · Section menu</h4>
+            <div class="row">
+              <div class="row-content">
+                <strong>Pasta — 400 g</strong>
+                <p class="muted">Use the large pot</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row-content">
+                <strong>Tomatoes — 1 tin</strong>
+                <p class="muted"></p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <h4>Preparation · Section menu</h4>
+            <div class="row">
+              <div class="row-content">
+                <strong>Boil the water</strong>
+                <p class="muted">Salt before adding pasta</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row-content">
+                <strong>Simmer the sauce</strong>
+                <p class="muted">Stir occasionally</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Template items have no checked state. Travel templates use the same
+          structure. Editing this template changes future runs only. Names/notes
+          use screen 04; sections and ordering use screen 12.
+        </p>
+      </section>
+      <section class="board" id="start-run">
+        <h2>07 — Start an independent run</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item">Shopping</span
+            ><span class="nav-item selected">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Start checklist run</h3>
+            <p>From: Camping packing</p>
+            <div class="field-label">Run name *</div>
+            <div class="field">Camping packing — 2026-10-24</div>
+            <p class="muted">
+              Suggested template name and local calendar date; editable
+            </p>
+            <div class="banner">
+              Copies the current sections, items, and notes. Every item starts
+              unchecked. Existing runs and the template stay unchanged.
+            </div>
+            <div class="actions">
+              <span class="button">Cancel</span
+              ><span class="button">Start run</span>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Run creation is one logical operation. A failed or uncertain response
+          keeps the chosen name; retry must not create a second run. Multiple
+          active runs may use the same template.
+        </p>
+      </section>
+      <section class="board" id="run-index">
+        <h2>08 — Active and finished runs</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item">Shopping</span
+            ><span class="nav-item selected">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Checklist runs</h3>
+            <div class="tabs">Templates · <strong>Runs</strong></div>
+            <div class="tabs"><strong>Active</strong> · Finished</div>
+            <div class="row">
+              <div class="row-content">
+                <strong>November camping trip</strong>
+                <p class="muted">4 of 12 complete · From Camping packing</p>
+                <span class="tools">Open · Archive · Move to Trash</span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row-content">
+                <strong>Pasta dinner — 2026-10-24</strong>
+                <p class="muted">2 of 4 complete</p>
+                <span class="tools">Open · Archive · Move to Trash</span>
+              </div>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Newest-created first. Finished view uses the same listing with
+          finished badges. Start runs from Templates; do not imply a blank-run
+          or duplicate-run feature.
+        </p>
+      </section>
+      <section class="board" id="active-run">
+        <h2>09 — Use and customize a run</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item">Shopping</span
+            ><span class="nav-item selected">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Pasta dinner — 2026-10-24</h3>
+            <p>2 of 4 complete · Active</p>
+            <div class="actions">
+              <span class="button">Edit details</span
+              ><span class="button">History</span
+              ><span class="button">Archive</span
+              ><span class="button">Move to Trash</span>
+            </div>
+            <div class="actions">
+              <span class="button">Add item</span
+              ><span class="button">Add section</span
+              ><span class="button">Organize</span>
+            </div>
+            <h4>Ingredients</h4>
+            <div class="row">
+              <span class="check">✓</span>
+              <div class="row-content">
+                <strong>Pasta — 400 g</strong>
+                <p class="muted">Use the large pot</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <div class="row">
+              <span class="check">✓</span>
+              <div class="row-content">
+                <strong>Tomatoes — 1 tin</strong>
+                <p class="muted"></p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <h4>Preparation</h4>
+            <div class="row">
+              <span class="check"></span>
+              <div class="row-content">
+                <strong>Boil the water</strong>
+                <p class="muted">Salt before adding pasta</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <div class="row">
+              <span class="check"></span>
+              <div class="row-content">
+                <strong>Simmer the sauce</strong>
+                <p class="muted">Stir occasionally</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <div class="actions"><span class="button">Finish run</span></div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Checked items stay in place. All non-trashed items count equally;
+          sections do not count. Customize this run without affecting its
+          template. Finish is explicit, even when every item is checked.
+        </p>
+      </section>
+      <section class="board" id="run-mobile">
+        <h2>10 — Cooking run on a phone</h2>
+        <article class="screen mobile">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item">Shopping</span
+            ><span class="nav-item selected">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Pasta dinner — 2026-10-24</h3>
+            <p>2 of 4 complete · Active</p>
+            <div class="actions">
+              <span class="button">Edit details</span
+              ><span class="button">History</span
+              ><span class="button">Archive</span
+              ><span class="button">Move to Trash</span>
+            </div>
+            <div class="actions">
+              <span class="button">Add item</span
+              ><span class="button">Add section</span
+              ><span class="button">Organize</span>
+            </div>
+            <h4>Ingredients</h4>
+            <div class="row">
+              <span class="check">✓</span>
+              <div class="row-content">
+                <strong>Pasta — 400 g</strong>
+                <p class="muted">Use the large pot</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <div class="row">
+              <span class="check">✓</span>
+              <div class="row-content">
+                <strong>Tomatoes — 1 tin</strong>
+                <p class="muted"></p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <h4>Preparation</h4>
+            <div class="row">
+              <span class="check"></span>
+              <div class="row-content">
+                <strong>Boil the water</strong>
+                <p class="muted">Salt before adding pasta</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <div class="row">
+              <span class="check"></span>
+              <div class="row-content">
+                <strong>Simmer the sauce</strong>
+                <p class="muted">Stir occasionally</p>
+                <span class="tools">Edit · Move to Trash</span>
+              </div>
+            </div>
+            <div class="actions"><span class="button">Finish run</span></div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Keep ingredient and preparation order stable during use. Notes wrap
+          beneath each title. The prototype must demonstrate saving, error
+          feedback, and touch/keyboard access.
+        </p>
+      </section>
+      <section class="board" id="finish-run">
+        <h2>11 — Finish and reopen</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item">Shopping</span
+            ><span class="nav-item selected">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Finish this run?</h3>
+            <div class="banner">
+              2 of 4 items are still unchecked. Finish anyway?
+            </div>
+            <div class="actions">
+              <span class="button">Keep working</span
+              ><span class="button">Finish run</span>
+            </div>
+            <hr />
+            <h3>Pasta dinner — Finished</h3>
+            <p>2 of 4 complete · Read-only</p>
+            <div class="row">
+              <span class="check"></span>
+              <div class="row-content">
+                <strong>Boil the water</strong>
+                <p class="muted">Unchecked when finished</p>
+                <span class="tools"></span>
+              </div>
+            </div>
+            <div class="actions">
+              <span class="button">History</span
+              ><span class="button">Reopen run</span
+              ><span class="button">Archive</span
+              ><span class="button">Move to Trash</span>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Confirm when any items are unchecked. Finished content has no
+          edit/check controls until reopened. Finished runs remain distinct from
+          archived runs.
+        </p>
+      </section>
+      <section class="board" id="organize">
+        <h2>12 — Sections and ordering</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item selected">Shopping</span
+            ><span class="nav-item">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Organize Groceries</h3>
+            <h4>Produce</h4>
+            <div class="actions">
+              <span class="button">Move section up</span
+              ><span class="button">Move section down</span
+              ><span class="button">Rename section</span
+              ><span class="button">Remove section</span>
+            </div>
+            <div class="row">
+              <div class="row-content">
+                <strong>Apples</strong>
+                <p class="muted">Position within section</p>
+                <span class="tools"
+                  >Move up · Move down · Move to section…</span
+                >
+              </div>
+            </div>
+            <h4>Dairy</h4>
+            <div class="row">
+              <div class="row-content">
+                <strong>Milk</strong>
+                <p class="muted">Position within section</p>
+                <span class="tools"
+                  >Move up · Move down · Move to section…</span
+                >
+              </div>
+            </div>
+            <div class="actions"><span class="button">Done</span></div>
+            <hr />
+            <h4>Remove Dairy?</h4>
+            <p>
+              Move its items to Unsectioned, preserving their relative order.
+            </p>
+            <div class="actions">
+              <span class="button">Cancel</span
+              ><span class="button">Remove section</span>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Explicit move controls work without dragging. Shopping organization
+          exposes underlying manual order, with purchased/needed labels.
+          Removing a section preserves items. Each acknowledged action is saved;
+          Done returns to the list.
+        </p>
+      </section>
+      <section class="board" id="tasks">
+        <h2>13 — Existing personal tasks</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item selected">Tasks</span
+            ><span class="nav-item">Shopping</span
+            ><span class="nav-item">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Tasks</h3>
+            <div class="actions"><span class="button">New task</span></div>
+            <div class="row">
+              <span class="check"></span>
+              <div class="row-content">
+                <strong>Water the plants</strong>
+                <p class="muted"></p>
+                <span class="tools">Edit · History · Move to Trash</span>
+              </div>
+            </div>
+            <h4>Completed</h4>
+            <div class="row">
+              <span class="check">✓</span>
+              <div class="row-content">
+                <strong>Return library books</strong>
+                <p class="muted"></p>
+                <span class="tools">Edit · History · Move to Trash</span>
+              </div>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Preserve title/notes, complete/reopen, and
+          incomplete-first/newest-first ordering. Move to Trash replaces
+          permanent Delete. Existing tasks receive a migration baseline, without
+          invented earlier dates.
+        </p>
+      </section>
+      <section class="board" id="history">
+        <h2>14 — History: current and previous values</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item selected">Shopping</span
+            ><span class="nav-item">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Groceries · History</h3>
+            <div class="actions">
+              <span class="button">Back to Groceries</span>
+            </div>
+            <h4>24 Oct · 10:42 · Owner</h4>
+            <p><strong>Milk — Quantity changed</strong></p>
+            <div class="compare">
+              <div>Before<br />1 carton</div>
+              <div>After<br />2 cartons</div>
+            </div>
+            <h4>24 Oct · 10:40 · Owner</h4>
+            <p>Apples marked purchased → needed</p>
+            <h4>24 Oct · 10:38 · Owner</h4>
+            <p>Dairy section renamed from Chilled</p>
+            <h4>Earlier changes</h4>
+            <span class="button">Load older changes</span>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Per-collection history includes its items and sections. Task history
+          uses the same structure, including the labeled migration baseline. No
+          arbitrary revision rollback. Permanently erased child content must
+          also disappear from parent history; a small generic gap notice may
+          explain missing entries.
+        </p>
+      </section>
+      <section class="board" id="archive">
+        <h2>15 — Archive</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item selected">Shopping</span
+            ><span class="nav-item">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Archive</h3>
+            <div class="row">
+              <div class="row-content">
+                <strong>Holiday supplies</strong>
+                <p class="muted">Shopping list · Read-only</p>
+                <span class="tools">View · Unarchive · Move to Trash</span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row-content">
+                <strong>Summer camping trip</strong>
+                <p class="muted">Finished checklist run · Read-only</p>
+                <span class="tools">View · Unarchive · Move to Trash</span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row-content">
+                <strong>Winter packing</strong>
+                <p class="muted">Checklist template · Read-only</p>
+                <span class="tools">View · Unarchive · Move to Trash</span>
+              </div>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Open archived content for read-only viewing and history. Unarchive
+          before editing or starting a template run. Unarchiving a finished run
+          leaves it finished. Archive does not expire automatically.
+        </p>
+      </section>
+      <section class="board" id="trash">
+        <h2>16 — Trash and restoration</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item selected">Shopping</span
+            ><span class="nav-item">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Trash</h3>
+            <div class="row">
+              <div class="row-content">
+                <strong>Old grocery list</strong>
+                <p class="muted">Shopping list · Contains 4 items</p>
+                <span class="tools">View · Restore · Erase permanently</span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row-content">
+                <strong>Bread</strong>
+                <p class="muted">Item in Groceries</p>
+                <span class="tools">View · Restore · Erase permanently</span>
+              </div>
+            </div>
+            <div class="banner">
+              Restore Old grocery list before restoring one of its items.
+            </div>
+            <div class="banner">
+              Restored Milk to Unsectioned because its former section no longer
+              exists.
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Trashed content is read-only. Parent restoration preserves prior
+          archive/finished states and leaves individually trashed children in
+          Trash. Restored items append to Unsectioned if their section is gone.
+          Display success only after acknowledgement.
+        </p>
+      </section>
+      <section class="board" id="confirmations">
+        <h2>17 — Trash, archive, and reset confirmations</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item selected">Shopping</span
+            ><span class="nav-item">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Move Groceries to Trash?</h3>
+            <p>
+              Its contents will be hidden together. You can restore it later.
+            </p>
+            <div class="actions">
+              <span class="button">Cancel</span
+              ><span class="button">Move to Trash</span>
+            </div>
+            <hr />
+            <h3>Archive Camping packing?</h3>
+            <p>
+              Keep this template read-only outside active views. Existing runs
+              remain available.
+            </p>
+            <div class="actions">
+              <span class="button">Cancel</span
+              ><span class="button">Archive</span>
+            </div>
+            <hr />
+            <h3>Mark purchased items as needed?</h3>
+            <p>
+              2 purchased items will return to Needed in their saved manual
+              positions.
+            </p>
+            <div class="actions">
+              <span class="button">Cancel</span
+              ><span class="button">Mark as needed</span>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Individual-item Trash remains reversible. Bulk clearing/trashing is
+          outside scope. Do not imply an automatic reset after completing a
+          shopping trip.
+        </p>
+      </section>
+      <section class="board" id="erase">
+        <h2>18 — Permanent erasure: scope warning</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item selected">Shopping</span
+            ><span class="nav-item">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Erase Camping packing permanently?</h3>
+            <div class="banner">This cannot be undone through Trash.</div>
+            <p>
+              Erases this template, its sections, all its items (including
+              individually trashed items), and their content history.
+            </p>
+            <p>
+              <strong
+                >Existing checklist runs keep their independent copies.</strong
+              >
+            </p>
+            <p>
+              Encrypted backup copies expire under the seven-day retention
+              policy. Recovery reapplies subsequent erasures before reopening
+              the app.
+            </p>
+            <div class="actions">
+              <span class="button">Cancel</span
+              ><span class="button">Erase permanently</span>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Only available for trashed content. Item erasure names the item and
+          explains that its content is removed from parent history too. Failures
+          leave the confirmation available for safe retry; never report erasure
+          before server acknowledgement.
+        </p>
+      </section>
+      <section class="board" id="empty">
+        <h2>19 — Empty states</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item">Shopping</span
+            ><span class="nav-item selected">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>No shopping lists yet</h3>
+            <p>Create a list for groceries or another regular errand.</p>
+            <div class="actions">
+              <span class="button">New shopping list</span>
+            </div>
+            <hr />
+            <h3>No items yet</h3>
+            <div class="actions">
+              <span class="button">Add item</span
+              ><span class="button">Add section</span>
+            </div>
+            <hr />
+            <h3>Template has no items</h3>
+            <p>Add at least one item before starting a run.</p>
+            <div class="actions"><span class="button">Add item</span></div>
+            <hr />
+            <p>No active runs. Choose a template to start one.</p>
+            <div class="actions">
+              <span class="button">View templates</span>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Empty is shown only after successful loading. Archive/Trash use
+          “Nothing archived” / “Trash is empty.” A run with all items trashed
+          shows 0 of 0 complete and still requires explicit finishing.
+        </p>
+      </section>
+      <section class="board" id="loading-error">
+        <h2>20 — Loading and connection failure</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item selected">Shopping</span
+            ><span class="nav-item">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Groceries</h3>
+            <div class="banner">
+              Loading your list… The server may take a moment to start.
+            </div>
+            <div class="skeleton">List contents appear after loading</div>
+            <hr />
+            <div class="banner">
+              Couldn’t load this list. Check your connection and try again.
+            </div>
+            <div class="actions"><span class="button">Try again</span></div>
+            <hr />
+            <div class="banner">
+              Couldn’t mark Milk as purchased. Your last saved state is
+              unchanged.
+            </div>
+            <div class="actions"><span class="button">Retry update</span></div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Do not show a false empty state or saved checkmark. Disable repeated
+          actions while pending. Failed new-run creation and bulk actions retry
+          with the same operation identity. No offline editing or
+          synchronization.
+        </p>
+      </section>
+      <section class="board" id="conflict">
+        <h2>21 — Save conflict and retained draft</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item selected">Shopping</span
+            ><span class="nav-item">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>This item changed in another tab</h3>
+            <p>Your changes have not been saved.</p>
+            <div class="compare">
+              <div>
+                <strong>Your draft</strong>
+                <p>Milk · 3 cartons</p>
+              </div>
+              <div>
+                <strong>Latest saved version</strong>
+                <p>Milk · 2 cartons</p>
+              </div>
+            </div>
+            <div class="actions">
+              <span class="button">Review latest version</span
+              ><span class="button">Keep draft open</span>
+            </div>
+            <hr />
+            <div class="banner">
+              After reviewing, edit against the latest version and explicitly
+              save again.
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Never offer blind overwrite. If moved to Trash or erased elsewhere,
+          explain its state and preserve the draft for manual copying. Reorder
+          and reset conflicts similarly require review of current content;
+          failed actions create no history.
+        </p>
+      </section>
+      <section class="board" id="session-validation">
+        <h2>22 — Sign-in, validation, and leaving a form</h2>
+        <article class="screen">
+          <div class="brand">intrepion <small>Everyday lists</small></div>
+          <div class="app-nav">
+            <span class="nav-item">Tasks</span
+            ><span class="nav-item selected">Shopping</span
+            ><span class="nav-item">Checklists</span>
+          </div>
+          <div class="content">
+            <h3>Your session expired</h3>
+            <p>
+              Sign in again to continue. Keep this tab open to retain your
+              unsaved draft.
+            </p>
+            <div class="actions">
+              <span class="button">Continue with Google</span>
+            </div>
+            <hr />
+            <h3>Edit item</h3>
+            <div class="field-label">Name *</div>
+            <div class="field">&nbsp;</div>
+            <p class="muted">Enter a name. Whitespace alone is not valid.</p>
+            <div class="actions">
+              <span class="button">Cancel</span
+              ><span class="button">Save item</span>
+            </div>
+            <hr />
+            <h4>Discard unsaved changes?</h4>
+            <div class="actions">
+              <span class="button">Keep editing</span
+              ><span class="button">Discard changes</span>
+            </div>
+          </div>
+          <div class="utility">Archive · Trash · Owner account · Sign out</div>
+        </article>
+        <p class="note">
+          Drafts stay in memory only and are lost on reload/closing the tab; do
+          not persist private content in browser storage. Google owner-only
+          sign-in/access denial remains as in MVP 1. On expiry hide saved
+          private content; an in-memory draft returns only after the approved
+          owner signs in.
+        </p>
+      </section>
+    </main>
+    <footer>
+      <p>
+        Scope: <a href="../../docs/mvp-2-plan.md">Accepted MVP 2 plan</a> ·
+        <a href="README.md">Review guide</a>
+      </p>
+      <p>
+        Wireframe approval → visual mockups → standalone local prototype →
+        production implementation. Household access is deferred.
+      </p>
+    </footer>
+  </body>
+</html>

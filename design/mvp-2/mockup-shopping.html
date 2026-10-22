@@ -1,0 +1,857 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Groceries — desktop mockup</title><style>:root {
+  --canvas: #f4f5f1;
+  --surface: #fff;
+  --ink: #1b302c;
+  --muted: #596b65;
+  --line: #dce4de;
+  --control-line: #7c8f85;
+  --primary: #185e52;
+  --soft: #eaf3ee;
+  --danger: #a52f2b;
+  --danger-soft: #fff2ef;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  color: var(--ink);
+  background: var(--canvas);
+  font-synthesis: none;
+  color-scheme: light;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+}
+button,
+input,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: default;
+}
+a {
+  color: var(--primary);
+  text-underline-offset: 4px;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+svg {
+  height: 18px;
+  width: 18px;
+  flex: 0 0 auto;
+}
+.review-header,
+.gallery,
+.review-footer {
+  max-width: 1320px;
+  margin: auto;
+  padding: 40px 32px;
+}
+.review-header h1 {
+  font-size: 42px;
+  line-height: 1.15;
+  letter-spacing: -0.045em;
+  margin: 14px 0;
+}
+.review-header p {
+  max-width: 72ch;
+  color: var(--muted);
+  margin: 10px 0;
+}
+.eyebrow {
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.review-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  margin-top: 24px;
+  font-size: 13px;
+}
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px 28px;
+  padding-top: 0;
+}
+.board {
+  min-width: 0;
+  scroll-margin-top: 24px;
+}
+.board.wide {
+  grid-column: 1 / -1;
+}
+.board-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.board-header h2 {
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+.board-header span,
+.board-note {
+  color: var(--muted);
+  font-size: 13px;
+}
+.board-note {
+  margin-top: 12px;
+  max-width: 88ch;
+}
+.app {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  overflow: hidden;
+  min-height: 620px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px #213b2f06;
+  overflow-wrap: anywhere;
+}
+.app-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--line);
+}
+.brand {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--primary);
+  color: white;
+  display: grid;
+  place-items: center;
+}
+.personal {
+  font-size: 12px;
+  color: var(--muted);
+}
+.primary-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 28px;
+  border-bottom: 1px solid var(--line);
+}
+.nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 9px 16px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+}
+.nav-button.selected {
+  background: var(--soft);
+  color: var(--primary);
+  border-color: #bfd1c6;
+}
+.content {
+  padding: 28px 32px 36px;
+  flex: 1;
+  min-width: 0;
+}
+.content.narrow {
+  width: 100%;
+  max-width: 660px;
+  margin: auto;
+}
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.heading h1 {
+  font-size: 30px;
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+  font-weight: 650;
+}
+.subline,
+.description {
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 8px;
+}
+.description {
+  max-width: 68ch;
+  margin-bottom: 18px;
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 15px;
+  border: 1px solid var(--control-line);
+  border-radius: 9px;
+  background: white;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  max-width: 100%;
+  text-align: center;
+}
+.button.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+.button.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: white;
+}
+.button.soft {
+  background: var(--soft);
+  color: var(--primary);
+  border-color: #bfd1c6;
+}
+.button.pending {
+  color: var(--muted);
+  background: #edf1ed;
+}
+.button:disabled {
+  cursor: default;
+}
+.toolbar,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 0;
+}
+.toolbar {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.actions.end {
+  justify-content: flex-end;
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.text-button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--primary);
+  background: transparent;
+  font-size: 13px;
+}
+.text-button.danger-text {
+  color: var(--danger);
+}
+.collection-row {
+  border-bottom: 1px solid var(--line);
+  padding: 18px 0;
+}
+.collection-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.collection-name {
+  font-size: 17px;
+  font-weight: 600;
+}
+.collection-note {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin: 7px 0 -5px -10px;
+}
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 4px 9px;
+  background: var(--soft);
+  color: var(--primary);
+}
+.badge.neutral {
+  background: #eef1ed;
+  color: var(--muted);
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 24px 0 2px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 6px;
+}
+.section-title h2 {
+  font-size: 14px;
+  font-weight: 650;
+}
+.item {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 0 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  align-items: start;
+}
+.item.no-check {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.check-control {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.check-box {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--control-line);
+  border-radius: 6px;
+  background: white;
+}
+.check-box.checked {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.check-box svg {
+  width: 16px;
+  height: 16px;
+}
+.item-text {
+  padding-top: 8px;
+  min-width: 0;
+}
+.item-title {
+  font-size: 16px;
+  font-weight: 550;
+  line-height: 1.5;
+}
+.item.done .item-title {
+  text-decoration: line-through;
+  color: var(--muted);
+  font-weight: 400;
+}
+.item-notes {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 4px;
+}
+.item-tools {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 190px;
+}
+.item-tools .text-button {
+  padding: 10px 8px;
+}
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+  margin: 0 0 24px;
+  padding-bottom: 10px;
+}
+.tabs.secondary {
+  border: 0;
+  margin-bottom: 6px;
+}
+.app-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 20px;
+  border-top: 1px solid var(--line);
+  padding: 12px 24px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 4px;
+}
+.account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #edf1ed;
+  color: var(--primary);
+  font-weight: 700;
+}
+.back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--primary);
+  font-size: 13px;
+  margin: -10px 0 16px;
+}
+.label-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 22px 0 8px;
+}
+.label-row label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.counter,
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+input,
+textarea,
+.select-display {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid var(--control-line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  padding: 12px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+textarea {
+  min-height: 110px;
+  resize: none;
+}
+.hint {
+  margin-top: 7px;
+}
+.invalid {
+  border-color: var(--danger);
+}
+.error-text {
+  color: var(--danger);
+}
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--soft);
+  border: 1px solid #bfd1c6;
+  border-radius: 9px;
+  color: var(--primary);
+  padding: 14px;
+  font-size: 13px;
+  margin: 18px 0;
+}
+.notice svg {
+  margin-top: 2px;
+}
+.notice strong {
+  display: block;
+  margin-bottom: 3px;
+}
+.notice.error {
+  background: var(--danger-soft);
+  color: #882e29;
+  border-color: #d7a69e;
+}
+.notice.neutral {
+  background: #f4f5f1;
+  border-color: var(--line);
+  color: var(--muted);
+}
+.progress-track {
+  height: 5px;
+  background: #e6ece7;
+  border-radius: 8px;
+  margin: 14px 0 22px;
+  overflow: hidden;
+}
+.progress-fill {
+  width: 50%;
+  height: 100%;
+  background: var(--primary);
+}
+.timeline-entry {
+  padding: 18px 0 18px 18px;
+  margin-left: 6px;
+  border-left: 2px solid var(--line);
+  position: relative;
+}
+.timeline-entry::before {
+  content: "";
+  position: absolute;
+  top: 25px;
+  left: -5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.event-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.event-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+.compare > div {
+  padding: 14px;
+  min-width: 0;
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.compare .after {
+  background: var(--soft);
+}
+.compare-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+.overlay {
+  display: grid;
+  place-items: center;
+  padding: 40px 24px;
+  background: #e4ebe5;
+  min-height: 620px;
+}
+.dialog {
+  width: 100%;
+  max-width: 440px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: white;
+  padding: 28px;
+  box-shadow: 0 20px 60px #16352b15;
+}
+.dialog h1 {
+  font-size: 24px;
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+  margin-bottom: 14px;
+}
+.dialog p {
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 12px;
+}
+.dialog .actions {
+  margin-bottom: 0;
+}
+.dialog-icon,
+.empty-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: var(--soft);
+  color: var(--primary);
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+.dialog-icon.danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.dialog-icon svg,
+.empty-icon svg {
+  width: 24px;
+  height: 24px;
+}
+.reference {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--canvas);
+  font-weight: 600;
+  margin: 18px 0;
+}
+.empty {
+  text-align: center;
+  max-width: 370px;
+  margin: 36px auto;
+  padding: 20px 0;
+}
+.empty-icon {
+  margin: 0 auto 20px;
+}
+.empty h2 {
+  font-size: 25px;
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+}
+.empty p {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 12px 0 22px;
+}
+.loader {
+  width: 19px;
+  height: 19px;
+  border: 2px solid #a8c6b4;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.skeleton {
+  height: 54px;
+  background: #eef1ed;
+  border-radius: 8px;
+  margin: 14px 0;
+}
+.substate {
+  border-top: 1px solid var(--line);
+  margin-top: 26px;
+  padding-top: 24px;
+}
+.substate h2 {
+  font-size: 20px;
+  letter-spacing: -0.025em;
+}
+.order-row {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.order-row .row-actions {
+  margin-top: 8px;
+}
+.focus-preview {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+.mobile-frame {
+  width: 390px;
+  max-width: 100%;
+  margin: auto;
+}
+.mobile-frame .app-top {
+  padding: 18px;
+}
+.mobile-frame .primary-nav {
+  padding: 10px 14px;
+  gap: 4px;
+}
+.mobile-frame .content {
+  padding: 24px 20px 28px;
+}
+.mobile-frame .heading h1 {
+  font-size: 28px;
+}
+.mobile-frame .toolbar .button,
+.mobile-frame .actions .button {
+  flex: 1 1 125px;
+}
+.mobile-frame .item {
+  grid-template-columns: 44px minmax(0, 1fr);
+}
+.mobile-frame .item-tools {
+  grid-column: 2;
+  max-width: none;
+  margin-left: -8px;
+}
+.mobile-frame .item.no-check {
+  grid-template-columns: minmax(0, 1fr);
+}
+.mobile-frame .item.no-check .item-tools {
+  grid-column: 1;
+}
+.mobile-frame .app-footer {
+  padding: 12px 16px;
+}
+.single-page {
+  padding: 48px 24px;
+}
+.single-page .app,
+.single-page .overlay {
+  max-width: 1060px;
+  margin: auto;
+  min-height: 780px;
+}
+.single-page .overlay {
+  border-radius: 18px;
+}
+.mobile-page {
+  background: white;
+}
+.mobile-page .mobile-frame {
+  width: 100%;
+}
+.mobile-page .app {
+  min-height: 100vh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.review-footer {
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  color: var(--muted);
+}
+@media (max-width: 850px) {
+  .gallery {
+    grid-template-columns: 1fr;
+  }
+  .board.wide {
+    grid-column: auto;
+  }
+  .review-header,
+  .gallery,
+  .review-footer {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .review-header h1 {
+    font-size: 34px;
+  }
+}
+@media (max-width: 650px) {
+  .app-top {
+    padding: 18px;
+  }
+  .primary-nav {
+    padding: 10px 14px;
+    gap: 4px;
+  }
+  .nav-button {
+    padding-left: 11px;
+    padding-right: 11px;
+  }
+  .content,
+  .mobile-frame .content {
+    padding: 24px 18px;
+  }
+  .heading h1 {
+    font-size: 28px;
+  }
+  .item {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+  .item-tools {
+    grid-column: 2;
+    max-width: none;
+    margin-left: -8px;
+  }
+  .item.no-check {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .item.no-check .item-tools {
+    grid-column: 1;
+  }
+  .toolbar .button,
+  .actions .button {
+    flex: 1 1 125px;
+  }
+  .single-page {
+    padding: 0;
+  }
+  .single-page .app {
+    border: 0;
+    border-radius: 0;
+    min-height: 100vh;
+  }
+  .overlay {
+    padding: 28px 16px;
+  }
+  .dialog {
+    padding: 22px;
+  }
+  .compare {
+    grid-template-columns: 1fr;
+  }
+  .app-footer {
+    padding: 12px 16px;
+  }
+}
+@media print {
+  .review-nav {
+    display: none;
+  }
+  .board {
+    break-inside: avoid;
+  }
+  .app {
+    box-shadow: none;
+  }
+}
+</style></head><body class="single-page"><div class="app"><div class="app-top"><div class="brand"><span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span>intrepion</div><span class="personal">Everyday lists</span></div><div class="primary-nav"><button type="button" class="nav-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>Tasks</button><button type="button" class="nav-button selected" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 5 2 1 2 12h12l2-9H6M9 21h.01M18 21h.01"/></svg>Shopping</button><button type="button" class="nav-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>Checklists</button></div><div class="content"><div class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h15"/></svg>Shopping</div><div class="heading"><div><h1>Groceries</h1><p class="subline">3 needed · 2 purchased</p></div></div><p class="description">For the weekend. Oat milk for breakfast.</p><div class="toolbar"><button type="button" class="button ">Edit details</button><button type="button" class="button "><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2.6 7.4M3 4v7h7M12 7v5l3 2"/></svg>History</button><button type="button" class="button ">Archive</button><button type="button" class="button ">Move to Trash</button></div><div class="actions"><button type="button" class="button primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add item</button><button type="button" class="button ">Add section</button><button type="button" class="button ">Organize</button></div><div class="section-title"><h2>Produce</h2><button type="button" class="text-button">Section actions</button></div><div class="item"><button type="button" class="check-control" aria-label="Unchecked: Apples"><span class="check-box"></span></button><div class="item-text"><div class="item-title">Apples</div><p class="item-notes">6 · For lunchboxes</p></div><div class="item-tools"><button type="button" class="text-button">Edit</button><button type="button" class="text-button danger-text">Move to Trash</button></div></div><div class="item done"><button type="button" class="check-control" aria-label="Checked: Carrots"><span class="check-box checked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span></button><div class="item-text"><div class="item-title">Carrots</div><p class="item-notes">1 bag · Purchased</p></div><div class="item-tools"><button type="button" class="text-button">Edit</button><button type="button" class="text-button danger-text">Move to Trash</button></div></div><div class="section-title"><h2>Dairy</h2><button type="button" class="text-button">Section actions</button></div><div class="item"><button type="button" class="check-control" aria-label="Unchecked: Milk"><span class="check-box"></span></button><div class="item-text"><div class="item-title">Milk</div><p class="item-notes">2 cartons · Oat milk</p></div><div class="item-tools"><button type="button" class="text-button">Edit</button><button type="button" class="text-button danger-text">Move to Trash</button></div></div><div class="item done"><button type="button" class="check-control" aria-label="Checked: Yogurt"><span class="check-box checked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span></button><div class="item-text"><div class="item-title">Yogurt</div><p class="item-notes">1 tub · Purchased</p></div><div class="item-tools"><button type="button" class="text-button">Edit</button><button type="button" class="text-button danger-text">Move to Trash</button></div></div><div class="section-title"><h2>Unsectioned</h2></div><div class="item"><button type="button" class="check-control" aria-label="Unchecked: Batteries"><span class="check-box"></span></button><div class="item-text"><div class="item-title">Batteries</div><p class="item-notes">AA · 1 pack</p></div><div class="item-tools"><button type="button" class="text-button">Edit</button><button type="button" class="text-button danger-text">Move to Trash</button></div></div><div class="actions"><button type="button" class="button ">Mark all purchased items as needed</button></div></div><div class="app-footer"><div class="footer-links"><button type="button" class="text-button">Archive</button><button type="button" class="text-button">Trash</button></div><div class="account"><span class="avatar">O</span><span>Owner</span><button type="button" class="text-button">Sign out</button></div></div></div></body></html>

@@ -45,14 +45,18 @@ test("real API task lifecycle persists across reload and logout", async ({
     .getByRole("button", { name: "Sign in as development owner" })
     .click();
   await expect(row).toBeVisible();
-  await row.getByRole("button", { name: "Delete task:" }).click();
+  await row.getByRole("button", { name: "Move task to Trash:" }).click();
   await expect(
     page.getByRole("button", { name: "Cancel", exact: true }),
   ).toBeFocused();
   await page.keyboard.press("Escape");
-  await expect(row.getByRole("button", { name: "Delete task:" })).toBeFocused();
-  await row.getByRole("button", { name: "Delete task:" }).click();
-  await page.getByRole("button", { name: "Delete task", exact: true }).click();
+  await expect(
+    row.getByRole("button", { name: "Move task to Trash:" }),
+  ).toBeFocused();
+  await row.getByRole("button", { name: "Move task to Trash:" }).click();
+  await page
+    .getByRole("button", { name: "Move to Trash", exact: true })
+    .click();
   await expect(row).toHaveCount(0);
 });
 
@@ -198,9 +202,11 @@ test("a lost create response cannot resurrect a task deleted in another tab", as
   const other = await context.newPage();
   await other.goto("/");
   await taskRow(other, title)
-    .getByRole("button", { name: "Delete task:" })
+    .getByRole("button", { name: "Move task to Trash:" })
     .click();
-  await other.getByRole("button", { name: "Delete task", exact: true }).click();
+  await other
+    .getByRole("button", { name: "Move to Trash", exact: true })
+    .click();
   await expect(taskRow(other, title)).toHaveCount(0);
   await page
     .getByRole("button", { name: "Try saving again", exact: true })
@@ -240,14 +246,16 @@ test("stale-tab deletion cannot discard a newer edit", async ({
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(taskRow(page, "Keep the newer edit")).toBeVisible();
   await taskRow(other, title)
-    .getByRole("button", { name: "Delete task:" })
+    .getByRole("button", { name: "Move task to Trash:" })
     .click();
-  await other.getByRole("button", { name: "Delete task", exact: true }).click();
+  await other
+    .getByRole("button", { name: "Move to Trash", exact: true })
+    .click();
   await expect(
     other
       .locator("#list-error")
       .getByText(
-        "This task changed in another window. Reload the list and review it before deleting.",
+        "This collection changed. Keep your draft and review the latest version before saving again.",
         { exact: true },
       ),
   ).toBeVisible();

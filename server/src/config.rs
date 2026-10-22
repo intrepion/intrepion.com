@@ -11,6 +11,7 @@ pub struct Config {
     pub owner_sub: String,
     pub local: bool,
     pub trust_render_proxy: bool,
+    pub erasure_ledger: Option<crate::erasure_ledger::LedgerSettings>,
 }
 
 impl Config {
@@ -58,6 +59,27 @@ impl Config {
                 required("GOOGLE_OWNER_SUB")?,
             )
         };
+        let erasure_ledger = if local {
+            Some(local_ledger())
+        } else {
+            let names = [
+                "ERASURE_B2_KEY_ID",
+                "ERASURE_B2_APPLICATION_KEY",
+                "ERASURE_B2_BUCKET_ID",
+            ];
+            let present = names.iter().filter(|name| env::var(name).is_ok()).count();
+            if present == 0 {
+                None
+            } else if present != 3 {
+                return Err("configure all three ERASURE_B2 settings together".into());
+            } else {
+                Some(crate::erasure_ledger::LedgerSettings::Backblaze {
+                    key_id: required(names[0])?,
+                    key: required(names[1])?,
+                    bucket_id: identifier(names[2])?,
+                })
+            }
+        };
         Ok(Self {
             bind,
             web_origin,
@@ -66,6 +88,7 @@ impl Config {
             google_client_id,
             owner_sub,
             local,
+            erasure_ledger,
             // Render supplies this reserved environment variable. Never enable
             // forwarded-header trust for local or directly exposed deployments.
             trust_render_proxy: !local && env::var("RENDER").as_deref() == Ok("true"),
@@ -73,6 +96,13 @@ impl Config {
     }
 }
 
+fn local_ledger() -> crate::erasure_ledger::LedgerSettings {
+    #[cfg(feature = "dev-auth")]
+    if env::var("ERASURE_LEDGER_B2_EMULATOR").as_deref() == Ok("1") {
+        return crate::erasure_ledger::LedgerSettings::BackblazeEmulator;
+    }
+    crate::erasure_ledger::LedgerSettings::Local
+}
 fn required(name: &str) -> Result<String, String> {
     env::var(name)
         .ok()

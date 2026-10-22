@@ -1,7 +1,11 @@
 fn main() {
     println!("cargo:rerun-if-changed=../proto/life/v1/tasks.proto");
+    println!("cargo:rerun-if-changed=../proto/life/v1/lists.proto");
     connectrpc_build::Config::new()
-        .files(&["../proto/life/v1/tasks.proto"])
+        .files(&[
+            "../proto/life/v1/tasks.proto",
+            "../proto/life/v1/lists.proto",
+        ])
         .includes(&["../proto"])
         .include_file("_connectrpc.rs")
         .compile()

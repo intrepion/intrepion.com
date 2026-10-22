@@ -1,6 +1,8 @@
 pub mod auth;
 pub mod config;
 pub mod db;
+pub mod erasure_ledger;
+mod lists;
 mod login_limit;
 mod tasks;
 pub mod proto {
@@ -45,7 +47,23 @@ pub fn app(auth: SharedAuth) -> Router {
         .route("/auth/logout", post(auth::logout));
     #[cfg(feature = "dev-auth")]
     let router = router.route("/auth/development", post(auth::development_login));
-    let mut rpc = connectrpc::Router::new().add_service(Arc::new(tasks::Tasks(auth.clone())));
+    let mut rpc = connectrpc::Router::new()
+        .add_service(Arc::new(tasks::Tasks(auth.clone())))
+        .add_service(Arc::new(lists::Lists(auth.clone())));
+    for method in [
+        "ListCollections",
+        "GetCollection",
+        "ApplyChange",
+        "ListHistory",
+        "ListTrashedItems",
+    ] {
+        rpc = rpc.with_route_limits(
+            &format!("life.v1.ListService/{method}"),
+            connectrpc::Limits::default()
+                .with_max_request_body_size(64 * 1024)
+                .with_max_message_size(64 * 1024),
+        );
+    }
     for method in ["ListTasks", "CreateTask", "UpdateTask", "DeleteTask"] {
         rpc = rpc.with_route_limits(
             &format!("life.v1.TaskService/{method}"),
@@ -78,6 +96,7 @@ mod tests {
                 owner_sub: "owner".into(),
                 local: false,
                 trust_render_proxy,
+                erasure_ledger: None,
             };
             let db =
                 crate::db::Database::new(config.db_url.clone(), config.db_token.clone()).unwrap();
@@ -146,6 +165,7 @@ mod tests {
             owner_sub: "owner".into(),
             local: false,
             trust_render_proxy: false,
+            erasure_ledger: None,
         };
         let db = crate::db::Database::new(config.db_url.clone(), config.db_token.clone()).unwrap();
         let response = app(crate::auth::Auth::new(config, db).unwrap())
@@ -172,6 +192,11 @@ async fn observe(request: Request, next: Next) -> Response {
         "/life.v1.TaskService/CreateTask" => "create",
         "/life.v1.TaskService/UpdateTask" => "update",
         "/life.v1.TaskService/DeleteTask" => "delete",
+        "/life.v1.ListService/ListCollections" => "collections",
+        "/life.v1.ListService/GetCollection" => "collection",
+        "/life.v1.ListService/ApplyChange" => "change",
+        "/life.v1.ListService/ListHistory" => "history",
+        "/life.v1.ListService/ListTrashedItems" => "trash",
         "/health/live" => "health",
         path if path.starts_with("/auth/") => "auth",
         _ => "other",

@@ -3,6 +3,7 @@
 A personal task app as the first MVP of a future Life OS. The initial delivery is a Rust API and an Astro/TypeScript web client; other clients and AI agents are deferred.
 
 - [Agreed MVP plan and delivery gates](docs/mvp-plan.md)
+- [MVP 2 Everyday lists scope](docs/mvp-2-plan.md), [approved designs](design/mvp-2/README.md), and [standalone prototype for review](design/mvp-2/PROTOTYPE.md)
 - [Domain glossary](GLOSSARY.md)
 - [Hosting comparison](docs/hosting-assessment.md)
 - [GitHub-only backup monitoring plan](docs/monitoring-assessment.md)

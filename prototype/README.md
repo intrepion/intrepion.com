@@ -1,4 +1,10 @@
-# Local task prototype
+# Local design prototypes
+
+The current **MVP 2 Everyday lists prototype** is at <http://127.0.0.1:4321/everyday/>. See [its walkthrough and review boundaries](../design/mvp-2/PROTOTYPE.md). Start it with `npm --prefix prototype run dev` after the one-time dependency installation below. No Rust server is required. MVP 2's wireframes, mockups, and standalone prototype are approved; production implementation is in progress.
+
+The original MVP 1 task prototype remains at <http://127.0.0.1:4321/>. Its approved review record follows.
+
+## MVP 1 task prototype
 
 Review question: do the approved task workflows, pending states, and recovery interactions feel right before production implementation?
 

@@ -27,8 +27,14 @@ if (
       <header>
         <div class="brand">
           <span aria-hidden="true" class="brand-mark">✓</span>intrepion
-        </div><span class="muted small">Personal list</span>
+        </div><span class="muted small">Everyday lists</span>
       </header>
+      <nav id="main-nav" aria-label="Lists" hidden>
+        <button id="nav-tasks">Tasks</button><button id="nav-shopping"
+          >Shopping</button
+        ><button id="nav-checklists">Checklists</button>
+      </nav>
+      <section id="everyday-view" class="content" hidden></section>
       <section id="status-view" class="center" aria-live="polite">
         <span class="spinner" aria-hidden="true"></span><h1
           tabindex="-1"
@@ -122,10 +128,13 @@ if (
         </form>
       </section>
       <footer id="account" hidden>
-        <span class="muted small">Owner account</span><button
-          class="quiet"
-          id="sign-out">Sign out</button
+        <span class="muted small">Owner account</span><div
+          class="everyday-actions"
         >
+          <button id="nav-archive">Archive</button><button id="nav-trash"
+            >Trash</button
+          >
+        </div><button class="quiet" id="sign-out">Sign out</button>
       </footer>
       <noscript
         ><p>

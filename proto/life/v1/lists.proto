@@ -1,0 +1,152 @@
+syntax = "proto3";
+package life.v1;
+
+// All methods require the configured owner's session, origin and CSRF token.
+service ListService {
+  rpc ListCollections(CollectionQuery) returns (CollectionPage);
+  rpc GetCollection(CollectionKey) returns (Collection);
+  rpc ApplyChange(ChangeRequest) returns (ChangeResult);
+  rpc ListHistory(HistoryQuery) returns (HistoryPage);
+  rpc ListTrashedItems(TrashQuery) returns (TrashPage);
+}
+
+enum CollectionKind {
+  COLLECTION_KIND_UNSPECIFIED = 0;
+  COLLECTION_KIND_TASK = 1;
+  COLLECTION_KIND_SHOPPING = 2;
+  COLLECTION_KIND_TEMPLATE = 3;
+  COLLECTION_KIND_RUN = 4;
+}
+enum ChangeAction {
+  CHANGE_ACTION_UNSPECIFIED = 0;
+  CHANGE_ACTION_CREATE_COLLECTION = 1;
+  CHANGE_ACTION_UPDATE_METADATA = 2;
+  CHANGE_ACTION_TRASH_COLLECTION = 3;
+  CHANGE_ACTION_RESTORE_COLLECTION = 4;
+  CHANGE_ACTION_ARCHIVE = 5;
+  CHANGE_ACTION_UNARCHIVE = 6;
+  CHANGE_ACTION_FINISH_RUN = 7;
+  CHANGE_ACTION_REOPEN_RUN = 8;
+  CHANGE_ACTION_CREATE_ITEM = 9;
+  CHANGE_ACTION_UPDATE_ITEM = 10;
+  CHANGE_ACTION_TRASH_ITEM = 11;
+  CHANGE_ACTION_RESTORE_ITEM = 12;
+  CHANGE_ACTION_ERASE_ITEM = 13;
+  CHANGE_ACTION_ERASE_COLLECTION = 14;
+  CHANGE_ACTION_CREATE_SECTION = 15;
+  CHANGE_ACTION_RENAME_SECTION = 16;
+  CHANGE_ACTION_REMOVE_SECTION = 17;
+  CHANGE_ACTION_MOVE_SECTION = 18;
+  CHANGE_ACTION_MOVE_ITEM = 19;
+  CHANGE_ACTION_START_RUN = 20;
+  CHANGE_ACTION_RESET_PURCHASES = 21;
+}
+message CollectionKey { string id = 1; }
+message CollectionQuery {
+  CollectionKind kind = 1;
+  // Active, archived or trashed collections; archive/trash ignore kind when unspecified.
+  bool archived = 2;
+  bool trashed = 3;
+  bool finished = 4;
+  string cursor = 5;
+}
+message CollectionPage {
+  repeated Collection collections = 1;
+  string next_cursor = 2;
+}
+message ListSection {
+  string id = 1;
+  string title = 2;
+  uint32 position = 3;
+}
+message ListItem {
+  string id = 1;
+  string title = 2;
+  string notes = 3;
+  string quantity = 4;
+  string section_id = 5;
+  bool completed = 6;
+  bool trashed = 7;
+  uint32 position = 8;
+}
+message Collection {
+  string id = 1;
+  CollectionKind kind = 2;
+  string title = 3;
+  string notes = 4;
+  bool completed = 5;
+  bool archived = 6;
+  bool trashed = 7;
+  bool finished = 8;
+  uint32 revision = 9;
+  uint64 created_order = 10;
+  string source_id = 11;
+  string source_title = 12;
+  repeated ListSection sections = 13;
+  repeated ListItem items = 14;
+  // Summaries include counts but omit sections/items; GetCollection includes them.
+  uint32 item_count = 15;
+  uint32 completed_count = 16;
+  bool erasure_pending = 17;
+  PendingErasure pending_erasure = 18;
+}
+// Content-free retry identity, available only through owner-authenticated reads.
+message PendingErasure {
+  string operation_id = 1;
+  uint32 expected_revision = 2;
+  string target_id = 3;
+  bool whole_collection = 4;
+}
+message CollectionDetails {
+  CollectionKind kind = 1;
+  string title = 2;
+  string notes = 3;
+  bool completed = 4;
+}
+message ChangeRequest {
+  // A fresh UUID per user action. Preserve it and the entire request through retries.
+  string operation_id = 1;
+  string collection_id = 2;
+  uint32 expected_revision = 3;
+  ChangeAction action = 4;
+  CollectionDetails details = 5;
+  ListItem item = 6;
+  ListSection section = 7;
+  string target_id = 8;
+  // Zero-based destination within a section or the collection's section order.
+  uint32 position = 9;
+  // START_RUN: collection_id is the new run ID; expected_revision is the source's revision.
+  string source_id = 10;
+}
+message ChangeResult {
+  Collection collection = 1;
+  bool erased = 2;
+}
+message HistoryQuery {
+  string collection_id = 1;
+  uint64 before_sequence = 2;
+}
+message HistoryEntry {
+  uint64 sequence = 1;
+  string actor = 2;
+  int64 occurred_at = 3;
+  string target_id = 4;
+  string target_title = 5;
+  string action = 6;
+  // JSON object of named domain values (no secrets or implementation metadata).
+  string before_json = 7;
+  string after_json = 8;
+}
+message HistoryPage {
+  repeated HistoryEntry entries = 1;
+  uint64 next_before_sequence = 2;
+}
+message TrashQuery { string cursor = 1; }
+message TrashedItem {
+  Collection parent = 1;
+  ListItem item = 2;
+}
+message TrashPage {
+  repeated TrashedItem items = 1;
+  string next_cursor = 2;
+}

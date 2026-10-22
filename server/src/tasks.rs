@@ -1,9 +1,16 @@
-use crate::{auth::SharedAuth, proto::life::v1::*};
-use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
+// MVP 1 compatibility: all content now lives in collections; DeleteTask uses Trash.
+use crate::{
+    auth::SharedAuth,
+    lists::{Lists, valid_id, validate_text},
+    proto::life::v1::*,
+};
+use connectrpc::{
+    ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult,
+};
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 
 pub struct Tasks(pub SharedAuth);
-
 #[derive(Deserialize)]
 struct Row {
     id: String,
@@ -26,60 +33,60 @@ impl From<Row> for Task {
         }
     }
 }
-fn valid_id(id: &str) -> bool {
-    id.len() == 36
-        && id.bytes().enumerate().all(|(i, b)| {
-            if [8, 13, 18, 23].contains(&i) {
-                b == b'-'
-            } else {
-                b.is_ascii_hexdigit()
-            }
-        })
-}
-fn validate(task: &Task) -> Result<(), ConnectError> {
-    if !valid_id(&task.id)
-        || task.title.trim().is_empty()
-        || task.title.chars().count() > 200
-        || task.notes.chars().count() > 10000
-        || task.title.contains('\0')
-        || task.notes.contains('\0')
-    {
-        return Err(ConnectError::invalid_argument(
-            "Use a title of 1–200 characters and notes of at most 10,000 characters.",
+fn task(c: Collection) -> Result<Task, ConnectError> {
+    if c.kind.as_known() != Some(CollectionKind::Task) || c.trashed {
+        return Err(ConnectError::not_found(
+            "Task no longer exists. Reload the list.",
         ));
     }
-    Ok(())
+    Ok(Task {
+        id: c.id,
+        title: c.title,
+        notes: c.notes,
+        completed: c.completed,
+        revision: c.revision,
+        created_order: c.created_order,
+        ..Default::default()
+    })
 }
-impl Tasks {
-    async fn authorize(&self, ctx: &RequestContext) -> Result<(), ConnectError> {
-        self.0
-            .session(ctx.headers(), true)
-            .await
-            .map(|_| ())
-            .map_err(|error| match error.0 {
-                axum::http::StatusCode::UNAUTHORIZED => {
-                    ConnectError::unauthenticated("Please sign in again.")
-                }
-                axum::http::StatusCode::FORBIDDEN => {
-                    ConnectError::permission_denied("Owner session and CSRF token required.")
-                }
-                _ => ConnectError::unavailable("Session service temporarily unavailable."),
-            })
+fn action_id(kind: &str, id: &str, revision: u32, values: &str) -> String {
+    let hex = format!(
+        "{:x}",
+        Sha256::digest(format!("legacy/{kind}/{id}/{revision}/{values}"))
+    );
+    format!(
+        "{}-{}-4{}-a{}-{}",
+        &hex[..8],
+        &hex[8..12],
+        &hex[13..16],
+        &hex[17..20],
+        &hex[20..32]
+    )
+}
+fn validate(t: &Task) -> Result<(), ConnectError> {
+    if !valid_id(&t.id) {
+        return Err(ConnectError::invalid_argument("Invalid task ID."));
     }
-    async fn get(&self, id: &str) -> Result<Task, ConnectError> {
-        self.0.db.query::<Row>("SELECT id,title,notes,completed,revision,sequence FROM tasks WHERE owner_sub=? AND id=?", &[self.0.config.owner_sub.clone(),id.into()]).await?.pop().map(Into::into).ok_or_else(||ConnectError::not_found("Task no longer exists. Reload the list."))
+    validate_text(&t.title, &t.notes)
+}
+fn details(t: &Task) -> CollectionDetails {
+    CollectionDetails {
+        kind: CollectionKind::Task.into(),
+        title: t.title.clone(),
+        notes: t.notes.clone(),
+        completed: t.completed,
+        ..Default::default()
     }
 }
-
 #[allow(refining_impl_trait)]
 impl TaskService for Tasks {
     async fn list_tasks(
         &self,
         ctx: RequestContext,
-        _request: ServiceRequest<'_, Empty>,
+        _r: ServiceRequest<'_, Empty>,
     ) -> ServiceResult<TaskList> {
-        self.authorize(&ctx).await?;
-        let rows = self.0.db.query::<Row>("SELECT id,title,notes,completed,revision,sequence FROM tasks WHERE owner_sub=? ORDER BY completed ASC, sequence DESC", std::slice::from_ref(&self.0.config.owner_sub)).await?;
+        self.0.authorize_rpc(&ctx).await?;
+        let rows=self.0.db.query::<Row>("SELECT id,title,notes,completed,revision,sequence FROM collections WHERE owner_sub=? AND kind=1 AND trashed=0 ORDER BY completed,sequence DESC",std::slice::from_ref(&self.0.config.owner_sub)).await?;
         Response::ok(TaskList {
             tasks: rows.into_iter().map(Into::into).collect(),
             ..Default::default()
@@ -88,87 +95,112 @@ impl TaskService for Tasks {
     async fn create_task(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, Task>,
+        r: ServiceRequest<'_, Task>,
     ) -> ServiceResult<Task> {
-        self.authorize(&ctx).await?;
-        let task = request.to_owned_message();
-        validate(&task)?;
-        self.0.db.query::<serde_json::Value>("INSERT INTO tasks(owner_sub,id,title,notes,completed) SELECT ?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM retired_task_ids WHERE owner_sub=? AND id=?) ON CONFLICT(owner_sub,id) DO NOTHING", &[self.0.config.owner_sub.clone(),task.id.clone(),task.title.clone(),task.notes.clone(),i32::from(task.completed).to_string(),self.0.config.owner_sub.clone(),task.id.clone()]).await?;
-        let stored = self.get(&task.id).await?;
-        if stored.title != task.title
-            || stored.notes != task.notes
-            || stored.completed != task.completed
-        {
-            return Err(ConnectError::failed_precondition(
-                "A task with this action ID was already saved with different values. Your draft is preserved. Reload the list before editing that task.",
-            ));
+        self.0.authorize_rpc(&ctx).await?;
+        let t = r.to_owned_message();
+        validate(&t)?;
+        let lists = Lists(self.0.clone());
+        match lists.get(&t.id).await {
+            Ok(existing) => {
+                let saved = task(existing)?;
+                if saved.title != t.title
+                    || saved.notes != t.notes
+                    || saved.completed != t.completed
+                {
+                    return Err(ConnectError::failed_precondition(
+                        "This action ID already belongs to a task with different values. Keep your draft and reload.",
+                    ));
+                }
+                return Response::ok(saved);
+            }
+            Err(error) if error.code == ErrorCode::NotFound => {}
+            Err(error) => return Err(error),
         }
-        Response::ok(stored)
+        let retired = self
+            .0
+            .db
+            .query::<serde_json::Value>(
+                "SELECT id FROM retired_task_ids WHERE owner_sub=? AND id=?",
+                &[self.0.config.owner_sub.clone(), t.id.clone()],
+            )
+            .await?;
+        if !retired.is_empty() {
+            return Err(ConnectError::not_found("Task no longer exists."));
+        }
+        let result = lists
+            .apply(ChangeRequest {
+                operation_id: action_id("create", &t.id, 0, ""),
+                collection_id: t.id.clone(),
+                action: ChangeAction::CreateCollection.into(),
+                details: details(&t).into(),
+                ..Default::default()
+            })
+            .await?;
+        Response::ok(task((*result.collection).clone())?)
     }
     async fn update_task(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, Task>,
+        r: ServiceRequest<'_, Task>,
     ) -> ServiceResult<Task> {
-        self.authorize(&ctx).await?;
-        let task = request.to_owned_message();
-        validate(&task)?;
-        let updated=self.0.db.query::<Row>("UPDATE tasks SET title=?,notes=?,completed=?,revision=revision+1 WHERE owner_sub=? AND id=? AND revision=? RETURNING id,title,notes,completed,revision,sequence", &[task.title.clone(),task.notes.clone(),i32::from(task.completed).to_string(),self.0.config.owner_sub.clone(),task.id.clone(),task.revision.to_string()]).await?;
-        if let Some(row) = updated.into_iter().next() {
-            return Response::ok(row.into());
+        self.0.authorize_rpc(&ctx).await?;
+        let t = r.to_owned_message();
+        validate(&t)?;
+        let lists = Lists(self.0.clone());
+        let saved = task(lists.get(&t.id).await?)?;
+        if saved.title == t.title && saved.notes == t.notes && saved.completed == t.completed {
+            return Response::ok(saved);
         }
-        let stored = self.get(&task.id).await?;
-        if stored.title == task.title
-            && stored.notes == task.notes
-            && stored.completed == task.completed
-        {
-            return Response::ok(stored);
-        }
-        Err(ConnectError::failed_precondition(
-            "This task changed in another window. Keep your draft, reload the list, and reconcile the changes.",
-        ))
+        let values = serde_json::to_string(&details(&t))
+            .map_err(|_| ConnectError::invalid_argument("Invalid task."))?;
+        let result = lists
+            .apply(ChangeRequest {
+                operation_id: action_id("update", &t.id, t.revision, &values),
+                collection_id: t.id.clone(),
+                expected_revision: t.revision,
+                action: ChangeAction::UpdateMetadata.into(),
+                details: details(&t).into(),
+                ..Default::default()
+            })
+            .await?;
+        Response::ok(task((*result.collection).clone())?)
     }
     async fn delete_task(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, TaskId>,
+        r: ServiceRequest<'_, TaskId>,
     ) -> ServiceResult<Empty> {
-        self.authorize(&ctx).await?;
-        if !valid_id(request.id) {
+        self.0.authorize_rpc(&ctx).await?;
+        if !valid_id(r.id) {
             return Err(ConnectError::invalid_argument("Invalid task ID."));
         }
-        if request.revision == 0 {
+        if r.revision == 0 {
             return Err(ConnectError::failed_precondition(
-                "Reload the application before deleting this task; its current revision is required.",
+                "Reload the application before removing this task; its current revision is required.",
             ));
         }
-        let deleted = self
-            .0
-            .db
-            .query::<serde_json::Value>(
-                "DELETE FROM tasks WHERE owner_sub=? AND id=? AND revision=? RETURNING id",
-                &[
-                    self.0.config.owner_sub.clone(),
-                    request.id.to_string(),
-                    request.revision.to_string(),
-                ],
-            )
-            .await?;
-        if deleted.is_empty() {
-            let remaining = self
-                .0
-                .db
-                .query::<serde_json::Value>(
-                    "SELECT id FROM tasks WHERE owner_sub=? AND id=?",
-                    &[self.0.config.owner_sub.clone(), request.id.to_string()],
-                )
-                .await?;
-            if !remaining.is_empty() {
-                return Err(ConnectError::failed_precondition(
-                    "This task changed in another window. Reload the list and review it before deleting.",
-                ));
+        let lists = Lists(self.0.clone());
+        match lists.get(r.id).await {
+            Ok(c) if c.kind.as_known() != Some(CollectionKind::Task) => {
+                return Err(ConnectError::not_found("Task no longer exists."));
             }
+            Ok(c) if c.trashed => return Response::ok(Empty::default()),
+            Ok(_) => {}
+            Err(error) if error.code == ErrorCode::NotFound => {
+                return Response::ok(Empty::default());
+            }
+            Err(error) => return Err(error),
         }
+        lists
+            .apply(ChangeRequest {
+                operation_id: action_id("trash", r.id, r.revision, ""),
+                collection_id: r.id.into(),
+                expected_revision: r.revision,
+                action: ChangeAction::TrashCollection.into(),
+                ..Default::default()
+            })
+            .await?;
         Response::ok(Empty::default())
     }
 }

@@ -445,3 +445,131 @@ dialog .form-actions {
     padding: 58px 24px;
   }
 }
+nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 16px 30px;
+  border-bottom: 1px solid var(--line);
+}
+.collection-card {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.collection-link {
+  text-align: left;
+  font-size: 18px;
+  color: var(--green);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.everyday-notes {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  margin: 6px 0 18px;
+}
+.section-title {
+  font-size: 18px;
+  margin: 24px 0 8px;
+}
+#everyday-view h1 {
+  overflow-wrap: anywhere;
+}
+#everyday-view .heading {
+  flex-wrap: wrap;
+}
+.everyday-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 24px;
+}
+.template-item {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+progress {
+  display: block;
+  width: min(100%, 420px);
+  height: 12px;
+  accent-color: var(--green);
+  margin: 12px 0;
+}
+select {
+  font: inherit;
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px;
+  border: 1px solid #9cad9f;
+  border-radius: 8px;
+  background: white;
+  color: inherit;
+  margin: 8px 0 20px;
+}
+select:focus {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+.history-entry {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.history-entry h2 {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+.history-value {
+  white-space: pre-wrap;
+  margin-top: 6px;
+  font-size: 14px;
+}
+.saved-comparison {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f4f5f1;
+  margin: 16px 0;
+  overflow-wrap: anywhere;
+}
+.saved-comparison h2 {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+.task-actions {
+  flex-wrap: wrap;
+  max-width: 250px;
+  gap: 2px;
+}
+button {
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.task-copy .muted {
+  overflow-wrap: anywhere;
+}
+footer {
+  flex-wrap: wrap;
+}
+footer .everyday-actions {
+  margin: 0;
+}
+@media (max-width: 700px) {
+  .task-actions {
+    max-width: 100%;
+  }
+  #everyday-view .task {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+  #everyday-view .template-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #everyday-view .template-item .task-actions {
+    grid-column: 1;
+  }
+  nav {
+    padding: 12px 20px;
+  }
+}

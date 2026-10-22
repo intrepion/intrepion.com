@@ -1,0 +1,5 @@
+# Retain recoverable history and independent checklist runs
+
+MVP 2 replaces MVP 1's ordinary permanent deletion with reversible Trash and retained change history, supporting everyday reuse and the later household direction. History and Trash do not automatically expire: the owner accepted the storage cost trade-off in Q5 and Q12–Q17, with explicit permanent erasure and existing budget monitoring instead. Permanent erasure must remove associated content from parent history; restoring an older backup must reapply subsequent erasures from a separate content-free identifier record before reopening the app (Q25 and Q37).
+
+Checklist runs copy their template's current content rather than following later edits, so a packing trip or cooking session remains stable while its source evolves (Q2 and Q19). Erasing a source template does not erase independent run copies; confirmations must explain that boundary. This intentionally trades extra storage and more involved recovery for predictable independent runs and reversible everyday mistakes.

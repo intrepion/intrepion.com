@@ -8,17 +8,26 @@ export default {
     )
       return new Response(null, { status: 404 });
     try {
-      const { sql, params } = await request.json();
+      const body = await request.json();
+      const statements = body.batch ?? [body];
       if (
-        typeof sql !== "string" ||
-        !Array.isArray(params) ||
-        params.some((p) => typeof p !== "string")
+        !Array.isArray(statements) ||
+        !statements.length ||
+        statements.some(
+          ({ sql, params }) =>
+            typeof sql !== "string" ||
+            !Array.isArray(params) ||
+            params.some((p) => typeof p !== "string"),
+        )
       )
         return new Response(null, { status: 400 });
-      const result = await env.DB.prepare(sql)
-        .bind(...params)
-        .all();
-      return Response.json({ success: true, result: [result] });
+      const prepared = statements.map(({ sql, params }) =>
+        env.DB.prepare(sql).bind(...params),
+      );
+      const result = body.batch
+        ? await env.DB.batch(prepared)
+        : [await prepared[0].all()];
+      return Response.json({ success: true, result });
     } catch {
       return Response.json(
         { success: false, errors: [{ code: 7500 }] },

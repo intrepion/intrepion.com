@@ -35,6 +35,15 @@ try {
       { env: localEnv },
     ),
   );
+  children.push(
+    start("node", ["scripts/local-erasure-ledger.mjs"], {
+      env: {
+        ...localEnv,
+        LOCAL_ERASURE_LEDGER_DIR: ".wrangler/erasure-ledger",
+      },
+    }),
+  );
+  await ready("http://127.0.0.1:8792/health");
   await bridgeReady();
   children.push(start("target/debug/intrepion-server", [], { env: localEnv }));
   await ready("http://127.0.0.1:8788/health/live");

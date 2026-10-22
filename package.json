@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate": "protoc -I proto --plugin=protoc-gen-es=./node_modules/.bin/protoc-gen-es --es_out=web/src/gen --es_opt=target=ts proto/life/v1/tasks.proto",
+    "generate": "protoc -I proto --plugin=protoc-gen-es=./node_modules/.bin/protoc-gen-es --es_out=web/src/gen --es_opt=target=ts proto/life/v1/tasks.proto proto/life/v1/lists.proto",
     "db:migrate": "wrangler d1 migrations apply DB --local --config server/local/wrangler.toml",
     "db:dev": "wrangler dev --local --config server/local/wrangler.toml --ip 127.0.0.1 --port 8791",
     "dev": "node scripts/dev.mjs",
@@ -12,7 +12,8 @@
     "lint": "eslint web/src web/tests scripts server/tests server/local/*.mjs --ignore-pattern '**/gen/**'",
     "format": "prettier --write .github scripts server/local server/tests proto web/src web/tests web/*.mjs web/*.ts web/*.json package.json tsconfig.json",
     "format:check": "prettier --check .github scripts server/local server/tests proto web/src web/tests web/*.mjs web/*.ts web/*.json package.json tsconfig.json",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:recovery": "node --test scripts/recovery.test.mjs"
   },
   "devDependencies": {
     "@bufbuild/protoc-gen-es": "^2.0.0",
