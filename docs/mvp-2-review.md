@@ -49,3 +49,9 @@ The independent reviewer found no documented-standard violations or actionable s
 The independent reviewer found no missing requirements, incorrect behavior or scope creep. Q37 replay and integrity guarantees remain intact; isolated import and verification are still required before reopening the application. Findings: **0**; worst issue: **none**.
 
 All three encryption/recovery tests and lint passed. The corrected SQL also imported into a new isolated hosted D1 database. The normal production API read and created synthetic data against that restored database and rejected reuse of an erased identity. Restored sessions were cleared; integrity and all six migrations were checked. The temporary database and plaintext files were removed. These are completed hosted recovery checks, not a claim that final public-client deployment has finished.
+
+## CI fallback review and launch
+
+The independent Standards review of `a02d8f2` found no correctness, security or actionable smell findings. It identified one outdated runbook sentence requiring push-only CI; that sentence now matches the gate. The independent Spec review found zero findings: push/PR triggers remain, manual dispatch executes the identical full suite, and the exact SHA, `main` branch, accepted event and latest-success requirements remain enforced. Coverage and browser E2E stay local-only. Remaining findings: Standards **0**, worst **none**; Spec **0**, worst **none**.
+
+The final full CI and Deploy workflows passed for `a02d8f280aa524f95fe4fb311298840fa2400198`. Hosted recovery and published-site browser checks also passed; see the release record for evidence and the distinction between operator-session checks and a fresh human Google sign-in.

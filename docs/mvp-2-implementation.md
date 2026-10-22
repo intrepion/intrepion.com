@@ -1,6 +1,6 @@
 # MVP 2 implementation record
 
-Status: production implementation is complete and verified locally. Hosted setup and launch remain pending. Scope, wireframes, mockups, and the standalone prototype are approved. No MVP 2 production deployment has occurred.
+Status: MVP 2 is live at https://intrepion.com as revision `a02d8f280aa524f95fe4fb311298840fa2400198`. Local verification, hosted setup, the maintenance migration, production workflow checks, and isolated hosted encrypted recovery passed. Scope, wireframes, mockups, and the standalone prototype are approved. See the [launch record](mvp-2-release.md).
 
 ## Agreed verification boundaries
 
@@ -40,15 +40,15 @@ Primary documentation: [D1 REST batch request](https://developers.cloudflare.com
 - A real legacy-database upgrade fixture: failed before backfill existed, then passed for title/notes/completion/revision preservation, migration baseline, and compatible task RPCs. Legacy task writes are now adapters over canonical collections. Old task-table content is removed after backfill, with legacy writes blocked.
 - Duplicate child identity: failed because a rejected insert was acknowledged with phantom history. Inserts now skip only an already present child in the same parent; cross-parent collisions abort the transaction. The focused item-collision regression and full API suite pass.
 
-## Verification and remaining release work
+## Verification and hosted release
 
 - Full local API integration suite: 27 passed. Full local browser suite: 22 passed, including the original task workflows and new list/recovery workflows. The list tests reuse an authenticated session to respect the unchanged production rate limiter.
 - Rust: 6 unit tests passed; both production and development Clippy checks passed; release build passed. TypeScript, Astro, ESLint, generated client, formatting, backup/probe checks and 3 real age encryption/recovery tests passed.
 - Local coverage was collected for the existing client model only: 83.33% lines/statements, 78.57% branches, 100% functions. This is not whole-application or server coverage. Coverage and browser E2E remain outside CI.
 - Production UI independently implements shopping, templates/runs, explicit finishing/reopening, section/item editing and ordering, history, Archive, Trash, erasure, safe retry, draft/session recovery, latest-value comparison, and 320px action layout. No prototype application code is imported.
-- Encrypted recovery replays the separately retained ledger before producing usable SQL, clears sessions, validates relationships/guards, and reconciles migrations from MVP 1. Live B2 provisioning, lifecycle review, isolated hosted REST transaction/recovery validation, and production migration are still release obligations.
+- Encrypted recovery replays the separately retained ledger before producing usable SQL, clears sessions, validates relationships/guards, and reconciles migrations from MVP 1. B2 provisioning and lifecycle review, isolated hosted REST transaction/recovery checks, and the stopped-service production migration are now complete.
 - [Two-axis review](mvp-2-review.md) found one retry/concurrency violation, two maintenance concerns and three specification findings. All were corrected and independently rechecked. Bulk updates, history and run copies use shared, byte-bounded rowsets; a maximum-note Unicode copy passes. The final browser run includes the additional unavailable-state regression and passed.
 
-Provider credentials, ledger provisioning, hosted migration/restore behavior, and deployment remain separate from local proof. Preserve existing zero-cost/spending controls and manual exact-revision deployment policy.
+Hosted verification independently checked the ledger scopes, batch rollback, encrypted recovery into isolated D1, and normal production API behavior after restoration. A real published mobile-browser check verified Google-button rendering and shopping persistence across reload using a temporary operator session; it does not substitute for a new human Google sign-in. Temporary sessions, synthetic content, isolated databases and plaintext were removed. Existing zero-cost/spending controls and the manual exact-revision deployment policy remain in force.
 
 The [erasure design](mvp-2-erasure-design.md) records the pending intent/publication/recovery protocol.

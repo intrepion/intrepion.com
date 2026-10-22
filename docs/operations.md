@@ -1,4 +1,4 @@
-# MVP 1 operations and launch
+# Operations and launch
 
 Q37 approves the prototype and authorizes separate production implementation. The repository now contains that implementation and CI/CD definitions. The repository is public, with pull requests, issues, discussions, wiki, and automatic merging disabled. The owner confirmed the final task/logout and Google MFA/recovery checks. The MVP now serves `https://intrepion.com`, replacing the previous main website. The API uses `https://api.intrepion.com`. No paid plan has been configured. `https://www.intrepion.com` redirects to the root hostname with an HTTPS 301, preserving paths and query strings.
 
@@ -65,7 +65,7 @@ Only after the relevant setup checks pass, set the **repository** variable `OPER
 
 ## GitHub configuration
 
-The `CI` workflow runs on every push and every pull request targeting `main`, on standard Linux runners. It builds the API and client, checks formatting, Clippy, ESLint, TypeScript/Astro, generated-code drift, unit tests, backup behavior, and generated-client integration tests. E2E and coverage remain local. It needs no cloud secrets and uploads no artifacts or caches.
+The `CI` workflow runs on every push and every pull request targeting `main`, on standard Linux runners. The same full suite can also be started manually on `main` if a push run is delayed or missing. It builds the API and client, checks formatting, Clippy, ESLint, TypeScript/Astro, generated-code drift, unit tests, backup behavior, and generated-client integration tests. E2E and coverage remain local. It needs no cloud secrets and uploads no artifacts or caches.
 
 Configure these variables and secrets in the indicated environments. The two enablement variables above must be repository variables, because job conditions evaluate before environment variables become available.
 
@@ -82,7 +82,7 @@ Collaborator-only interaction limits are active until **2027-04-21 06:07:23 UTC*
 
 ## Deployment and rollback
 
-Use **Deploy → Run workflow** on `main` with a full commit SHA. The gate requires the latest push-CI run for that exact `main` revision to have succeeded, then checks that it is an ancestor of current `main`. The workflow checks out that SHA, builds the static client, applies additive D1 migrations, requests the same Render commit, waits for a confirmed live deployment, and uploads the corresponding static assets plus the www redirect project. Environment approval rules may be added if desired; deployment itself always requires a manual workflow trigger.
+Use **Deploy → Run workflow** on `main` with a full commit SHA. The gate requires the latest push or manually triggered CI run for that exact `main` revision to have succeeded, then checks that it is an ancestor of current `main`. The workflow checks out that SHA, builds the static client, applies additive D1 migrations, requests the same Render commit, waits for a confirmed live deployment, and uploads the corresponding static assets plus the www redirect project. Environment approval rules may be added if desired; deployment itself always requires a manual workflow trigger.
 
 For initial provisioning, Render may attempt a first deployment; keep the service unexposed or suspended until the launch checks pass. Disable auto-deploys explicitly: choosing a commit through Render's API does not disable them. Inspect provider dashboards if a deployment times out before retrying. Partial deployment can leave a new API with the previous web client, so maintain backward-compatible RPC/schema changes. A rollback uses another passing revision; it does not automatically reverse migrations or restore deleted tasks. There are no destructive down migrations in this MVP.
 
@@ -148,3 +148,7 @@ The web build also emits Cloudflare's `_headers` file from a normal Astro endpoi
 Regression evidence for these corrections: the original caller-lockout test failed with HTTP 429 for the second caller; both task race tests initially failed because the requests incorrectly succeeded; the original probe counted a loading page as ready. After correction, six Rust tests, eight real HTTP/local D1 workflows, and the probe tests pass. The replacement dependency graph contains 201 registry crate versions and the OSV query returned zero advisories with no pending pagination. Node 26.12.1 was checksum-verified against the official distribution and used for local validation; no system-wide toolchain was changed. Live rollout still requires passing CI for the exact commit. Refresh older browser tabs after rollout: the API deliberately refuses deletion requests without a revision rather than risk deleting unseen edits.
 
 Backup validation accepts legacy schemas for staged recovery but requires the retirement trigger whenever the retired-ID table exists. A regression fixture missing that trigger failed to be rejected before the correction and is rejected now. After deployment, run a fresh encrypted backup and test local decryption/restoration with the current schema.
+
+## MVP 2 Everyday lists launch
+
+MVP 2 is live at `https://intrepion.com` as exact passing revision `a02d8f280aa524f95fe4fb311298840fa2400198`. The stopped-service migration, separately restricted erasure-ledger keys, hosted workflow/browser checks, and isolated hosted encrypted recovery passed. No paid plan, spending cap, unrelated service or DNS configuration was changed. See the [MVP 2 release record](mvp-2-release.md) for CI/deployment/backup evidence, the corrected D1 recovery import format, and required ledger-key rotation before 2027-01-20.

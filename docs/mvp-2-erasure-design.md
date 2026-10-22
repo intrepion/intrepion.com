@@ -1,6 +1,6 @@
 # Erasure and recovery implementation design
 
-Status: the accepted Q17/Q25/Q37 behavior is implemented and passes local RPC/browser/encrypted-recovery tests; hosted provisioning and recovery verification remain required. This does not authorize a hosted deployment or new spending.
+Status: the accepted Q17/Q25/Q37 behavior is implemented, verified locally and through hosted ledger/recovery checks, and deployed after the owner explicitly requested the live upgrade. No paid plan was introduced. See the release record for evidence and ongoing recovery requirements.
 
 The ledger must survive restoring an older D1 backup. An in-database deletion table alone cannot satisfy Q37. Use the existing B2 backup bucket with a separately scoped append-only application key restricted to the exact `erasures/<D1 database UUID>/` prefix. Ledger records contain the database identifier, operation identifier, collection identifier, optional item identifier, and erasure scope, never names, notes, quantities, Google credentials, or content snapshots. Owner-account transfer must not invalidate recovery: scope ledger records to the database and stable entity IDs, not the current Google identity. Enforce global collection/item identifiers within the database before relying on this replay rule.
 
@@ -30,4 +30,4 @@ The recovery seam must exercise export/encryption/restore plus replay of the ind
 
 Primary references: [B2 upload URL requires writeFiles](https://www.backblaze.com/apidocs/b2-get-upload-url), [B2 upload protocol](https://www.backblaze.com/apidocs/b2-upload-file), and [application-key prefix restrictions](https://www.backblaze.com/docs/en/cloud-storage-get-started-with-a-backblaze-integration).
 
-See the [release and recovery procedure](mvp-2-release.md) for exact operator commands, scope checks, schema upgrade, and hosted verification still required before launch.
+See the [release and recovery procedure](mvp-2-release.md) for exact operator commands, scope checks, schema upgrade, and completed hosted verification and the ongoing recovery procedure.
