@@ -28,6 +28,28 @@ export function verifySql(sql) {
     db.prepare(
       "SELECT token_hash,owner_sub,csrf,expires_at FROM sessions LIMIT 1",
     ).all();
+    // Legacy snapshots can be restored before applying migration 0002. Once
+    // receipts exist, restoring without their trigger would silently weaken deletion.
+    if (
+      db
+        .prepare(
+          "SELECT 1 FROM sqlite_master WHERE type='table' AND name='retired_task_ids'",
+        )
+        .get()
+    ) {
+      db.prepare("SELECT owner_sub,id FROM retired_task_ids LIMIT 1").all();
+      if (
+        !db
+          .prepare(
+            "SELECT 1 FROM sqlite_master WHERE type='trigger' AND name='remember_deleted_task' AND tbl_name='tasks'",
+          )
+          .get()
+      ) {
+        throw new Error(
+          "Backup is missing deleted-task retirement protection.",
+        );
+      }
+    }
   } finally {
     db.close();
   }

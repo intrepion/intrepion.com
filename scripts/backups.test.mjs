@@ -1,8 +1,16 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
-import { B2, createBackup, checkBackup } from "./backups.mjs";
+import { B2, createBackup, checkBackup, verifySql } from "./backups.mjs";
 import { readFile } from "node:fs/promises";
-const sql = await readFile("server/migrations/0001_initial.sql");
+const sql = Buffer.concat([
+  await readFile("server/migrations/0001_initial.sql"),
+  await readFile("server/migrations/0002_retired_task_ids.sql"),
+]);
+test("restoring a schema with retired IDs requires its deletion trigger", () => {
+  assert.doesNotThrow(() => verifySql(sql));
+  const missingTrigger = Buffer.from(sql.toString().split("CREATE TRIGGER")[0]);
+  assert.throws(() => verifySql(missingTrigger), /retirement protection/);
+});
 test("B2 accepts its documented upload host and blocks redirects and unrelated destinations", async () => {
   const uploadUrl =
     "https://pod-000-1005-03.backblaze.com/b2api/v4/b2_upload_file";
