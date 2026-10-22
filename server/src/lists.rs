@@ -1,8 +1,11 @@
 mod erasure;
+mod writes;
 use crate::{auth::SharedAuth, db::Statement, proto::life::v1::*};
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
+const NO_CONFLICTING_RECEIPT: &str = "NOT EXISTS(SELECT 1 FROM collection_operations WHERE owner_sub=? AND operation_id=? AND fingerprint<>?)";
+use writes::{Writes, history_writes, json_chunks};
 
 pub struct Lists(pub SharedAuth);
 #[derive(Deserialize)]
@@ -126,43 +129,25 @@ fn item_values(c: &Collection, item: &ListItem) -> serde_json::Value {
 fn collection_values(c: &Collection) -> serde_json::Value {
     serde_json::json!({"title":c.title,"notes":c.notes,"completed":c.completed,"archived":c.archived,"trashed":c.trashed,"finished":c.finished})
 }
-fn write_item(owner: &str, c: &Collection, item: &ListItem, create: bool) -> Statement {
-    if create {
-        Statement::new(
-            "INSERT INTO list_items(owner_sub,collection_id,id,title,notes,quantity,section_id,completed,trashed,position) SELECT ?,?,?,?,?,?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM list_items WHERE owner_sub=? AND collection_id=? AND id=?) AND @guard",
-            vec![
-                owner.into(),
-                c.id.clone(),
-                item.id.clone(),
-                item.title.clone(),
-                item.notes.clone(),
-                item.quantity.clone(),
-                item.section_id.clone(),
-                i32::from(item.completed).to_string(),
-                i32::from(item.trashed).to_string(),
-                item.position.to_string(),
-                owner.into(),
-                c.id.clone(),
-                item.id.clone(),
-            ],
-        )
-    } else {
-        Statement::new(
-            "UPDATE list_items SET title=?,notes=?,quantity=?,section_id=?,completed=?,trashed=?,position=? WHERE owner_sub=? AND collection_id=? AND id=? AND @guard",
-            vec![
-                item.title.clone(),
-                item.notes.clone(),
-                item.quantity.clone(),
-                item.section_id.clone(),
-                i32::from(item.completed).to_string(),
-                i32::from(item.trashed).to_string(),
-                item.position.to_string(),
-                owner.into(),
-                c.id.clone(),
-                item.id.clone(),
-            ],
-        )
-    }
+fn insert_item(owner: &str, c: &Collection, item: &ListItem) -> Statement {
+    Statement::new(
+        "INSERT INTO list_items(owner_sub,collection_id,id,title,notes,quantity,section_id,completed,trashed,position) SELECT ?,?,?,?,?,?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM list_items WHERE owner_sub=? AND collection_id=? AND id=?) AND @guard",
+        vec![
+            owner.into(),
+            c.id.clone(),
+            item.id.clone(),
+            item.title.clone(),
+            item.notes.clone(),
+            item.quantity.clone(),
+            item.section_id.clone(),
+            i32::from(item.completed).to_string(),
+            i32::from(item.trashed).to_string(),
+            item.position.to_string(),
+            owner.into(),
+            c.id.clone(),
+            item.id.clone(),
+        ],
+    )
 }
 fn validate_item(c: &Collection, item: &ListItem) -> Result<(), ConnectError> {
     validate_text(&item.title, &item.notes)?;
@@ -208,6 +193,9 @@ fn conflict() -> ConnectError {
     )
 }
 impl Lists {
+    fn operation_identity(&self, r: &ChangeRequest, fingerprint: &str) -> [String; 3] {
+        [self.owner(), r.operation_id.clone(), fingerprint.into()]
+    }
     fn owner(&self) -> String {
         self.0.config.owner_sub.clone()
     }
@@ -277,19 +265,22 @@ impl Lists {
             "EXISTS(SELECT 1 FROM collections WHERE owner_sub=? AND id=? AND last_operation=?)";
         let statements = vec![
             Statement::new(
-                "INSERT INTO collections(owner_sub,id,kind,title,notes,completed,last_operation) SELECT ?,?,?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM collection_operations WHERE owner_sub=? AND operation_id=? AND fingerprint<>?) ON CONFLICT(owner_sub,id) DO NOTHING",
-                vec![
-                    self.owner(),
-                    r.collection_id.clone(),
-                    kind.to_string(),
-                    r.details.title.trim().into(),
-                    r.details.notes.clone(),
-                    i32::from(r.details.completed).to_string(),
-                    r.operation_id.clone(),
-                    self.owner(),
-                    r.operation_id.clone(),
-                    fingerprint.into(),
-                ],
+                &format!(
+                    "INSERT INTO collections(owner_sub,id,kind,title,notes,completed,last_operation) SELECT ?,?,?,?,?,?,? WHERE {NO_CONFLICTING_RECEIPT} ON CONFLICT(owner_sub,id) DO NOTHING"
+                ),
+                {
+                    let mut parameters = vec![
+                        self.owner(),
+                        r.collection_id.clone(),
+                        kind.to_string(),
+                        r.details.title.trim().into(),
+                        r.details.notes.clone(),
+                        i32::from(r.details.completed).to_string(),
+                        r.operation_id.clone(),
+                    ];
+                    parameters.extend(self.operation_identity(r, fingerprint));
+                    parameters
+                },
             ),
             Statement::new(
                 &format!(
@@ -349,48 +340,45 @@ impl Lists {
         let next_revision = c.revision.checked_add(1).ok_or_else(|| {
             ConnectError::failed_precondition("Collection revision limit reached.")
         })?;
-        let guard = "EXISTS(SELECT 1 FROM collections WHERE owner_sub=? AND id=? AND last_operation=? AND revision=?) AND NOT EXISTS(SELECT 1 FROM erasure_intents WHERE collection_id=?) AND NOT EXISTS(SELECT 1 FROM collection_operations WHERE owner_sub=? AND operation_id=? AND fingerprint<>?)";
-        let guard_params = vec![
-            self.owner(),
-            c.id.clone(),
-            r.operation_id.clone(),
-            next_revision.to_string(),
-            c.id.clone(),
-            self.owner(),
-            r.operation_id.clone(),
-            fingerprint.into(),
-        ];
-        let mut statements = vec![Statement::new(
-            "UPDATE collections SET revision=revision+1,last_operation=? WHERE owner_sub=? AND id=? AND revision=? AND NOT EXISTS(SELECT 1 FROM erasure_intents WHERE collection_id=?)",
-            vec![
-                r.operation_id.clone(),
+        let guard = format!(
+            "EXISTS(SELECT 1 FROM collections WHERE owner_sub=? AND id=? AND last_operation=? AND revision=?) AND NOT EXISTS(SELECT 1 FROM erasure_intents WHERE collection_id=?) AND {NO_CONFLICTING_RECEIPT}"
+        );
+        let guard_params = {
+            let mut parameters = vec![
                 self.owner(),
                 c.id.clone(),
-                r.expected_revision.to_string(),
+                r.operation_id.clone(),
+                next_revision.to_string(),
                 c.id.clone(),
-            ],
+            ];
+            parameters.extend(self.operation_identity(r, fingerprint));
+            parameters
+        };
+        let mut statements = vec![Statement::new(
+            &format!(
+                "UPDATE collections SET revision=revision+1,last_operation=? WHERE owner_sub=? AND id=? AND revision=? AND NOT EXISTS(SELECT 1 FROM erasure_intents WHERE collection_id=?) AND {NO_CONFLICTING_RECEIPT}"
+            ),
+            {
+                let mut parameters = vec![
+                    r.operation_id.clone(),
+                    self.owner(),
+                    c.id.clone(),
+                    r.expected_revision.to_string(),
+                    c.id.clone(),
+                ];
+                parameters.extend(self.operation_identity(r, fingerprint));
+                parameters
+            },
         )];
         for mut write in writes {
-            write.sql = write.sql.replace("@guard", guard);
+            write.sql = write.sql.replace("@guard", &guard);
             write.params.extend(guard_params.clone());
             statements.push(write);
         }
-        for event in events {
-            if event.before == event.after {
-                continue;
-            }
-            let mut params = vec![
-                self.owner(),
-                c.id.clone(),
-                r.operation_id.clone(),
-                event.target,
-                event.title,
-                event.action,
-                event.before.to_string(),
-                event.after.to_string(),
-            ];
-            params.extend(guard_params.clone());
-            statements.push(Statement::new(&format!("INSERT INTO collection_history(owner_sub,collection_id,operation_id,target_id,target_title,action,before_json,after_json) SELECT ?,?,?,?,?,?,?,? WHERE {guard} ON CONFLICT(owner_sub,operation_id,target_id) DO NOTHING"),params));
+        for mut write in history_writes(&self.owner(), &c.id, &r.operation_id, events)? {
+            write.sql = write.sql.replace("@guard", &guard);
+            write.params.extend(guard_params.clone());
+            statements.push(write);
         }
         let mut receipt = vec![
             self.owner(),
@@ -448,7 +436,7 @@ impl Lists {
                 "Restore, unarchive or reopen this collection before editing it.",
             ));
         }
-        let mut writes = vec![];
+        let mut writes = Writes::default();
         let mut events = vec![];
         match r.action.as_known() {
             Some(ChangeAction::RenameSection) => {
@@ -486,7 +474,7 @@ impl Lists {
                         .iter()
                         .position(|s| s.id == section.id)
                         .ok_or_else(conflict)?;
-                    writes.push(Statement::new("UPDATE list_sections SET position=? WHERE owner_sub=? AND collection_id=? AND id=? AND @guard",vec![position.to_string(),self.owner(),c.id.clone(),section.id.clone()]));
+                    writes.section_position(&section.id, position);
                     if previous == position {
                         continue;
                     }
@@ -530,7 +518,7 @@ impl Lists {
                         .position(|i| i.id == moved.id)
                         .ok_or_else(conflict)?;
                     if before.position != moved.position {
-                        writes.push(write_item(&self.owner(), &c, &moved, false));
+                        writes.update_item(&moved);
                     }
                     if previous == position {
                         continue;
@@ -566,7 +554,7 @@ impl Lists {
                     let mut item = before.clone();
                     item.section_id.clear();
                     item.position = position;
-                    writes.push(write_item(&self.owner(), &c, &item, false));
+                    writes.update_item(&item);
                     events.push(Event {
                         target: item.id.clone(),
                         title: item.title.clone(),
@@ -607,7 +595,7 @@ impl Lists {
                         .checked_add(1)
                         .ok_or_else(conflict)?;
                 }
-                writes.push(write_item(&self.owner(), &c, &item, false));
+                writes.update_item(&item);
                 events.push(Event {
                     target: item.id.clone(),
                     title: item.title.clone(),
@@ -748,7 +736,7 @@ impl Lists {
                     .unwrap_or(0)
                     .checked_add(1)
                     .ok_or_else(conflict)?;
-                writes.push(write_item(&self.owner(), &c, &item, true));
+                writes.push(insert_item(&self.owner(), &c, &item));
                 events.push(Event {
                     target: item.id.clone(),
                     title: item.title.clone(),
@@ -778,7 +766,7 @@ impl Lists {
                         .checked_add(1)
                         .ok_or_else(conflict)?
                 };
-                writes.push(write_item(&self.owner(), &c, &item, false));
+                writes.update_item(&item);
                 events.push(Event {
                     target: item.id.clone(),
                     title: item.title.clone(),
@@ -796,7 +784,7 @@ impl Lists {
                 for before in c.items.iter().filter(|i| !i.trashed && i.completed) {
                     let mut item = before.clone();
                     item.completed = false;
-                    writes.push(write_item(&self.owner(), &c, &item, false));
+                    writes.update_item(&item);
                     events.push(Event {
                         target: item.id.clone(),
                         title: item.title.clone(),
@@ -812,7 +800,14 @@ impl Lists {
                 ));
             }
         }
-        self.commit(&c, r, fingerprint, writes, events).await
+        self.commit(
+            &c,
+            r,
+            fingerprint,
+            writes.finish(&self.owner(), &c.id)?,
+            events,
+        )
+        .await
     }
 }
 impl Lists {
@@ -889,14 +884,8 @@ impl Lists {
                 ..Default::default()
             })
             .collect();
-        let section_json = serde_json::json!(
-            run.sections
-                .iter()
-                .map(|s| serde_json::json!({"id":s.id,"title":s.title,"position":s.position}))
-                .collect::<Vec<_>>()
-        )
-        .to_string();
-        let item_json=serde_json::json!(run.items.iter().map(|i|serde_json::json!({"id":i.id,"title":i.title,"notes":i.notes,"section_id":i.section_id,"position":i.position})).collect::<Vec<_>>()).to_string();
+        let section_json=json_chunks(run.sections.iter().map(|section|serde_json::json!({"id":section.id,"title":section.title,"position":section.position})))?;
+        let item_json=json_chunks(run.items.iter().map(|item|serde_json::json!({"id":item.id,"title":item.title,"notes":item.notes,"section_id":item.section_id,"position":item.position})))?;
         let mut events = vec![Event {
             target: run.id.clone(),
             title: run.title.clone(),
@@ -918,76 +907,53 @@ impl Lists {
             before: serde_json::Value::Null,
             after: item_values(&run, i),
         }));
-        let guard = "EXISTS(SELECT 1 FROM collections WHERE owner_sub=? AND id=? AND last_operation=?) AND NOT EXISTS(SELECT 1 FROM collection_operations WHERE owner_sub=? AND operation_id=? AND fingerprint<>?)";
-        let guard_params = vec![
-            self.owner(),
-            run.id.clone(),
-            r.operation_id.clone(),
-            self.owner(),
-            r.operation_id.clone(),
-            fingerprint.into(),
-        ];
+        let guard = format!(
+            "EXISTS(SELECT 1 FROM collections WHERE owner_sub=? AND id=? AND last_operation=?) AND {NO_CONFLICTING_RECEIPT}"
+        );
+        let guard_params = {
+            let mut parameters = vec![self.owner(), run.id.clone(), r.operation_id.clone()];
+            parameters.extend(self.operation_identity(r, fingerprint));
+            parameters
+        };
         let mut statements = vec![Statement::new(
-            "INSERT INTO collections(owner_sub,id,kind,title,notes,source_id,source_title,last_operation) SELECT ?,?,4,?,?,?,?,? FROM collections WHERE owner_sub=? AND id=? AND revision=? AND kind=3 AND archived=0 AND trashed=0 AND NOT EXISTS(SELECT 1 FROM erasure_intents e WHERE e.collection_id=collections.id) AND NOT EXISTS(SELECT 1 FROM collection_operations WHERE owner_sub=? AND operation_id=? AND fingerprint<>?) ON CONFLICT(owner_sub,id) DO NOTHING",
-            vec![
-                self.owner(),
-                run.id.clone(),
-                run.title.clone(),
-                run.notes.clone(),
-                source.id.clone(),
-                source.title.clone(),
-                r.operation_id.clone(),
-                self.owner(),
-                source.id.clone(),
-                r.expected_revision.to_string(),
-                self.owner(),
-                r.operation_id.clone(),
-                fingerprint.into(),
-            ],
+            &format!(
+                "INSERT INTO collections(owner_sub,id,kind,title,notes,source_id,source_title,last_operation) SELECT ?,?,4,?,?,?,?,? FROM collections WHERE owner_sub=? AND id=? AND revision=? AND kind=3 AND archived=0 AND trashed=0 AND NOT EXISTS(SELECT 1 FROM erasure_intents e WHERE e.collection_id=collections.id) AND {NO_CONFLICTING_RECEIPT} ON CONFLICT(owner_sub,id) DO NOTHING"
+            ),
+            {
+                let mut parameters = vec![
+                    self.owner(),
+                    run.id.clone(),
+                    run.title.clone(),
+                    run.notes.clone(),
+                    source.id.clone(),
+                    source.title.clone(),
+                    r.operation_id.clone(),
+                    self.owner(),
+                    source.id.clone(),
+                    r.expected_revision.to_string(),
+                ];
+                parameters.extend(self.operation_identity(r, fingerprint));
+                parameters
+            },
         )];
-        for (sql, mut params) in [
-            (
-                "INSERT INTO list_sections(owner_sub,collection_id,id,title,position) SELECT ?,?,json_extract(value,'$.id'),json_extract(value,'$.title'),json_extract(value,'$.position') FROM json_each(?) AS input WHERE NOT EXISTS(SELECT 1 FROM list_sections WHERE owner_sub=? AND collection_id=? AND id=json_extract(input.value,'$.id')) AND @guard",
-                vec![
-                    self.owner(),
-                    run.id.clone(),
-                    section_json,
-                    self.owner(),
-                    run.id.clone(),
-                ],
-            ),
-            (
-                "INSERT INTO list_items(owner_sub,collection_id,id,title,notes,section_id,position) SELECT ?,?,json_extract(value,'$.id'),json_extract(value,'$.title'),json_extract(value,'$.notes'),json_extract(value,'$.section_id'),json_extract(value,'$.position') FROM json_each(?) AS input WHERE NOT EXISTS(SELECT 1 FROM list_items WHERE owner_sub=? AND collection_id=? AND id=json_extract(input.value,'$.id')) AND @guard",
-                vec![
-                    self.owner(),
-                    run.id.clone(),
-                    item_json,
-                    self.owner(),
-                    run.id.clone(),
-                ],
-            ),
-            (
-                "INSERT INTO collection_history(owner_sub,collection_id,operation_id,target_id,target_title,action,before_json,after_json) SELECT ?,?,?,json_extract(value,'$.target'),json_extract(value,'$.title'),json_extract(value,'$.action'),coalesce(json_extract(value,'$.before'),'null'),coalesce(json_extract(value,'$.after'),'null') FROM json_each(?) WHERE @guard ON CONFLICT(owner_sub,operation_id,target_id) DO NOTHING",
-                vec![
-                    self.owner(),
-                    run.id.clone(),
-                    r.operation_id.clone(),
-                    serde_json::to_string(&events)
-                        .map_err(|_| ConnectError::internal("Invalid run history."))?,
-                ],
-            ),
-            (
-                "INSERT INTO collection_operations(owner_sub,operation_id,collection_id,fingerprint) SELECT ?,?,?,? WHERE @guard ON CONFLICT(owner_sub,operation_id) DO NOTHING",
-                vec![
-                    self.owner(),
-                    r.operation_id.clone(),
-                    run.id.clone(),
-                    fingerprint.into(),
-                ],
-            ),
-        ] {
-            params.extend(guard_params.clone());
-            statements.push(Statement::new(&sql.replace("@guard", guard), params));
+        let mut copies = Vec::new();
+        for rows in section_json {
+            copies.push(Statement::new("INSERT INTO list_sections(owner_sub,collection_id,id,title,position) SELECT ?,?,json_extract(value,'$.id'),json_extract(value,'$.title'),json_extract(value,'$.position') FROM json_each(?) AS input WHERE NOT EXISTS(SELECT 1 FROM list_sections WHERE owner_sub=? AND collection_id=? AND id=json_extract(input.value,'$.id')) AND @guard",vec![self.owner(),run.id.clone(),rows,self.owner(),run.id.clone()]));
+        }
+        for rows in item_json {
+            copies.push(Statement::new("INSERT INTO list_items(owner_sub,collection_id,id,title,notes,section_id,position) SELECT ?,?,json_extract(value,'$.id'),json_extract(value,'$.title'),json_extract(value,'$.notes'),json_extract(value,'$.section_id'),json_extract(value,'$.position') FROM json_each(?) AS input WHERE NOT EXISTS(SELECT 1 FROM list_items WHERE owner_sub=? AND collection_id=? AND id=json_extract(input.value,'$.id')) AND @guard",vec![self.owner(),run.id.clone(),rows,self.owner(),run.id.clone()]));
+        }
+        copies.extend(history_writes(
+            &self.owner(),
+            &run.id,
+            &r.operation_id,
+            events,
+        )?);
+        copies.push(Statement::new("INSERT INTO collection_operations(owner_sub,operation_id,collection_id,fingerprint) SELECT ?,?,?,? WHERE @guard ON CONFLICT(owner_sub,operation_id) DO NOTHING",vec![self.owner(),r.operation_id.clone(),run.id.clone(),fingerprint.into()]));
+        for mut copy in copies {
+            copy.sql = copy.sql.replace("@guard", &guard);
+            copy.params.extend(guard_params.clone());
+            statements.push(copy);
         }
         self.0.db.batch(&statements).await?;
         let saved = self.receipt(&r.operation_id).await?.ok_or_else(conflict)?;

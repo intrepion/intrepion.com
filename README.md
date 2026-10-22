@@ -3,7 +3,7 @@
 A personal task app as the first MVP of a future Life OS. The initial delivery is a Rust API and an Astro/TypeScript web client; other clients and AI agents are deferred.
 
 - [Agreed MVP plan and delivery gates](docs/mvp-plan.md)
-- [MVP 2 Everyday lists scope](docs/mvp-2-plan.md), [approved designs](design/mvp-2/README.md), and [standalone prototype for review](design/mvp-2/PROTOTYPE.md)
+- [MVP 2 Everyday lists scope](docs/mvp-2-plan.md), [approved designs](design/mvp-2/README.md), and [approved standalone prototype](design/mvp-2/PROTOTYPE.md)
 - [Domain glossary](GLOSSARY.md)
 - [Hosting comparison](docs/hosting-assessment.md)
 - [GitHub-only backup monitoring plan](docs/monitoring-assessment.md)
@@ -18,6 +18,8 @@ A personal task app as the first MVP of a future Life OS. The initial delivery i
 - [Deployment, backups, monitoring, and launch evidence](docs/operations.md)
 
 Wireframes (Q35), mockups (Q36), and prototype interactions (Q37) are approved. The separate Rust/Axum API and Astro client implement the task workflow, durable D1 storage, Google owner sessions, and local development authentication. GitHub Actions definitions cover CI, manual deployment of a passing revision, encrypted backups, and an independent backup-age check. MVP 1 is live at [intrepion.com](https://intrepion.com) with Google owner-only access. Hosted task persistence, encrypted offsite recovery through the API, and private failure-email delivery passed. See the operations record for the deployed revision, timing samples, and accepted free-hosting limits.
+
+MVP 2 Everyday lists is implemented and verified locally: shopping lists, reusable checklist templates, independent runs, History, Archive, Trash and erasure-aware recovery. See the [implementation checks](docs/mvp-2-implementation.md), [review record](docs/mvp-2-review.md), and [hosted release procedure](docs/mvp-2-release.md). The live deployment remains MVP 1 until that maintenance upgrade is completed.
 
 For the production application's local development stack, install Rust, Node and `protoc`, run `npm ci` and `npm --prefix web ci` once, then `npm run dev` and open <http://127.0.0.1:4322>. The server uses local D1 and development login; task data survives restarts.
 

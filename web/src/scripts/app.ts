@@ -536,6 +536,10 @@ window.addEventListener("beforeunload", (event) => {
 });
 const everyday = new Everyday(get("everyday-view"), api, {
   show: () => view("everyday"),
+  tasks: () => {
+    everyday.reset();
+    void loadTasks();
+  },
   busy: setBusy,
   expired,
   confirm,

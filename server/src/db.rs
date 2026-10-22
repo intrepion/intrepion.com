@@ -73,7 +73,7 @@ impl Database {
         };
         eprintln!(
             "{}",
-            serde_json::json!({"event":"database","duration_ms":start.elapsed().as_millis(),"ok":result.is_ok()})
+            serde_json::json!({"event":"database","duration_ms":start.elapsed().as_millis(),"ok":result.is_ok(),"statement_count":statements.len()})
         );
         result
     }

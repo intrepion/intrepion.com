@@ -89,6 +89,19 @@ test("a reusable travel template starts an independent run that can finish and r
   await expect(
     page.getByRole("checkbox", { name: "Reopen Pack passport", exact: true }),
   ).toBeEnabled();
+  await page
+    .getByRole("button", { name: "Archive collection", exact: true })
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Archive", exact: true })
+    .click();
+  await expect(
+    page.getByText("Archived · read-only", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Finish run", exact: true }),
+  ).toBeDisabled();
   await page.getByRole("button", { name: "Checklists", exact: true }).click();
   await page.getByRole("button", { name: "Templates", exact: true }).click();
   await page
@@ -472,6 +485,10 @@ test("long shopping content keeps every action within a 320px viewport", async (
         .map((button) => button.textContent),
     );
   expect(outside).toEqual([]);
+  await page.screenshot({
+    path: test.info().outputPath("shopping-mobile.png"),
+    fullPage: true,
+  });
 });
 
 test("a collection erasure interrupted by a reload can be completed from Trash", async ({
@@ -585,4 +602,177 @@ test("restoring an item whose section was removed explains its Unsectioned desti
       exact: true,
     }),
   ).toBeVisible();
+});
+
+test("conflicting item review displays the latest quantity and section beside the retained draft", async ({
+  page,
+  context,
+}) => {
+  await owner(page);
+  await page.getByRole("button", { name: "Shopping", exact: true }).click();
+  await page
+    .getByRole("button", { name: "New shopping list", exact: true })
+    .click();
+  await page
+    .getByLabel("Name", { exact: true })
+    .fill("Item comparison groceries");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.getByRole("button", { name: "Add section", exact: true }).click();
+  await page.getByLabel("Name", { exact: true }).fill("Chilled");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.getByRole("button", { name: "Add item", exact: true }).click();
+  await page.getByLabel("Name", { exact: true }).fill("Comparison milk");
+  await page.getByLabel("Quantity", { exact: true }).fill("1 carton");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Edit item: Comparison milk", exact: true })
+    .click();
+  await page
+    .getByLabel("Notes", { exact: true })
+    .fill("Preserve these draft notes");
+  const other = await context.newPage();
+  await other.goto("/");
+  await other.getByRole("button", { name: "Shopping", exact: true }).click();
+  await other
+    .getByRole("button", {
+      name: "Open Item comparison groceries",
+      exact: true,
+    })
+    .click();
+  await other
+    .getByRole("button", { name: "Edit item: Comparison milk", exact: true })
+    .click();
+  await other.getByLabel("Quantity", { exact: true }).fill("2 cartons");
+  await other
+    .getByLabel("Section", { exact: true })
+    .selectOption({ label: "Chilled" });
+  await other.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(other.getByText("2 cartons", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Review latest", exact: true })
+    .click();
+  await expect(page.getByLabel("Notes", { exact: true })).toHaveValue(
+    "Preserve these draft notes",
+  );
+  await expect(page.locator(".saved-comparison")).toContainText("2 cartons");
+  await expect(page.locator(".saved-comparison")).toContainText("Chilled");
+  await expect(page.getByLabel("Quantity", { exact: true })).toHaveValue(
+    "1 carton",
+  );
+  await other.close();
+});
+
+test("a pending item erasure pauses all run mutations after a reload", async ({
+  page,
+  request,
+}) => {
+  await owner(page);
+  await page.getByRole("button", { name: "Checklists", exact: true }).click();
+  await page.getByRole("button", { name: "New template", exact: true }).click();
+  await page
+    .getByLabel("Name", { exact: true })
+    .fill("Pending erasure template");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  for (const name of ["Keep working item", "Erase run item"]) {
+    await page.getByRole("button", { name: "Add item", exact: true }).click();
+    await page.getByLabel("Name", { exact: true }).fill(name);
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+  }
+  await page.getByRole("button", { name: "Start run", exact: true }).click();
+  await page.getByLabel("Name", { exact: true }).fill("Paused run");
+  await page.getByRole("button", { name: "Start run", exact: true }).click();
+  await page
+    .getByRole("button", {
+      name: "Move item to Trash: Erase run item",
+      exact: true,
+    })
+    .click();
+  await page
+    .getByRole("button", { name: "Move to Trash", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Trash", exact: true }).click();
+  await request.post("http://127.0.0.1:8792/fault", {
+    headers: { authorization: "Bearer local-erasure-only" },
+    data: { fail_next: "before" },
+  });
+  await page
+    .getByRole("button", {
+      name: "Erase item permanently: Erase run item",
+      exact: true,
+    })
+    .click();
+  await page
+    .getByRole("button", { name: "Erase permanently", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Retry action", exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "Trash", exact: true }).click();
+  await expect(
+    page.getByRole("button", {
+      name: "Erase item permanently: Erase run item",
+      exact: true,
+    }),
+  ).toBeDisabled();
+  await page.getByRole("button", { name: "Checklists", exact: true }).click();
+  await page.getByRole("button", { name: "Active runs", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Open Paused run", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Retry pending erasure", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("#app")).toHaveAttribute("aria-busy", "false");
+  for (const name of [
+    "Finish run",
+    "Archive collection",
+    "Move collection to Trash",
+  ])
+    await expect(
+      page.getByRole("button", { name, exact: true }),
+    ).toBeDisabled();
+  await expect(
+    page.getByRole("checkbox", {
+      name: "Complete Keep working item",
+      exact: true,
+    }),
+  ).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Retry pending erasure", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Retry pending erasure", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("checkbox", {
+      name: "Complete Keep working item",
+      exact: true,
+    }),
+  ).toBeEnabled();
+});
+
+test("a failed list load does not claim the collection is empty", async ({
+  page,
+}) => {
+  await owner(page);
+  await page.route(
+    "**/life.v1.ListService/ListCollections",
+    (route) => route.abort("failed"),
+    { times: 1 },
+  );
+  await page.getByRole("button", { name: "Shopping", exact: true }).click();
+  await expect(page.locator("#everyday-view [role=alert]")).toBeVisible();
+  await expect(
+    page.getByText(
+      "Nothing here yet. Create a list or start a run from a template.",
+      { exact: true },
+    ),
+  ).not.toBeVisible();
+  await page.getByRole("button", { name: "Try again", exact: true }).click();
+  await expect(page.locator("#everyday-view [role=alert]")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "New shopping list", exact: true }),
+  ).toBeEnabled();
 });

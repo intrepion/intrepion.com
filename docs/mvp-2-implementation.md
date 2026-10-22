@@ -1,6 +1,6 @@
 # MVP 2 implementation record
 
-Status: production implementation in progress. Scope, wireframes, mockups, and the standalone prototype are approved. No MVP 2 production deployment has occurred.
+Status: production implementation is complete and verified locally. Hosted setup and launch remain pending. Scope, wireframes, mockups, and the standalone prototype are approved. No MVP 2 production deployment has occurred.
 
 ## Agreed verification boundaries
 
@@ -38,16 +38,16 @@ Primary documentation: [D1 REST batch request](https://developers.cloudflare.com
 - Finished/archived/trashed states: failed on unsupported actions, then passed for read-only restrictions, explicit reopening, and restoration preserving previous states.
 - Section/item ordering, historical names, section removal, and Trash discovery/restoration: failed on unsupported actions, then passed.
 - A real legacy-database upgrade fixture: failed before backfill existed, then passed for title/notes/completion/revision preservation, migration baseline, and compatible task RPCs. Legacy task writes are now adapters over canonical collections. Old task-table content is removed after backfill, with legacy writes blocked.
-- Duplicate child identity: failed because a rejected insert was acknowledged with phantom history. Inserts now skip only an already present child in the same parent; cross-parent collisions abort the transaction. The focused item-collision regression passes. Recent section/run SQL changes still require their affected focused tests or the final suite.
+- Duplicate child identity: failed because a rejected insert was acknowledged with phantom history. Inserts now skip only an already present child in the same parent; cross-parent collisions abort the transaction. The focused item-collision regression and full API suite pass.
 
 ## Verification and remaining release work
 
-- Full local API integration suite: 25 passed. Full local browser suite: 19 passed, including the original task workflows and new list/recovery workflows. The list tests reuse an authenticated session to respect the unchanged production rate limiter.
+- Full local API integration suite: 27 passed. Full local browser suite: 22 passed, including the original task workflows and new list/recovery workflows. The list tests reuse an authenticated session to respect the unchanged production rate limiter.
 - Rust: 6 unit tests passed; both production and development Clippy checks passed; release build passed. TypeScript, Astro, ESLint, generated client, formatting, backup/probe checks and 3 real age encryption/recovery tests passed.
 - Local coverage was collected for the existing client model only: 83.33% lines/statements, 78.57% branches, 100% functions. This is not whole-application or server coverage. Coverage and browser E2E remain outside CI.
 - Production UI independently implements shopping, templates/runs, explicit finishing/reopening, section/item editing and ordering, history, Archive, Trash, erasure, safe retry, draft/session recovery, latest-value comparison, and 320px action layout. No prototype application code is imported.
 - Encrypted recovery replays the separately retained ledger before producing usable SQL, clears sessions, validates relationships/guards, and reconciles migrations from MVP 1. Live B2 provisioning, lifecycle review, isolated hosted REST transaction/recovery validation, and production migration are still release obligations.
-- Two-axis review against the agreed baseline is next. Review bounded bulk-statement growth and large permitted responses as well as requirements/standards; fix findings and commit the final result on the current branch.
+- [Two-axis review](mvp-2-review.md) found one retry/concurrency violation, two maintenance concerns and three specification findings. All were corrected and independently rechecked. Bulk updates, history and run copies use shared, byte-bounded rowsets; a maximum-note Unicode copy passes. The final browser run includes the additional unavailable-state regression and passed.
 
 Provider credentials, ledger provisioning, hosted migration/restore behavior, and deployment remain separate from local proof. Preserve existing zero-cost/spending controls and manual exact-revision deployment policy.
 

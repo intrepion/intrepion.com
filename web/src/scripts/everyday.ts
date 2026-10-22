@@ -15,6 +15,7 @@ import { Api, needsLogin } from "../lib/api";
 
 type Hooks = {
   show(): void;
+  tasks(): void;
   busy(value: boolean): void;
   expired(): void;
   announce(message: string): void;
@@ -81,6 +82,7 @@ export class Everyday {
   private draft?: Draft;
   private pending?: ChangeRequest;
   private list: Collection[] = [];
+  private listLoaded = false;
   private cursor = "";
   private problem = "";
   private working = false;
@@ -109,6 +111,7 @@ export class Everyday {
   }
   reset() {
     this.active = false;
+    this.listLoaded = false;
     this.collection = undefined;
     this.history = undefined;
     this.draft = undefined;
@@ -196,6 +199,7 @@ export class Everyday {
     await this.run(() => this.fetchList(more));
   }
   private async fetchList(more = false) {
+    if (!more) this.listLoaded = false;
     this.problem = "";
     this.renderLoading();
     const page = await this.api.lists.listCollections(
@@ -220,6 +224,7 @@ export class Everyday {
         : items.items;
       this.trashCursor = items.nextCursor;
     }
+    this.listLoaded = true;
     this.render();
   }
   private renderLoading() {
@@ -373,6 +378,7 @@ export class Everyday {
         ),
       );
     this.root.append(heading);
+    if (!this.listLoaded) return;
     if (!this.list.length)
       this.root.append(
         el(
@@ -446,11 +452,21 @@ export class Everyday {
     const c = this.collection!;
     this.root.append(
       button(
-        this.kind === Kind.SHOPPING
-          ? "← Back to shopping"
-          : "← Back to checklists",
+        this.area === "trash"
+          ? "← Back to Trash"
+          : this.area === "archive"
+            ? "← Back to Archive"
+            : this.kind === Kind.TASK
+              ? "← Back to tasks"
+              : this.kind === Kind.SHOPPING
+                ? "← Back to shopping"
+                : "← Back to checklists",
         () => {
           if (this.pending) return;
+          if (this.kind === Kind.TASK && this.area === "normal") {
+            this.hooks.tasks();
+            return;
+          }
           this.collection = undefined;
           void this.load();
         },
@@ -534,6 +550,12 @@ export class Everyday {
             ),
         ),
       );
+    if (c.erasurePending || this.pending)
+      actions
+        .querySelectorAll<HTMLButtonElement>("button")
+        .forEach((button, index) => {
+          if (index > 0) button.disabled = true;
+        });
     this.root.append(actions);
     if (c.trashed) this.root.append(el("p", "In Trash · read-only", "muted"));
     else if (c.archived)
@@ -571,7 +593,11 @@ export class Everyday {
     if (c.kind === Kind.TEMPLATE) {
       const start = button("Start run", () => this.edit("run"), "primary");
       start.disabled =
-        !c.items.some((i) => !i.trashed) || c.archived || c.trashed;
+        !c.items.some((i) => !i.trashed) ||
+        c.archived ||
+        c.trashed ||
+        c.erasurePending ||
+        !!this.pending;
       this.root.append(start);
     }
     if (c.kind === Kind.RUN) {
@@ -583,31 +609,30 @@ export class Everyday {
       progress.value = c.completedCount;
       progress.setAttribute("aria-label", "Checklist progress");
       this.root.append(progress);
-      this.root.append(
-        button(
-          c.finished ? "Reopen run" : "Finish run",
-          () =>
-            void (async () => {
-              if (
-                !c.finished &&
-                c.completedCount < c.itemCount &&
-                !(await this.hooks.confirm(
-                  "Finish with unchecked items?",
-                  "Unchecked items will stay unchecked. You can reopen this run later.",
-                  "Finish run",
-                  "Keep working",
-                  c.title,
-                ))
-              )
-                return;
-              await this.save(
-                this.request(
-                  c.finished ? Action.REOPEN_RUN : Action.FINISH_RUN,
-                ),
-              );
-            })(),
-        ),
+      const finish = button(
+        c.finished ? "Reopen run" : "Finish run",
+        () =>
+          void (async () => {
+            if (
+              !c.finished &&
+              c.completedCount < c.itemCount &&
+              !(await this.hooks.confirm(
+                "Finish with unchecked items?",
+                "Unchecked items will stay unchecked. You can reopen this run later.",
+                "Finish run",
+                "Keep working",
+                c.title,
+              ))
+            )
+              return;
+            await this.save(
+              this.request(c.finished ? Action.REOPEN_RUN : Action.FINISH_RUN),
+            );
+          })(),
       );
+      finish.disabled =
+        c.archived || c.trashed || c.erasurePending || !!this.pending;
+      this.root.append(finish);
     }
     if (c.notes) this.root.append(el("p", c.notes, "everyday-notes"));
     if (c.kind !== Kind.TASK && !c.items.some((i) => !i.trashed))
@@ -707,7 +732,9 @@ export class Everyday {
     toggle.disabled =
       this.collection!.finished ||
       this.collection!.archived ||
-      this.collection!.trashed;
+      this.collection!.trashed ||
+      this.collection!.erasurePending ||
+      !!this.pending;
     if (this.collection!.kind !== Kind.TEMPLATE) row.append(toggle);
     else row.classList.add("template-item");
     row.append(copy);
@@ -795,10 +822,30 @@ export class Everyday {
       const latest =
         d.mode === "section"
           ? this.collection.sections.find((s) => s.id === d.id)
-          : (item ?? this.collection);
+          : d.mode === "item"
+            ? item
+            : this.collection;
       saved.append(el("p", latest?.title ?? "This item no longer exists."));
       if (latest && "notes" in latest && latest.notes)
         saved.append(el("p", latest.notes, "everyday-notes"));
+      if (item) {
+        if (this.collection.kind === Kind.SHOPPING)
+          saved.append(el("p", `Quantity: ${item.quantity || "—"}`));
+        saved.append(
+          el(
+            "p",
+            `Section: ${item.sectionId ? (this.collection.sections.find((section) => section.id === item.sectionId)?.title ?? "Former section") : "Unsectioned"}`,
+          ),
+        );
+        if (this.collection.kind !== Kind.TEMPLATE)
+          saved.append(
+            el(
+              "p",
+              `Progress: ${this.collection.kind === Kind.SHOPPING ? (item.completed ? "Purchased" : "Needed") : item.completed ? "Complete" : "Incomplete"}`,
+            ),
+          );
+        if (item.trashed) saved.append(el("p", "In Trash"));
+      }
       this.root.append(saved);
     }
     for (const [key, label, limit] of [
@@ -844,6 +891,17 @@ export class Everyday {
         const option = el("option", section.title);
         option.value = section.id;
         select.append(option);
+      }
+      if (
+        d.fields.sectionId &&
+        !this.collection!.sections.some(
+          (section) => section.id === d.fields.sectionId,
+        )
+      ) {
+        const missing = el("option", "Former section — choose a destination");
+        missing.value = d.fields.sectionId;
+        missing.disabled = true;
+        select.append(missing);
       }
       select.value = d.fields.sectionId;
       select.addEventListener("change", () => {
@@ -974,14 +1032,14 @@ export class Everyday {
             "muted small",
           ),
         );
-      card.append(
-        button(
-          `Erase item permanently: ${item.title}`,
-          () => void this.actOnTrashedItem(entry, true),
-          "danger",
-          "Erase permanently",
-        ),
+      const erase = button(
+        `Erase item permanently: ${item.title}`,
+        () => void this.actOnTrashedItem(entry, true),
+        "danger",
+        "Erase permanently",
       );
+      erase.disabled = parent.erasurePending;
+      card.append(erase);
       this.root.append(card);
     }
     if (this.trashCursor)

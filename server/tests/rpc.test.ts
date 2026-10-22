@@ -1440,3 +1440,84 @@ test("reorder history reports human positions for every item whose relative orde
     { position: 2 },
   );
 });
+
+test("racing one action ID across collections leaves the rejected collection revision unchanged", async () => {
+  const owner = await login();
+  const first = await shopping(owner),
+    second = await shopping(owner);
+  const operationId = crypto.randomUUID();
+  const requests = [
+    changeRequest(first, ChangeAction.UPDATE_METADATA, {
+      operationId,
+      details: { title: "Winner candidate one" },
+    }),
+    changeRequest(second, ChangeAction.UPDATE_METADATA, {
+      operationId,
+      details: { title: "Winner candidate two" },
+    }),
+  ];
+  const outcomes = await Promise.allSettled(
+    requests.map((request) => lists.applyChange(request, owner)),
+  );
+  assert.equal(
+    outcomes.filter((result) => result.status === "fulfilled").length,
+    1,
+  );
+  const rejected = outcomes.findIndex((result) => result.status === "rejected");
+  const original = [first, second][rejected]!;
+  const unchanged = await lists.getCollection({ id: original.id }, owner);
+  assert.equal(unchanged.revision, original.revision);
+  assert.equal(unchanged.title, original.title);
+  assert.equal(
+    (await lists.listHistory({ collectionId: original.id }, owner)).entries
+      .length,
+    1,
+  );
+});
+
+test("a run can copy many maximum-length Unicode notes without a bound-value overflow", async () => {
+  const owner = await login();
+  let source = (
+    await lists.applyChange(
+      {
+        operationId: crypto.randomUUID(),
+        collectionId: crypto.randomUUID(),
+        action: ChangeAction.CREATE_COLLECTION,
+        details: {
+          kind: CollectionKind.TEMPLATE,
+          title: "Large Unicode recipe",
+        },
+      },
+      owner,
+    )
+  ).collection!;
+  const notes = "🍎".repeat(10000);
+  for (let index = 0; index < 55; index++)
+    source = (
+      await lists.applyChange(
+        changeRequest(source, ChangeAction.CREATE_ITEM, {
+          item: { id: crypto.randomUUID(), title: `Step ${index}`, notes },
+        }),
+        owner,
+      )
+    ).collection!;
+  const run = (
+    await lists.applyChange(
+      {
+        operationId: crypto.randomUUID(),
+        collectionId: crypto.randomUUID(),
+        sourceId: source.id,
+        expectedRevision: source.revision,
+        action: ChangeAction.START_RUN,
+        details: { title: "Large independent run" },
+      },
+      owner,
+    )
+  ).collection!;
+  assert.equal(run.items.length, 55);
+  assert.equal(run.items[54]!.notes, notes);
+  assert.equal(
+    run.items.every((item) => !item.completed),
+    true,
+  );
+});
