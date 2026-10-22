@@ -4,6 +4,8 @@ Status: implementation and local verification in progress. Nothing in this docum
 
 ## First upgrade
 
+CI runs on pushes and pull requests to `main` as before, and can also be started manually on `main` if a push does not create a run. During this launch GitHub received two commits without creating their push runs despite Actions remaining enabled. Use `gh workflow run ci.yml --ref main` to execute the same complete checks. Deployment requires the latest push or manual CI run for the exact target SHA on `main` to succeed; pull-request runs and other branch runs do not satisfy the gate. No coverage or browser E2E was added to CI.
+
 Migration 0005 moves task content into canonical collections and blocks the old task-table writes. This is a maintenance upgrade, not an additive migration safe under the old API. The ordinary Deploy workflow now checks for the completed MVP 2 schema before its migration step; it refuses the first upgrade rather than applying it beneath MVP 1.
 
 Complete implementation checks and review first, then prepare the concrete hosted upgrade for owner launch approval:
