@@ -1,19 +1,8 @@
-import { test, expect, type Page, type BrowserContext } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+import { signInPilot } from "./session";
 
-// List workflows share a real owner session so the expanded suite respects the
-// production rate limiter. Dedicated task/auth recovery tests still log in.
-let ownerCookies: Awaited<ReturnType<BrowserContext["cookies"]>> | undefined;
 async function owner(page: Page) {
-  if (ownerCookies) await page.context().addCookies(ownerCookies);
-  await page.goto("/");
-  if (!ownerCookies)
-    await page
-      .getByRole("button", { name: "Sign in as development owner" })
-      .click();
-  await expect(
-    page.getByRole("button", { name: "Shopping", exact: true }),
-  ).toBeVisible();
-  ownerCookies ??= await page.context().cookies();
+  await signInPilot(page);
 }
 
 test("shopping list, item and quantity persist through the real API", async ({

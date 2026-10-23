@@ -1,12 +1,10 @@
+import { signInPilot } from "./session";
 import { test, expect } from "@playwright/test";
 
 test("a head creates a household and switches between private and shared task lists", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Sign in as development owner" })
-    .click();
+  await signInPilot(page);
   await page.getByRole("button", { name: "New task", exact: true }).click();
   await page
     .getByLabel("Title", { exact: true })
@@ -128,26 +126,14 @@ test("recipient-bound head invitations work in the browser and removal clears an
   const secondContext = await browser.newContext();
   const second = await secondContext.newPage();
   try {
-    await second.goto("/");
-    await second
-      .getByRole("button", {
-        name: "Sign in as development Morgan",
-        exact: true,
-      })
-      .click();
+    await signInPilot(second, "Morgan");
     await second
       .getByRole("button", { name: "My capacity", exact: true })
       .click();
     const recipient = await second
       .getByLabel("Your account ID", { exact: true })
       .inputValue();
-    await page.goto("/");
-    await page
-      .getByRole("button", {
-        name: "Sign in as development owner",
-        exact: true,
-      })
-      .click();
+    await signInPilot(page);
     await page
       .getByRole("button", { name: "My capacity", exact: true })
       .click();
@@ -214,6 +200,10 @@ test("recipient-bound head invitations work in the browser and removal clears an
       .getByRole("dialog")
       .getByRole("button", { name: "Remove head", exact: true })
       .click();
+    // Start the next member request after the removal has been acknowledged.
+    await expect(
+      page.getByRole("button", { name: "Remove head Morgan", exact: true }),
+    ).toHaveCount(0);
     await second
       .getByRole("button", { name: "Save task", exact: true })
       .click();
@@ -243,10 +233,7 @@ test("recipient-bound head invitations work in the browser and removal clears an
 test("a head previews and changes only their own reserved allocation", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Sign in as development owner", exact: true })
-    .click();
+  await signInPilot(page);
   await page.getByRole("button", { name: "My capacity", exact: true }).click();
   await page
     .getByRole("button", { name: "Create household", exact: true })
@@ -306,10 +293,7 @@ test("a head previews and changes only their own reserved allocation", async ({
 test("full storage recovery confirms the active task and resumes protected erasure after a reload", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Sign in as development owner", exact: true })
-    .click();
+  await signInPilot(page);
   await page.getByRole("button", { name: "My capacity", exact: true }).click();
   await page
     .getByRole("button", { name: "Create household", exact: true })
@@ -434,10 +418,7 @@ test("full storage recovery confirms the active task and resumes protected erasu
 test("the last head confirms a final UTC month-end closure and sees retained capacity privately", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Sign in as development owner", exact: true })
-    .click();
+  await signInPilot(page);
   await page.getByRole("button", { name: "My capacity", exact: true }).click();
   await page
     .getByRole("button", { name: "Create household", exact: true })
@@ -509,10 +490,7 @@ test("the last head confirms a final UTC month-end closure and sees retained cap
 test("a head changes their own count ceiling without changing household capacity", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Sign in as development owner", exact: true })
-    .click();
+  await signInPilot(page);
   await page.getByRole("button", { name: "My capacity", exact: true }).click();
   await page
     .getByRole("button", { name: "Create household", exact: true })
@@ -584,10 +562,7 @@ test("a head changes their own count ceiling without changing household capacity
 test("a personal shopping list is explicitly copied into a household with fresh History", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Sign in as development owner", exact: true })
-    .click();
+  await signInPilot(page);
   await page.getByRole("button", { name: "My capacity", exact: true }).click();
   await page
     .getByRole("button", { name: "Create household", exact: true })
@@ -656,10 +631,7 @@ test("a personal shopping list is explicitly copied into a household with fresh 
 test("a head resumes the confirmed shared-content erasure snapshot after protection uncertainty", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Sign in as development owner", exact: true })
-    .click();
+  await signInPilot(page);
   await page.getByRole("button", { name: "My capacity", exact: true }).click();
   await page
     .getByRole("button", { name: "Create household", exact: true })
@@ -745,10 +717,7 @@ test("a head resumes the confirmed shared-content erasure snapshot after protect
 test("a household draft requires confirmation before sign-out", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Sign in as development owner", exact: true })
-    .click();
+  await signInPilot(page);
   await page.getByRole("button", { name: "My capacity", exact: true }).click();
   await page
     .getByRole("button", { name: "Create household", exact: true })
@@ -788,10 +757,7 @@ test("a household draft requires confirmation before sign-out", async ({
 test("signing in as a different approved identity after expiry does not recover another person's task draft", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Sign in as development owner", exact: true })
-    .click();
+  await signInPilot(page);
   await page.getByRole("button", { name: "New task", exact: true }).click();
   await page
     .getByLabel("Title", { exact: true })

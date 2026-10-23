@@ -16,7 +16,7 @@ npm --prefix web run test:e2e
 npm --prefix web run coverage
 ```
 
-E2E and coverage are local-only. Stop the development stack before E2E: it starts an isolated D1 database, real Rust API, independent loopback ledger, and static preview on ports 8791, 8788, 8792 and 4322. `CHROMIUM_PATH` overrides the default `/usr/local/bin/chromium`. E2E refuses to run with `CI` set. Traces are local and ignored by Git; never upload traces containing real task data. Coverage currently measures the client field-validation and ordering module; server coverage can be collected locally using `cargo llvm-cov --workspace --html` after installing that tool. Neither coverage command is in CI.
+E2E and coverage are local-only. Stop the development stack before E2E: it starts an isolated D1 database, real Rust API, independent loopback ledger, and static preview on ports 8791, 8788, 8792 and 4322. `CHROMIUM_PATH` overrides the default `/usr/local/bin/chromium`. E2E refuses to run with `CI` set. Run web builds sequentially with E2E: rebuilding `web/dist` while the suite serves it can temporarily remove routes. Traces are local and ignored by Git; never upload traces containing real task data. Coverage currently measures the client field-validation and ordering module; server coverage can be collected locally using `cargo llvm-cov --workspace --html` after installing that tool. Neither coverage command is in CI.
 
 No theme selector or later-client features are included in MVP 1. The original standalone `/prototype` remains runnable on port 4321 and separate from this application.
 

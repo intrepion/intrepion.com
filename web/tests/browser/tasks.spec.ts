@@ -1,9 +1,7 @@
+import { signInPilot } from "./session";
 import { test, expect, type Page } from "@playwright/test";
 async function signIn(page: Page) {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Sign in as development owner" })
-    .click();
+  await signInPilot(page);
   await expect(
     page.getByRole("button", { name: "New task", exact: true }),
   ).toBeEnabled();
