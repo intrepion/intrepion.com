@@ -87,6 +87,28 @@ try {
     ],
     { env: localEnv },
   );
+  const pilotFixture = join(state, "pilot-fixture.sql");
+  await writeFile(
+    pilotFixture,
+    "INSERT INTO pilot_accounts(subject,display_name) VALUES('development-second','Second pilot user');",
+  );
+  await run(
+    "node",
+    [
+      "node_modules/wrangler/bin/wrangler.js",
+      "d1",
+      "execute",
+      "DB",
+      "--local",
+      "--config",
+      "server/local/wrangler.toml",
+      "--persist-to",
+      state,
+      "--file",
+      pilotFixture,
+    ],
+    { env: localEnv },
+  );
   ledger = start("node", ["scripts/local-erasure-ledger.mjs"], {
     env: {
       ...localEnv,

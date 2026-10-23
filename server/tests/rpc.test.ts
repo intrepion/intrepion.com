@@ -69,7 +69,7 @@ test("anonymous callers cannot list private tasks", async () => {
   );
 });
 
-async function login() {
+async function login(credential = "") {
   const challenge = await fetch(`${baseUrl}/auth/challenge`, {
     method: "POST",
     headers: { origin },
@@ -86,7 +86,7 @@ async function login() {
         .map((value) => value.split(";")[0])
         .join("; "),
     },
-    body: JSON.stringify({ nonce, credential: "" }),
+    body: JSON.stringify({ nonce, credential }),
   });
   assert.equal(response.status, 200);
   const { csrf } = (await response.json()) as { csrf: string };
@@ -101,6 +101,41 @@ async function login() {
     },
   };
 }
+
+test("approved pilot users have separate personal tasks and cannot read each other's collections", async () => {
+  const owner = await login();
+  const other = await login("development-second");
+  const ownerTask = await client.createTask(
+    { id: crypto.randomUUID(), title: "Private owner task" },
+    owner,
+  );
+  const otherTask = await client.createTask(
+    { id: crypto.randomUUID(), title: "Private second task" },
+    other,
+  );
+  assert.equal(
+    (await client.listTasks({}, owner)).tasks.some(
+      (t) => t.id === otherTask.id,
+    ),
+    false,
+  );
+  assert.equal(
+    (await client.listTasks({}, other)).tasks.some(
+      (t) => t.id === ownerTask.id,
+    ),
+    false,
+  );
+  await assert.rejects(
+    lists.getCollection({ id: ownerTask.id }, other),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.NotFound,
+  );
+  await assert.rejects(
+    lists.getCollection({ id: otherTask.id }, owner),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.NotFound,
+  );
+});
 
 test("owner writes survive an API restart and a session re-login", async () => {
   const owner = await login();

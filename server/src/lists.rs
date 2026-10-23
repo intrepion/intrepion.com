@@ -7,7 +7,11 @@ use sha2::{Digest, Sha256};
 const NO_CONFLICTING_RECEIPT: &str = "NOT EXISTS(SELECT 1 FROM collection_operations WHERE owner_sub=? AND operation_id=? AND fingerprint<>?)";
 use writes::{Writes, history_writes, json_chunks};
 
-pub struct Lists(pub SharedAuth);
+#[derive(Clone, Default)]
+pub(crate) struct Scope {
+    pub owner: String,
+}
+pub struct Lists(pub SharedAuth, pub(crate) Scope);
 #[derive(Deserialize)]
 struct CollectionRow {
     id: String,
@@ -196,8 +200,20 @@ impl Lists {
     fn operation_identity(&self, r: &ChangeRequest, fingerprint: &str) -> [String; 3] {
         [self.owner(), r.operation_id.clone(), fingerprint.into()]
     }
-    fn owner(&self) -> String {
-        self.0.config.owner_sub.clone()
+    pub(crate) fn owner(&self) -> String {
+        self.1.owner.clone()
+    }
+    pub(crate) async fn authorized(
+        auth: SharedAuth,
+        ctx: &RequestContext,
+    ) -> Result<Self, ConnectError> {
+        let session = auth.authorize_rpc(ctx).await?;
+        Ok(Self(
+            auth,
+            Scope {
+                owner: session.user_sub,
+            },
+        ))
     }
     pub(crate) async fn get(&self, id: &str) -> Result<Collection, ConnectError> {
         if !valid_id(id) {
@@ -973,11 +989,11 @@ impl ListService for Lists {
         ctx: RequestContext,
         r: ServiceRequest<'_, TrashQuery>,
     ) -> ServiceResult<TrashPage> {
-        self.0.authorize_rpc(&ctx).await?;
+        let service = Lists::authorized(self.0.clone(), &ctx).await?;
         if !r.cursor.is_empty() && !valid_id(r.cursor) {
             return Err(ConnectError::invalid_argument("Invalid Trash cursor."));
         }
-        let mut rows=self.0.db.query::<TrashedRow>("SELECT i.*,json_object('id',c.id,'kind',c.kind,'title',c.title,'notes',c.notes,'completed',c.completed,'archived',c.archived,'trashed',c.trashed,'finished',c.finished,'revision',c.revision,'sequence',c.sequence,'source_id',c.source_id,'source_title',c.source_title,'erasure_pending',EXISTS(SELECT 1 FROM erasure_intents e WHERE e.collection_id=c.id)) AS parent_json FROM list_items i JOIN collections c ON c.owner_sub=i.owner_sub AND c.id=i.collection_id WHERE i.owner_sub=? AND i.trashed=1 AND (?='' OR i.id>?) ORDER BY i.id LIMIT 51",&[self.owner(),r.cursor.into(),r.cursor.into()]).await?;
+        let mut rows=service.0.db.query::<TrashedRow>("SELECT i.*,json_object('id',c.id,'kind',c.kind,'title',c.title,'notes',c.notes,'completed',c.completed,'archived',c.archived,'trashed',c.trashed,'finished',c.finished,'revision',c.revision,'sequence',c.sequence,'source_id',c.source_id,'source_title',c.source_title,'erasure_pending',EXISTS(SELECT 1 FROM erasure_intents e WHERE e.collection_id=c.id)) AS parent_json FROM list_items i JOIN collections c ON c.owner_sub=i.owner_sub AND c.id=i.collection_id WHERE i.owner_sub=? AND i.trashed=1 AND (?='' OR i.id>?) ORDER BY i.id LIMIT 51",&[service.owner(),r.cursor.into(),r.cursor.into()]).await?;
         let more = rows.len() > 50;
         rows.truncate(50);
         let next_cursor = if more {
@@ -1009,15 +1025,15 @@ impl ListService for Lists {
         ctx: RequestContext,
         r: ServiceRequest<'_, CollectionKey>,
     ) -> ServiceResult<Collection> {
-        self.0.authorize_rpc(&ctx).await?;
-        Response::ok(self.get(r.id).await?)
+        let service = Lists::authorized(self.0.clone(), &ctx).await?;
+        Response::ok(service.get(r.id).await?)
     }
     async fn list_collections(
         &self,
         ctx: RequestContext,
         r: ServiceRequest<'_, CollectionQuery>,
     ) -> ServiceResult<CollectionPage> {
-        self.0.authorize_rpc(&ctx).await?;
+        let service = Lists::authorized(self.0.clone(), &ctx).await?;
         let kind = r.kind.to_i32();
         if !(0..=4).contains(&kind) {
             return Err(ConnectError::invalid_argument("Unknown collection kind."));
@@ -1025,7 +1041,7 @@ impl ListService for Lists {
         let cursor = if r.cursor.is_empty() {
             None
         } else {
-            Some(self.get(r.cursor).await?)
+            Some(service.get(r.cursor).await?)
         };
         let title = cursor.as_ref().map(|c| c.title.clone()).unwrap_or_default();
         let (page_filter, order, page_params) = if kind == 4 {
@@ -1069,7 +1085,7 @@ impl ListService for Lists {
             )
         };
         let mut params = vec![
-            self.owner(),
+            service.owner(),
             kind.to_string(),
             kind.to_string(),
             i32::from(r.trashed).to_string(),
@@ -1082,7 +1098,7 @@ impl ListService for Lists {
         let sql = format!(
             "SELECT c.*,EXISTS(SELECT 1 FROM erasure_intents e WHERE e.collection_id=c.id) AS erasure_pending,(SELECT count(*) FROM list_items i WHERE i.owner_sub=c.owner_sub AND i.collection_id=c.id AND i.trashed=0) AS item_count,(SELECT count(*) FROM list_items i WHERE i.owner_sub=c.owner_sub AND i.collection_id=c.id AND i.trashed=0 AND i.completed=1) AS completed_count FROM collections c WHERE owner_sub=? AND (CAST(? AS INTEGER)=0 OR kind=?) AND (CAST(? AS INTEGER)=1 OR archived=?) AND trashed=? AND (CAST(? AS INTEGER)!=4 OR finished=?) AND {page_filter} ORDER BY {order} LIMIT 51"
         );
-        let mut rows = self.0.db.query::<CollectionRow>(&sql, &params).await?;
+        let mut rows = service.0.db.query::<CollectionRow>(&sql, &params).await?;
         let more = rows.len() > 50;
         rows.truncate(50);
         let next_cursor = if more {
@@ -1101,17 +1117,17 @@ impl ListService for Lists {
         ctx: RequestContext,
         r: ServiceRequest<'_, ChangeRequest>,
     ) -> ServiceResult<ChangeResult> {
-        self.0.authorize_rpc(&ctx).await?;
-        Response::ok(self.apply(r.to_owned_message()).await?)
+        let service = Lists::authorized(self.0.clone(), &ctx).await?;
+        Response::ok(service.apply(r.to_owned_message()).await?)
     }
     async fn list_history(
         &self,
         ctx: RequestContext,
         r: ServiceRequest<'_, HistoryQuery>,
     ) -> ServiceResult<HistoryPage> {
-        self.0.authorize_rpc(&ctx).await?;
-        self.get(r.collection_id).await?;
-        let mut rows=self.0.db.query::<HistoryRow>("SELECT sequence,target_id,target_title,action,occurred_at,before_json,after_json FROM collection_history WHERE owner_sub=? AND collection_id=? AND (CAST(? AS INTEGER)=0 OR sequence<?) ORDER BY sequence DESC LIMIT 51",&[self.owner(),r.collection_id.into(),r.before_sequence.to_string(),r.before_sequence.to_string()]).await?;
+        let service = Lists::authorized(self.0.clone(), &ctx).await?;
+        service.get(r.collection_id).await?;
+        let mut rows=service.0.db.query::<HistoryRow>("SELECT sequence,target_id,target_title,action,occurred_at,before_json,after_json FROM collection_history WHERE owner_sub=? AND collection_id=? AND (CAST(? AS INTEGER)=0 OR sequence<?) ORDER BY sequence DESC LIMIT 51",&[service.owner(),r.collection_id.into(),r.before_sequence.to_string(),r.before_sequence.to_string()]).await?;
         let more = rows.len() > 50;
         rows.truncate(50);
         let next_before_sequence = if more {

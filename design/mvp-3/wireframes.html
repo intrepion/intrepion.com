@@ -1,0 +1,1540 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MVP 3 Household foundation — wireframes</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: #eee;
+        color: #222;
+        font:
+          15px/1.5 system-ui,
+          sans-serif;
+      }
+      header,
+      main,
+      footer {
+        max-width: 1380px;
+        margin: auto;
+        padding: 28px;
+      }
+      h1 {
+        font-size: 32px;
+        line-height: 1.2;
+      }
+      h2 {
+        font-size: 18px;
+        margin: 0 0 12px;
+      }
+      h3 {
+        font-size: 23px;
+        margin: 0 0 16px;
+      }
+      p {
+        margin: 10px 0;
+      }
+      a {
+        color: inherit;
+        text-underline-offset: 3px;
+      }
+      nav {
+        display: flex;
+        gap: 10px 22px;
+        flex-wrap: wrap;
+        margin-top: 22px;
+      }
+      nav a {
+        font-size: 13px;
+      }
+      .eyebrow {
+        font: 12px/1.5 monospace;
+        text-transform: uppercase;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 32px;
+      }
+      .board {
+        min-width: 0;
+        scroll-margin-top: 16px;
+      }
+      .screen {
+        border: 2px solid #444;
+        background: white;
+        min-height: 480px;
+        overflow-wrap: anywhere;
+      }
+      .top,
+      .space,
+      .tabs {
+        padding: 12px 20px;
+        border-bottom: 1px solid #bbb;
+      }
+      .top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        font-weight: bold;
+      }
+      .space {
+        font-weight: bold;
+        background: #f3f3f3;
+      }
+      .tabs {
+        line-height: 1.9;
+      }
+      .content {
+        padding: 20px;
+      }
+      .row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 13px 0;
+        border-bottom: 1px solid #ddd;
+      }
+      .row > div {
+        min-width: 0;
+      }
+      .row > span {
+        font-size: 13px;
+        text-align: right;
+        max-width: 38%;
+        flex-shrink: 0;
+      }
+      .muted {
+        color: #555;
+        font-size: 13px;
+        font-weight: normal;
+      }
+      .label {
+        font-weight: 600;
+        margin: 17px 0 5px;
+      }
+      .field {
+        border: 1px solid #888;
+        min-height: 44px;
+        padding: 10px;
+      }
+      .notice {
+        border: 1px dashed #666;
+        padding: 12px;
+        margin: 14px 0;
+        background: #fafafa;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 18px 0;
+      }
+      .button {
+        display: inline-block;
+        border: 1px solid #444;
+        padding: 10px 13px;
+        min-height: 44px;
+      }
+      .note {
+        border-left: 2px dashed #888;
+        padding: 10px 12px;
+        margin-top: 12px;
+        font-size: 13px;
+      }
+      .mobile {
+        max-width: 360px;
+        margin: auto;
+      }
+      .mobile .row {
+        flex-direction: column;
+        gap: 5px;
+      }
+      .mobile .row > span {
+        max-width: 100%;
+        text-align: left;
+      }
+      footer {
+        border-top: 1px solid #bbb;
+        margin-top: 28px;
+      }
+      .review-notice {
+        border: 2px solid #555;
+        padding: 14px;
+        background: white;
+      }
+      @media (max-width: 850px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        header,
+        main,
+        footer {
+          padding: 18px;
+        }
+      }
+      @media (max-width: 400px) {
+        .content,
+        .top,
+        .space,
+        .tabs {
+          padding: 12px;
+        }
+        .row {
+          flex-direction: column;
+          gap: 5px;
+        }
+        .row > span {
+          max-width: 100%;
+          text-align: left;
+        }
+        .top {
+          flex-direction: column;
+        }
+        .button {
+          padding: 9px;
+        }
+        .actions {
+          gap: 8px;
+        }
+      }
+      @media print {
+        nav {
+          display: none;
+        }
+        body {
+          background: white;
+        }
+        .board {
+          break-inside: avoid;
+        }
+        .grid {
+          display: block;
+        }
+        .board {
+          margin-bottom: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <p class="eyebrow">
+        Design gate 1 · wireframes · approved by owner
+      </p>
+      <h1>Everyday lists, together</h1>
+      <p>
+        Review space boundaries, actions and confirmations before visual
+        styling. These static screens extend the approved Everyday lists
+        workflows.
+      </p>
+      <div class="review-notice">
+        <strong
+          >All names, dates, content and numerical allowances are
+          illustrative.</strong
+        >
+        Pilot caps remain unapproved. Controls illustrate placement; only the
+        gallery index links navigate. No scripts, services, external assets,
+        authentication or saved data.
+      </div>
+      <p>
+        Start with 01–08 for household access, 09–14 for capacity, and 16–21 for
+        departure and recovery. Phone layouts are 22–23.
+      </p>
+      <nav aria-label="Wireframe index">
+        <a href="#spaces">01 Personal space and household switching</a
+        ><a href="#shared">02 Shared everyday lists</a
+        ><a href="#create">03 Create household</a
+        ><a href="#invite">04 Invite an approved person</a
+        ><a href="#accept">05 Accept household invitation</a
+        ><a href="#invite-errors">06 Invitation unavailable</a
+        ><a href="#heads">07 Heads and authority</a
+        ><a href="#ceilings">08 Set your own count ceilings</a
+        ><a href="#capacity">09 Your plan and allocations</a
+        ><a href="#allocation">10 Change your contribution</a
+        ><a href="#allocation-blocked">11 Allocation cannot be withdrawn</a
+        ><a href="#usage">12 Space usage and counted states</a
+        ><a href="#full">13 Full storage / over-limit spaces</a
+        ><a href="#copy">14 Copy personal content into a household</a
+        ><a href="#history">15 Content and administrative history</a
+        ><a href="#remove">16 Remove another head</a
+        ><a href="#leave">17 Leave while another head remains</a
+        ><a href="#close">18 Last head leaves and closes household</a
+        ><a href="#former">19 Former head: retained contribution</a
+        ><a href="#closed">20 Closed household and erasure status</a
+        ><a href="#recovery">21 Loading, conflicts and lost access</a
+        ><a href="#mobile">22 Phone: shared shopping</a
+        ><a href="#mobile-capacity">23 Phone: capacity and own ceilings</a>
+      </nav>
+    </header>
+    <main class="grid">
+      <section class="board" id="spaces">
+        <h2>01 — Personal space and household switching</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Personal ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage
+          </div>
+          <div class="content">
+            <h3>Your spaces</h3>
+            <div class="notice">
+              Personal content is private. Sharing requires an explicit copy.
+            </div>
+            <div class="row">
+              <div>
+                <strong>Personal</strong>
+                <div class="muted">Tasks, shopping and checklists</div>
+              </div>
+              <span>Current</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Maple household</strong>
+                <div class="muted">Head · shared with Morgan</div>
+              </div>
+              <span>Open</span>
+            </div>
+            <div class="actions">
+              <span class="button">Create household</span
+              ><span class="button">My capacity</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Tasks</strong>
+                <div class="muted">One flat inbox in this space</div>
+              </div>
+              <span>Open</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Open a space → load only that space’s data. Keep the selected space
+          visible on every form and confirmation. Switching with an unsaved
+          draft asks whether to stay or discard. Personal-only users need not
+          create a household.
+        </p>
+      </section>
+      <section class="board" id="shared">
+        <h2>02 — Shared everyday lists</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage ·
+            Household
+          </div>
+          <div class="content">
+            <h3>Shopping</h3>
+            <div class="notice">
+              Shared with all heads in Maple. Last refreshed just now.
+            </div>
+            <div class="actions">
+              <span class="button">Refresh</span
+              ><span class="button">New shopping list</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Weekly groceries</strong>
+                <div class="muted">12 items · 3 purchased</div>
+              </div>
+              <span>Open</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Camping supplies</strong>
+                <div class="muted">8 items · 1 purchased</div>
+              </div>
+              <span>Open</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Usage</strong>
+                <div class="muted">
+                  350 / 500 retained items · 520 / 768 KiB
+                </div>
+              </div>
+              <span>View usage</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          The existing Tasks, Shopping and Checklists workflows repeat within
+          each space. Templates create independent runs. Open and save refresh
+          data; no live-update promise. Archive, Trash and history retain their
+          existing behavior. Saving always rechecks membership, conflicts and
+          quotas.
+        </p>
+      </section>
+      <section class="board" id="create">
+        <h2>03 — Create household</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Personal ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage
+          </div>
+          <div class="content">
+            <h3>Create a household</h3>
+            <div class="label">Household name</div>
+            <div class="field">Maple household</div>
+            <div class="notice">
+              You will become a head. Other participants will also be heads,
+              with full shared-content access.
+            </div>
+            <div class="label">Initial capacity from your plan</div>
+            <div class="field">
+              Choose amounts for items, shopping lists, templates, runs and
+              storage
+            </div>
+            <div class="row">
+              <div>
+                <strong>Households headed</strong>
+                <div class="muted">1 / 3 → 2 / 3</div>
+              </div>
+              <span>Example</span>
+            </div>
+            <div class="actions">
+              <span class="button">Cancel</span
+              ><span class="button">Review capacity</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Review every resource independently before creating. Show personal
+          capacity before/after and reject insufficient allocations or a reached
+          household limit without creating partial records. Name validation and
+          quota errors preserve the entered name. Numbers here and throughout
+          are examples, not approved caps.
+        </p>
+      </section>
+      <section class="board" id="invite">
+        <h2>04 — Invite an approved person</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage ·
+            Household
+          </div>
+          <div class="content">
+            <h3>Invite a head</h3>
+            <div class="label">Recipient</div>
+            <div class="field">An operator-approved account</div>
+            <div class="notice">
+              This person will see all retained household content and History,
+              including changes made before they join. They can remove heads and
+              permanently erase shared content.
+            </div>
+            <div class="actions">
+              <span class="button">Cancel</span
+              ><span class="button">Create invitation link</span>
+            </div>
+            <div class="label">Created link — shown after success</div>
+            <div class="field">[Recipient-bound invitation link]</div>
+            <div class="row">
+              <div>
+                <strong>Expires</strong>
+                <div class="muted">Seven days after creation</div>
+              </div>
+              <span>Copy link</span>
+            </div>
+            <div class="actions">
+              <span class="button">Revoke invitation</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Send the copied link yourself. It only works for the selected approved
+          identity. The finished design must identify the recipient clearly
+          without exposing an unrestricted directory of pilot users. Creating a
+          link grants no access, reserves no membership slot and does not send
+          email.
+        </p>
+      </section>
+      <section class="board" id="accept">
+        <h2>05 — Accept household invitation</h2>
+        <div class="screen">
+          <div class="content">
+            <p class="eyebrow">Invitation · signed in as Morgan</p>
+            <h3>Join Maple household?</h3>
+            <p>You are invited to become a head.</p>
+            <div class="notice">
+              Every head can view existing content and History, invite or remove
+              heads, and explicitly erase shared content. Your personal space
+              stays private.
+            </div>
+            <div class="row">
+              <div>
+                <strong>Your initial ceilings</strong>
+                <div class="muted">
+                  Equal to current household count allowances
+                </div>
+              </div>
+              <span>No reserved share</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Your subscription contribution</strong>
+                <div class="muted">
+                  None until you explicitly allocate capacity
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="actions">
+              <span class="button">Decline</span
+              ><span class="button">Accept and join</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Acceptance checks the signed-in stable Google identity, operator
+          approval, expiry, revocation, current household status and user
+          household limit. A repeat acceptance cannot duplicate membership.
+          Accept → shared space; decline → personal space.
+        </p>
+      </section>
+      <section class="board" id="invite-errors">
+        <h2>06 — Invitation unavailable</h2>
+        <div class="screen">
+          <div class="content">
+            <h3>This invitation cannot be accepted</h3>
+            <div class="row">
+              <div>
+                <strong>Wrong Google account</strong>
+                <div class="muted">
+                  Use the approved account named by the invitation.
+                </div>
+              </div>
+              <span>Try another account</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Expired or revoked</strong>
+                <div class="muted">Ask a current head for a new link.</div>
+              </div>
+              <span>Back to personal</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Household closed</strong>
+                <div class="muted">
+                  This household no longer accepts members.
+                </div>
+              </div>
+              <span>Back to personal</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Household limit reached</strong>
+                <div class="muted">
+                  Your existing memberships are unchanged.
+                </div>
+              </div>
+              <span>My households</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          These are alternative states, not simultaneous errors. Do not expose
+          household content to an unauthorized visitor. An already accepted
+          invitation offers Open household only to the authorized member. A
+          temporary API failure offers Retry rather than claiming expiry or
+          revocation.
+        </p>
+      </section>
+      <section class="board" id="heads">
+        <h2>07 — Heads and authority</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage ·
+            Household
+          </div>
+          <div class="content">
+            <h3>Heads</h3>
+            <div class="row">
+              <div>
+                <strong>Alex · you</strong>
+                <div class="muted">230 retained items · ceiling 300</div>
+              </div>
+              <span>My ceilings</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Morgan</strong>
+                <div class="muted">120 retained items · ceiling 500</div>
+              </div>
+              <span>Remove head</span>
+            </div>
+            <div class="actions"><span class="button">Invite a head</span></div>
+            <div class="notice">
+              Each head controls their own individual ceilings. Contribution
+              size does not change administrative rights.
+            </div>
+            <div class="row">
+              <div>
+                <strong>Household activity</strong>
+                <div class="muted">
+                  Invitations, membership and allowance changes
+                </div>
+              </div>
+              <span>View</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Other heads’ ceilings are read-only: no edit control, including
+          raising them. Each head can manage only their own subscription
+          allocations. The UI distinguishes shared household usage from private
+          plan details. Ordinary member/dependent roles and PIN controls are
+          absent.
+        </p>
+      </section>
+      <section class="board" id="ceilings">
+        <h2>08 — Set your own count ceilings</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage ·
+            Household
+          </div>
+          <div class="content">
+            <h3>My ceilings</h3>
+            <div class="notice">
+              Ceilings limit your own creations. They do not reserve household
+              capacity.
+            </div>
+            <div class="label">Retained items · currently 230</div>
+            <div class="field">300</div>
+            <div class="label">Shopping lists / templates / runs</div>
+            <div class="field">8 / 4 / 8</div>
+            <div class="notice">
+              Example change to 200 items: your 230 retained items remain.
+              Further item increases will be blocked until usage fits or you
+              raise your ceiling.
+            </div>
+            <div class="actions">
+              <span class="button">Cancel</span
+              ><span class="button">Review my changes</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Only your own ceilings are editable. Show a before/after confirmation
+          for each resource, including below-usage effects. Storage belongs to
+          the whole space; there is no individual byte allowance. A household
+          total can block creation before a personal ceiling is reached.
+        </p>
+      </section>
+      <section class="board" id="capacity">
+        <h2>09 — Your plan and allocations</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Personal ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage
+          </div>
+          <div class="content">
+            <h3>My capacity</h3>
+            <div class="notice">
+              Pilot plan · assigned by the operator. No payments or automatic
+              upgrades.
+            </div>
+            <div class="row">
+              <div>
+                <strong>Resource</strong>
+                <div class="muted">Plan → Maple → personal remainder</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Retained items</strong>
+                <div class="muted">1,000 → 300 → 700</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Shopping lists</strong>
+                <div class="muted">20 → 8 → 12</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Templates / runs</strong>
+                <div class="muted">10 / 20 → 4 / 8 → 6 / 12</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Storage</strong>
+                <div class="muted">2 MiB → 512 KiB → 1.5 MiB</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="actions">
+              <span class="button">Manage Maple allocation</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Other private allocations</strong>
+                <div class="muted">Visible only to you</div>
+              </div>
+              <span></span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Show all allocated households, including retained allocations after
+          departure/closure, and totals per resource. Unallocated capacity is
+          personal capacity. No currency, prices, payment links or billing
+          periods. Other heads never see this private plan overview.
+        </p>
+      </section>
+      <section class="board" id="allocation">
+        <h2>10 — Change your contribution</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage ·
+            Household
+          </div>
+          <div class="content">
+            <h3>My contribution</h3>
+            <div class="label">Retained-item capacity</div>
+            <div class="field">300 → 200</div>
+            <div class="label">Storage capacity</div>
+            <div class="field">512 KiB → 512 KiB</div>
+            <div class="label">Shopping lists / templates / runs</div>
+            <div class="field">8 / 4 / 8 — unchanged</div>
+            <div class="row">
+              <div>
+                <strong>Maple item capacity</strong>
+                <div class="muted">500 → 400; retained usage 350</div>
+              </div>
+              <span>Fits</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Your personal item capacity</strong>
+                <div class="muted">700 → 800; retained usage 120</div>
+              </div>
+              <span>Fits</span>
+            </div>
+            <div class="actions">
+              <span class="button">Cancel</span
+              ><span class="button">Confirm allocation</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Every resource has its own input and before/after result. Compare all
+          affected source spaces against retained usage; storage/counts cannot
+          substitute for each other. Recheck on confirmation. A concurrent
+          change invalidating the preview returns a new preview, with no partial
+          allocation or duplicate retry.
+        </p>
+      </section>
+      <section class="board" id="allocation-blocked">
+        <h2>11 — Allocation cannot be withdrawn</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage ·
+            Household
+          </div>
+          <div class="content">
+            <h3>Keep enough capacity</h3>
+            <div class="notice">
+              This change would leave Maple with capacity for 300 items, but it
+              retains 350.
+            </div>
+            <div class="row">
+              <div>
+                <strong>Required before this change</strong>
+                <div class="muted">
+                  50 fewer retained items, or replacement capacity
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Trash still counts</strong>
+                <div class="muted">
+                  Moving items to Trash will not free capacity.
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="actions">
+              <span class="button">Keep current allocation</span
+              ><span class="button">Review household usage</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Reject the entire invalid change. Offer explanations for each exceeded
+          resource. A former head gets this eligibility summary but cannot open
+          household content. Do not imply that another head’s approval alone can
+          make an invalid withdrawal valid.
+        </p>
+      </section>
+      <section class="board" id="usage">
+        <h2>12 — Space usage and counted states</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage ·
+            Household
+          </div>
+          <div class="content">
+            <h3>Usage</h3>
+            <div class="row">
+              <div>
+                <strong>Retained items</strong>
+                <div class="muted">350 / 500 · yours 230 / 300</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Shopping lists</strong>
+                <div class="muted">5 / 12</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Templates / runs</strong>
+                <div class="muted">2 / 6 · 3 / 12</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Content and History</strong>
+                <div class="muted">520 / 768 KiB</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="notice">
+              Active, archived, finished and trashed content counts. Runs and
+              other independent copies count separately. History can grow on
+              every edit.
+            </div>
+            <div class="row">
+              <div>
+                <strong>Contributions to Maple</strong>
+                <div class="muted">
+                  Alex: 300 items, 512 KiB · Morgan: 200 items, 256 KiB
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="actions">
+              <span class="button">Open Trash</span
+              ><span class="button">My contribution</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Also expose uniform per-collection item/section caps at relevant
+          forms. Counts and bytes must have documented definitions. Heads see
+          only contributions to this household, never a contributor’s private
+          remainder, personal usage or allocations elsewhere. Separate
+          infrastructure monitoring remains operator tooling.
+        </p>
+      </section>
+      <section class="board" id="full">
+        <h2>13 — Full storage / over-limit spaces</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage ·
+            Household
+          </div>
+          <div class="content">
+            <h3>Storage is full</h3>
+            <div class="notice">
+              Your edit was not saved. Retaining its History would exceed
+              household storage.
+            </div>
+            <div class="label">Your unsaved draft</div>
+            <div class="field">[Keep edited notes available here]</div>
+            <div class="actions">
+              <span class="button">Cancel edit</span
+              ><span class="button">Review usage</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Available actions</strong>
+                <div class="muted">
+                  View existing content; review and explicitly erase retained
+                  content; add capacity.
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>After a plan reduction</strong>
+                <div class="muted">
+                  Existing content stays visible even if now over a limit.
+                </div>
+              </div>
+              <span></span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Full storage may block completion, Trash, restore or shortening notes
+          if History needs more bytes. Never silently trim History or pretend
+          the edit saved. Only exceeded dimensions block increases; other
+          changes still check their limits. Erasure remains available and
+          capacity is released only after successful protected erasure.
+        </p>
+      </section>
+      <section class="board" id="copy">
+        <h2>14 — Copy personal content into a household</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Personal ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage
+          </div>
+          <div class="content">
+            <h3>Copy “Weekend packing”</h3>
+            <div class="label">Destination</div>
+            <div class="field">Maple household</div>
+            <div class="row">
+              <div>
+                <strong>Required</strong>
+                <div class="muted">
+                  1 template · 12 items · retained content storage
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Source</strong>
+                <div class="muted">Remains private and unchanged</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Destination History</strong>
+                <div class="muted">
+                  Starts fresh; personal History is not copied
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="notice">
+              All heads in Maple will be able to view, change and erase the new
+              copy.
+            </div>
+            <div class="actions">
+              <span class="button">Cancel</span
+              ><span class="button">Copy to Maple</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Preview all affected allowances, including creator ceilings and
+          per-collection caps. Success creates the complete independent copy.
+          Failure creates nothing and preserves the personal original. Starting
+          a run follows the same capacity principles; fresh run content is
+          charged to its starter.
+        </p>
+      </section>
+      <section class="board" id="history">
+        <h2>15 — Content and administrative history</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage ·
+            Household
+          </div>
+          <div class="content">
+            <h3>History</h3>
+            <div class="row">
+              <div>
+                <strong>Weekly groceries · item updated</strong>
+                <div class="muted">Morgan · today 09:12</div>
+              </div>
+              <span>Before / after</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Weekly groceries · item added</strong>
+                <div class="muted">Alex · today 09:10</div>
+              </div>
+              <span>View change</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Household activity</strong>
+                <div class="muted">
+                  Alex changed their own item ceiling: 500 → 300
+                </div>
+              </div>
+              <span>View details</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Household activity</strong>
+                <div class="muted">Morgan accepted head membership</div>
+              </div>
+              <span>View details</span>
+            </div>
+            <div class="notice">
+              New heads can see retained household History from before they
+              joined.
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Content history stays attached to its task/list/template/run.
+          Household activity records administrative changes without copying
+          private list content into security logs. Preserve original-owner
+          attribution for migrated content. A former creator’s content stays
+          attributable after departure; do not invent historical actors or
+          expose that person’s private spaces.
+        </p>
+      </section>
+      <section class="board" id="remove">
+        <h2>16 — Remove another head</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage ·
+            Household
+          </div>
+          <div class="content">
+            <h3>Remove Morgan?</h3>
+            <div class="notice">
+              Morgan will lose access to Maple on their next request, including
+              in an open browser.
+            </div>
+            <div class="row">
+              <div>
+                <strong>Shared content and History</strong>
+                <div class="muted">
+                  Remain in Maple with creator attribution
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Morgan’s contribution</strong>
+                <div class="muted">
+                  Stays allocated until withdrawal leaves enough capacity
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Private data</strong>
+                <div class="muted">
+                  Morgan’s personal space and other households are unaffected
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="actions">
+              <span class="button">Cancel</span
+              ><span class="button">Confirm removal</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Any current head can confirm removal without second-head approval. No
+          extra confirmation is implied for changing the other person’s
+          subscription because removal grants no such authority. Recheck current
+          membership before committing. Never offer a silent contribution
+          transfer or content erasure as part of removal.
+        </p>
+      </section>
+      <section class="board" id="leave">
+        <h2>17 — Leave while another head remains</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage ·
+            Household
+          </div>
+          <div class="content">
+            <h3>Leave Maple?</h3>
+            <div class="notice">
+              You will lose household content access. Morgan remains a head.
+            </div>
+            <div class="row">
+              <div>
+                <strong>Your retained content</strong>
+                <div class="muted">
+                  Remains shared; still counts toward household totals
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Your contribution</strong>
+                <div class="muted">
+                  Remains until a valid withdrawal; manage it from My capacity
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Your ceilings on rejoining</strong>
+                <div class="muted">Existing creator counts apply again</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="actions">
+              <span class="button">Stay</span
+              ><span class="button">Confirm leave</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Departure is not blocked for lack of replacement capacity. Any
+          still-needed allocation stays reserved, with narrow management access
+          afterward. A concurrent last-head change requires the separate closure
+          confirmation; never silently convert this leave action into scheduled
+          whole-household erasure.
+        </p>
+      </section>
+      <section class="board" id="close">
+        <h2>18 — Last head leaves and closes household</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage ·
+            Household
+          </div>
+          <div class="content">
+            <h3>Leave and close Maple?</h3>
+            <div class="notice">
+              You are the last head. Leaving permanently closes this household.
+              It cannot be reopened.
+            </div>
+            <div class="row">
+              <div>
+                <strong>Scheduled permanent erasure</strong>
+                <div class="muted">1 November 2026, 00:00 UTC</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Your local deadline</strong>
+                <div class="muted">31 October 2026, 5:00 PM PDT · example</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Until erasure succeeds</strong>
+                <div class="muted">
+                  Content and History retain their allocated capacity
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>After confirming</strong>
+                <div class="muted">
+                  No household access; pending invitations revoked
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="actions">
+              <span class="button">Stay</span
+              ><span class="button">Confirm leave and close</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Explain that erasure is automatic at calendar month-end UTC, not a
+          future billing date or rolling 30-day period. Recompute and present
+          the exact deadline at confirmation, especially near month-end.
+          Whole-household erasure while still a head remains a separate explicit
+          operation with scope confirmation.
+        </p>
+      </section>
+      <section class="board" id="former">
+        <h2>19 — Former head: retained contribution</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Personal ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage
+          </div>
+          <div class="content">
+            <h3>Retained allocation · Maple</h3>
+            <div class="notice">
+              You are no longer a head. Household content is unavailable.
+            </div>
+            <div class="row">
+              <div>
+                <strong>Your allocation</strong>
+                <div class="muted">
+                  300 items · 8 shopping lists · 4 templates · 8 runs · 512 KiB
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Withdrawal preview</strong>
+                <div class="muted">
+                  Requested reduction currently lacks backing capacity
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="actions">
+              <span class="button">Review withdrawal eligibility</span
+              ><span class="button">Back to my capacity</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Show only the allocation and minimal quota eligibility information
+          needed for the former contributor to manage it. No household list
+          names, actors, content links or administrative controls. Valid
+          withdrawals need no remaining head’s approval; invalid ones cannot
+          free capacity.
+        </p>
+      </section>
+      <section class="board" id="closed">
+        <h2>20 — Closed household and erasure status</h2>
+        <div class="screen">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Personal ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage
+          </div>
+          <div class="content">
+            <h3>Closed allocation · Maple</h3>
+            <div class="notice">
+              Closed permanently. No reopening or content access.
+            </div>
+            <div class="row">
+              <div>
+                <strong>Erasure scheduled</strong>
+                <div class="muted">1 November 2026, 00:00 UTC</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Capacity status</strong>
+                <div class="muted">
+                  Reserved until protected erasure succeeds
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Alternative failure state</strong>
+                <div class="muted">
+                  Erasure delayed. Capacity remains reserved; operator alerted.
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Success state</strong>
+                <div class="muted">
+                  Erased. Your allocation is released to personal capacity.
+                </div>
+              </div>
+              <span></span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Scheduled, retrying and succeeded are separate states. The operator
+          gets GitHub failure notifications; contributors see a concise status.
+          Backups must not resurrect erased household content. Content-free
+          safety records are separate operator accounting, not a reason to
+          retain the erased content or its capacity forever.
+        </p>
+      </section>
+      <section class="board" id="recovery">
+        <h2>21 — Loading, conflicts and lost access</h2>
+        <div class="screen">
+          <div class="content">
+            <h3>Recovery states</h3>
+            <div class="row">
+              <div>
+                <strong>Loading a space</strong>
+                <div class="muted">
+                  Loading Maple… Do not show cached personal content here.
+                </div>
+              </div>
+              <span></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Another head changed this record</strong>
+                <div class="muted">
+                  Keep your draft. Review the latest version before saving
+                  again.
+                </div>
+              </div>
+              <span>Review latest</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Capacity changed during save</strong>
+                <div class="muted">
+                  Not saved. Refresh the capacity preview and retry.
+                </div>
+              </div>
+              <span>Review capacity</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Membership ended</strong>
+                <div class="muted">
+                  Clear household content from view. Return to your personal
+                  space.
+                </div>
+              </div>
+              <span>Personal</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Session expired</strong>
+                <div class="muted">
+                  Sign in again; do not expose household drafts under another
+                  identity.
+                </div>
+              </div>
+              <span>Sign in</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Service unavailable</strong>
+                <div class="muted">
+                  Could not load this space. Existing data is unchanged.
+                </div>
+              </div>
+              <span>Retry</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Preserve drafts only where still authorized, distinguish service
+          failure from access denial, and isolate draft/cache keys by account
+          and space. Retry uses the same operation identity so an uncertain
+          response cannot create duplicates. Stale permission changes cannot
+          silently succeed.
+        </p>
+      </section>
+      <section class="board" id="mobile">
+        <h2>22 — Phone: shared shopping</h2>
+        <div class="screen mobile">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage ·
+            Household
+          </div>
+          <div class="content">
+            <h3>Weekly groceries</h3>
+            <div class="notice">Shared · updated on refresh</div>
+            <div class="actions">
+              <span class="button">Refresh</span
+              ><span class="button">Add item</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>☐ Oats</strong>
+                <div class="muted">2 bags · Morgan</div>
+              </div>
+              <span>Edit</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>☐ Apples</strong>
+                <div class="muted">6 · Alex</div>
+              </div>
+              <span>Edit</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>☑ Rice</strong>
+                <div class="muted">1 bag · Alex</div>
+              </div>
+              <span>Edit</span>
+            </div>
+            <div class="actions">
+              <span class="button">History</span
+              ><span class="button">List actions</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Usage</strong>
+                <div class="muted">350 / 500 retained items</div>
+              </div>
+              <span>View</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          At phone width, wrap navigation and actions instead of hiding
+          household identity. Keep quantities, item controls and list actions
+          visible without horizontal scrolling. Structural caps and save
+          failures appear near the relevant action. Completion is shown as saved
+          only after confirmation.
+        </p>
+      </section>
+      <section class="board" id="mobile-capacity">
+        <h2>23 — Phone: capacity and own ceilings</h2>
+        <div class="screen mobile">
+          <div class="top">
+            intrepion <span class="muted">Alex · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists<br />Archive · Trash · Usage ·
+            Household
+          </div>
+          <div class="content">
+            <h3>My household limits</h3>
+            <div class="row">
+              <div>
+                <strong>Your retained items</strong>
+                <div class="muted">230 / 300</div>
+              </div>
+              <span>Edit mine</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Household retained items</strong>
+                <div class="muted">350 / 500</div>
+              </div>
+              <span>View usage</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Your contribution</strong>
+                <div class="muted">300 items · 512 KiB</div>
+              </div>
+              <span>Manage mine</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Household storage</strong>
+                <div class="muted">520 / 768 KiB</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="notice">
+              Other heads’ ceilings are read-only. Contributions do not reserve
+              a personal share.
+            </div>
+            <div class="actions">
+              <span class="button">Heads</span
+              ><span class="button">My capacity</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Use stacked resource rows on mobile; no wide allocation matrix. Each
+          allocation review still shows every affected resource and
+          personal/household before-and-after capacity. Do not collapse a
+          multi-resource decision into one percentage slider.
+        </p>
+      </section>
+    </main>
+    <footer>
+      <p>
+        Wireframes approved by the owner. Next gate: visual mockup approval. A separate
+        server-free local prototype follows mockup approval; production
+        implementation comes afterward.
+      </p>
+      <p>
+        Privacy, keyboard behavior, focus management, announcements and actual
+        save/retry transitions require validation in the later prototype and
+        production stages.
+      </p>
+    </footer>
+  </body>
+</html>

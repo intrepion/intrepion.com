@@ -49,7 +49,7 @@ pub fn app(auth: SharedAuth) -> Router {
     let router = router.route("/auth/development", post(auth::development_login));
     let mut rpc = connectrpc::Router::new()
         .add_service(Arc::new(tasks::Tasks(auth.clone())))
-        .add_service(Arc::new(lists::Lists(auth.clone())));
+        .add_service(Arc::new(lists::Lists(auth.clone(), Default::default())));
     for method in [
         "ListCollections",
         "GetCollection",

@@ -1,6 +1,10 @@
 # Local design prototypes
 
-The current **MVP 2 Everyday lists prototype** is at <http://127.0.0.1:4321/everyday/>. See [its walkthrough and review boundaries](../design/mvp-2/PROTOTYPE.md). Start it with `npm --prefix prototype run dev` after the one-time dependency installation below. No Rust server is required. MVP 2's wireframes, mockups, and standalone prototype are approved; production implementation is in progress.
+The current **MVP 3 Household foundation prototype** is [a self-contained HTML file](public/households/index.html). Open it directly, or run `npm --prefix prototype run dev` and visit <http://127.0.0.1:4321/households/index.html>. No Rust server, credentials or real Google login are needed. See [the guided walkthroughs and review boundaries](../design/mvp-3/PROTOTYPE.md). MVP 3 wireframes and mockups are approved; the interactive prototype is approved; production implementation proceeds separately.
+
+## Earlier prototypes
+
+The **MVP 2 Everyday lists prototype** is at <http://127.0.0.1:4321/everyday/>. See [its walkthrough and review boundaries](../design/mvp-2/PROTOTYPE.md). Start it with `npm --prefix prototype run dev` after the one-time dependency installation below. No Rust server is required. MVP 2's wireframes, mockups, and standalone prototype are approved; production implementation is in progress.
 
 The original MVP 1 task prototype remains at <http://127.0.0.1:4321/>. Its approved review record follows.
 

@@ -1,0 +1,3242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Household foundation · throwaway local prototype</title>
+    <style>
+      :root {
+        font:
+          15px/1.55 -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Arial,
+          sans-serif;
+        color: #1b302c;
+        background: #f4f5f1;
+        --green: #185e52;
+        --muted: #596b65;
+        --line: #dce4de;
+        --outline: #7c8f85;
+        --red: #a52f2b;
+        --soft: #eaf3ee;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px 16px;
+      }
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+        color: inherit;
+      }
+      button,
+      input,
+      select,
+      textarea {
+        min-height: 44px;
+        border: 1px solid var(--outline);
+        border-radius: 9px;
+        background: white;
+        padding: 10px 13px;
+      }
+      button {
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+      button:focus-visible,
+      a:focus-visible,
+      summary:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible {
+        outline: 3px solid var(--green);
+        outline-offset: 3px;
+      }
+      a {
+        color: var(--green);
+        text-underline-offset: 4px;
+      }
+      button.primary {
+        background: var(--green);
+        border-color: var(--green);
+        color: white;
+      }
+      button.danger {
+        background: var(--red);
+        border-color: var(--red);
+        color: white;
+      }
+      button.quiet {
+        background: var(--soft);
+        color: var(--green);
+        border-color: #bfd1c6;
+      }
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+      h1,
+      h2,
+      h3 {
+        line-height: 1.25;
+        letter-spacing: -0.03em;
+      }
+      h1 {
+        font-size: 29px;
+      }
+      h2 {
+        font-size: 24px;
+      }
+      h3 {
+        font-size: 18px;
+      }
+      p {
+        margin: 10px 0;
+      }
+      small,
+      .muted {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .review,
+      main,
+      .inspector {
+        max-width: 1100px;
+        margin: 0 auto 22px;
+      }
+      .review {
+        border: 1px dashed var(--outline);
+        border-radius: 14px;
+        padding: 20px;
+        background: #fff;
+      }
+      .review h1 {
+        font-size: 23px;
+      }
+      .review > p {
+        max-width: 90ch;
+        font-size: 14px;
+      }
+      .eyebrow {
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .controls,
+      .actions,
+      .tabs,
+      .review-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .controls {
+        align-items: flex-end;
+        margin: 15px 0;
+      }
+      .controls label {
+        flex: 1;
+        min-width: 180px;
+      }
+      .controls select {
+        display: block;
+        width: 100%;
+        margin-top: 5px;
+      }
+      summary {
+        cursor: pointer;
+        padding: 10px 0;
+        color: var(--green);
+        font-weight: 600;
+      }
+      .walkthrough {
+        padding: 16px;
+        background: #f5f8f5;
+        border-radius: 10px;
+        margin-top: 12px;
+      }
+      .walkthrough p {
+        max-width: 85ch;
+      }
+      .review-tabs {
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+      .review-tabs button[aria-selected="true"] {
+        background: var(--green);
+        color: white;
+      }
+      .steps {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .steps button {
+        text-align: left;
+      }
+      .steps button[aria-current="step"] {
+        border: 2px solid var(--green);
+      }
+      .summary-grid,
+      .resource-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .summary-grid {
+        margin: 14px 0;
+      }
+      .summary-card {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 13px;
+        background: #fafbf9;
+        overflow-wrap: anywhere;
+      }
+      .summary-card strong {
+        display: block;
+        margin: 4px 0;
+      }
+      .app {
+        background: white;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px #213b2f08;
+      }
+      .top,
+      .spacebar,
+      .app-footer {
+        padding: 18px 26px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+      }
+      .mark {
+        display: grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        background: var(--green);
+        border-radius: 9px;
+        color: white;
+      }
+      .spacebar {
+        background: #fafbf9;
+      }
+      .spacebar label {
+        flex: 1;
+        max-width: 380px;
+      }
+      .spacebar select {
+        display: block;
+        width: 100%;
+        margin-top: 5px;
+      }
+      .badge {
+        font-size: 12px;
+        background: var(--soft);
+        color: var(--green);
+        border-radius: 99px;
+        padding: 5px 11px;
+      }
+      .tabs {
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--line);
+        gap: 6px;
+      }
+      .tabs button {
+        border-color: transparent;
+        background: transparent;
+        color: var(--muted);
+      }
+      .tabs button[aria-current="page"] {
+        background: var(--soft);
+        border-color: #bfd1c6;
+        color: var(--green);
+      }
+      .content {
+        padding: 28px;
+      }
+      .heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 22px;
+      }
+      .actions {
+        margin: 15px 0;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .row > div {
+        min-width: 0;
+      }
+      .row-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .row-title strong {
+        overflow-wrap: anywhere;
+      }
+      .row .actions {
+        margin: 0;
+        flex-shrink: 0;
+        max-width: 55%;
+      }
+      .row p {
+        margin: 4px 0;
+        font-size: 13px;
+        color: var(--muted);
+        overflow-wrap: anywhere;
+      }
+      .check {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        display: grid;
+        place-items: center;
+        padding: 0;
+      }
+      .checked {
+        background: var(--soft);
+        border-color: var(--green);
+        color: var(--green);
+      }
+      .bought {
+        text-decoration: line-through;
+        color: var(--muted);
+      }
+      .notice {
+        padding: 14px 16px;
+        border: 1px solid #bfd1c6;
+        border-radius: 10px;
+        background: var(--soft);
+        color: var(--green);
+        margin: 15px 0;
+        overflow-wrap: anywhere;
+      }
+      .notice.error {
+        border-color: #cb766b;
+        background: #fff2ef;
+        color: #842d28;
+      }
+      .empty {
+        padding: 35px 0;
+        color: var(--muted);
+      }
+      .app-footer {
+        border-top: 1px solid var(--line);
+        border-bottom: 0;
+        justify-content: flex-start;
+        background: #fafbf9;
+        font-size: 13px;
+      }
+      .app-footer button {
+        background: transparent;
+      }
+      .resource {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 16px;
+        margin: 10px 0;
+      }
+      .resource .numbers {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .meter {
+        height: 6px;
+        border-radius: 99px;
+        background: var(--line);
+        margin: 12px 0 4px;
+        overflow: hidden;
+      }
+      .meter span {
+        height: 100%;
+        display: block;
+        background: var(--green);
+      }
+      .resource.over .meter span {
+        background: var(--red);
+      }
+      label.field {
+        display: block;
+        font-weight: 600;
+        font-size: 13px;
+        margin: 16px 0 6px;
+      }
+      label.field input,
+      label.field textarea,
+      label.field select {
+        display: block;
+        width: 100%;
+        margin-top: 7px;
+        font-weight: 400;
+      }
+      textarea {
+        min-height: 88px;
+        resize: vertical;
+      }
+      .resource-grid label {
+        min-width: 0;
+      }
+      .resource-grid input {
+        min-width: 0;
+      }
+      .inspector {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px;
+        background: white;
+      }
+      .inspector pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-size: 12px;
+        max-height: 400px;
+        overflow: auto;
+      }
+      .state-note {
+        font-size: 13px;
+      }
+      dialog {
+        width: calc(100% - 28px);
+        max-width: 620px;
+        border: 1px solid var(--outline);
+        border-radius: 16px;
+        padding: 24px;
+        color: inherit;
+        max-height: 90vh;
+        overflow-y: auto;
+        overflow-wrap: anywhere;
+      }
+      dialog::backdrop {
+        background: #1b302c66;
+      }
+      dialog h2 {
+        margin-bottom: 14px;
+      }
+      dialog .actions {
+        justify-content: flex-end;
+      }
+      .hidden {
+        display: none;
+      }
+      .event {
+        padding: 14px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .event details pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-size: 12px;
+      }
+      .section-label {
+        font-size: 14px;
+        background: #f4f5f1;
+        border-radius: 6px;
+        padding: 9px;
+        margin: 22px 0 0;
+      }
+      .account {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      @media (max-width: 650px) {
+        body {
+          padding: 14px 10px;
+        }
+        .content {
+          padding: 22px 16px;
+        }
+        .top,
+        .spacebar {
+          padding: 16px;
+        }
+        .row {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .row .actions {
+          max-width: 100%;
+          flex-wrap: wrap;
+        }
+        .summary-grid,
+        .resource-grid {
+          grid-template-columns: 1fr;
+        }
+        .heading h1 {
+          font-size: 26px;
+        }
+        .tabs {
+          padding: 10px;
+          gap: 2px;
+        }
+        .tabs button {
+          padding: 9px 10px;
+        }
+        .review {
+          padding: 16px;
+        }
+        .controls label {
+          min-width: 100%;
+        }
+        dialog {
+          padding: 20px 16px;
+        }
+        .top {
+          gap: 10px;
+        }
+        .app-footer {
+          padding: 14px 16px;
+        }
+        .steps button {
+          white-space: normal;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="review" aria-label="Prototype review controls">
+      <p class="eyebrow">
+        MVP 3 · throwaway prototype · no real accounts or services
+      </p>
+      <h1>Do households and shared capacity feel right?</h1>
+      <p>
+        Explore the approved Everyday lists design with household access,
+        invitations, individual ceilings, contributed capacity and final
+        closure. Everything is synthetic and in memory. Reload resets it. All
+        allowances are examples, not approved launch caps. This code will not
+        become production code.
+      </p>
+      <div class="controls">
+        <label
+          >Review as<select id="identity">
+            <option value="alex">Alex · approved</option>
+            <option value="morgan">Morgan · approved</option>
+            <option value="casey">Casey · approved</option>
+            <option value="unapproved">Unapproved account</option>
+            <option value="">Signed out</option>
+          </select></label
+        ><label
+          >Next content save<select id="next-result">
+            <option value="success">Succeeds</option>
+            <option value="failure">Fails before saving</option>
+            <option value="lost">Saves, response lost</option>
+            <option value="conflict">Another head changes the record</option>
+            <option value="expired">Session expires</option>
+          </select></label
+        ><button id="reset">Reset demo</button>
+      </div>
+      <details id="guided">
+        <summary>Guided walkthroughs and review scenarios</summary>
+        <div
+          class="review-tabs"
+          role="tablist"
+          aria-label="Walkthroughs"
+          id="scenario-tabs"
+        ></div>
+        <div id="walkthrough" class="walkthrough" role="tabpanel"></div>
+        <div class="controls">
+          <button data-review="full">Simulate full household storage</button
+          ><button data-review="over">Simulate lower item capacity</button
+          ><button data-review="revoke">Simulate losing household access</button
+          ><button data-review="month">Advance to month-end</button
+          ><button data-review="erase-fail">
+            Make next scheduled erasure fail</button
+          ><button data-review="erase">Run scheduled erasure</button>
+        </div>
+        <p class="muted">
+          Review controls intentionally expose all synthetic identities and
+          simulated operator/time changes. They are outside the product UI. “My
+          capacity” inside the app respects the privacy boundaries.
+        </p>
+      </details>
+      <div id="state-summary" class="summary-grid" aria-live="polite"></div>
+    </aside>
+    <main
+      id="app"
+      class="app"
+      tabindex="-1"
+      aria-label="Household prototype"
+    ></main>
+    <aside class="inspector">
+      <details>
+        <summary>Review-only simulated state</summary>
+        <p class="state-note">
+          All synthetic identities, private spaces and retained allocations are
+          visible here solely to explain the simulation. Real users must never
+          receive this data.
+        </p>
+        <pre id="state-inspector"></pre>
+      </details>
+    </aside>
+    <dialog id="dialog" aria-labelledby="dialog-title">
+      <div id="dialog-body"></div>
+    </dialog>
+    <script>
+      // Pure, throwaway domain simulation. No DOM, storage, requests or production imports.
+      const HouseholdDemo = (() => {
+        const keys = ["items", "shopping", "template", "run", "bytes"];
+        const names = {
+          items: "Retained items",
+          shopping: "Shopping lists",
+          template: "Templates",
+          run: "Runs",
+          bytes: "Content + History storage",
+        };
+        const plan = () => ({
+          items: 1000,
+          shopping: 20,
+          template: 10,
+          run: 20,
+          bytes: 2097152,
+        });
+        const zero = () => Object.fromEntries(keys.map((k) => [k, 0]));
+        const clone = (s) => JSON.parse(JSON.stringify(s));
+        const now = (s) => new Date(s.now).toISOString();
+        const nextId = (s) => "demo-" + ++s.sequence;
+        const personal = (u) => "personal-" + u;
+        const alloc = (items, shopping, template, run, bytes) => ({
+          items,
+          shopping,
+          template,
+          run,
+          bytes,
+        });
+        function initial() {
+          const s = {
+            now: Date.UTC(2026, 9, 22, 12),
+            sequence: 30,
+            users: {
+              alex: { name: "Alex", approved: true, plan: plan() },
+              morgan: { name: "Morgan", approved: true, plan: plan() },
+              casey: { name: "Casey", approved: true, plan: plan() },
+              unapproved: { name: "Unapproved", approved: false, plan: plan() },
+            },
+            households: {
+              maple: {
+                id: "maple",
+                name: "Maple household",
+                heads: ["alex", "morgan"],
+                status: "active",
+                allocations: {
+                  alex: alloc(80, 8, 4, 8, 524288),
+                  morgan: alloc(40, 4, 2, 4, 262144),
+                },
+                ceilings: {
+                  alex: alloc(120, 12, 6, 12, 0),
+                  morgan: alloc(120, 12, 6, 12, 0),
+                },
+                eraseAt: null,
+                erasureError: false,
+              },
+            },
+            collections: [],
+            history: [],
+            admin: [],
+            invitations: [],
+            receipts: [],
+            erased: [],
+            failErasure: false,
+          };
+          function collection(id, space, kind, title, creator, items = []) {
+            return {
+              id,
+              space,
+              kind,
+              title,
+              notes: "",
+              creator,
+              trashed: false,
+              archived: false,
+              finished: false,
+              checked: false,
+              version: 1,
+              sections:
+                kind === "task"
+                  ? []
+                  : [
+                      {
+                        id: id + "-section",
+                        title:
+                          kind === "template" ? "Before you go" : "Essentials",
+                      },
+                    ],
+              items: items.map((title, i) => ({
+                id: id + "-item-" + i,
+                title,
+                quantity: kind === "shopping" ? "1" : "",
+                notes: "",
+                checked: false,
+                trashed: false,
+                creator,
+                section: id + "-section",
+              })),
+            };
+          }
+          s.collections.push(
+            collection(
+              "task-a",
+              personal("alex"),
+              "task",
+              "Plan the weekend",
+              "alex",
+            ),
+            collection(
+              "personal-trip",
+              personal("alex"),
+              "template",
+              "Weekend packing",
+              "alex",
+              ["Pack chargers", "Check travel documents"],
+            ),
+            collection(
+              "groceries",
+              "maple",
+              "shopping",
+              "Weekly groceries",
+              "alex",
+              ["Oats", "Apples", "Rice"],
+            ),
+            collection(
+              "travel",
+              "maple",
+              "template",
+              "Camping checklist",
+              "morgan",
+              ["Pack tent", "Check weather"],
+            ),
+            collection(
+              "morgan-task",
+              "maple",
+              "task",
+              "Check the pantry",
+              "morgan",
+            ),
+            collection(
+              "casey-task",
+              personal("casey"),
+              "task",
+              "Water the plants",
+              "casey",
+            ),
+          );
+          s.collections.find((c) => c.id === "groceries").items[2].checked =
+            true;
+          s.history.push({
+            id: "initial-history",
+            space: "maple",
+            collection: "groceries",
+            actor: "alex",
+            time: now(s),
+            event: "Shopping list created",
+            before: null,
+            after: { title: "Weekly groceries" },
+          });
+          return s;
+        }
+        function requireUser(s, u) {
+          if (!s.users[u]?.approved)
+            throw Error("This Google account is not approved for the pilot.");
+        }
+        function requireAccess(s, u, space) {
+          requireUser(s, u);
+          if (space === personal(u)) return;
+          if (
+            !s.households[space] ||
+            s.households[space].status !== "active" ||
+            !s.households[space].heads.includes(u)
+          )
+            throw Error("You no longer have access to this household.");
+        }
+        function totals(s, space) {
+          if (space.startsWith("personal-")) {
+            const u = space.slice(9),
+              r = { ...s.users[u].plan };
+            for (const h of Object.values(s.households))
+              if (h.status !== "erased" && h.allocations[u])
+                for (const k of keys) r[k] -= h.allocations[u][k];
+            return r;
+          }
+          const r = zero(),
+            h = s.households[space];
+          if (h?.status !== "erased")
+            for (const a of Object.values(h?.allocations || {}))
+              for (const k of keys) r[k] += a[k];
+          return r;
+        }
+        function usage(s, space, creator) {
+          const r = zero(),
+            records = [];
+          for (const c of s.collections.filter((c) => c.space === space)) {
+            if (c.kind === "task") {
+              if (!creator || c.creator === creator) r.items++;
+            } else {
+              if (!creator || c.creator === creator) r[c.kind]++;
+              r.items += c.items.filter(
+                (i) => !creator || i.creator === creator,
+              ).length;
+            }
+            records.push({
+              kind: c.kind,
+              title: c.title,
+              notes: c.notes,
+              checked: c.checked,
+              sections: c.sections.map((x) => x.title),
+              items: c.items.map((i) => ({
+                title: i.title,
+                quantity: i.quantity,
+                notes: i.notes,
+                checked: i.checked,
+              })),
+            });
+          }
+          if (!creator)
+            r.bytes = new TextEncoder().encode(
+              JSON.stringify(records) +
+                JSON.stringify(s.history.filter((h) => h.space === space)),
+            ).length;
+          return r;
+        }
+        function checkIncrease(before, after, cap, label) {
+          for (const k of keys)
+            if (after[k] > cap[k] && after[k] > before[k])
+              throw Error(
+                `${label}: ${names[k]} would exceed the allowance. Retained Trash and History still count.`,
+              );
+        }
+        function validAmounts(value) {
+          for (const k of keys)
+            if (!Number.isSafeInteger(value[k]) || value[k] < 0)
+              throw Error(
+                "Enter a whole, non-negative amount for every resource.",
+              );
+        }
+        function audit(s, space, u, event) {
+          s.admin.push({ id: nextId(s), space, actor: u, event, time: now(s) });
+        }
+        function getCollection(s, a) {
+          const c = s.collections.find((c) => c.id === a.id);
+          if (!c) throw Error("This record is no longer available.");
+          requireAccess(s, a.user, c.space);
+          return c;
+        }
+        function apply(original, a) {
+          if (a.op && original.receipts.includes(a.op)) return original;
+          const s = clone(original),
+            u = a.user;
+          requireUser(s, u);
+          if (a.type === "allocate") {
+            const h = s.households[a.space];
+            if (!h || (!h.heads.includes(u) && !h.allocations[u]))
+              throw Error("This allocation is unavailable.");
+            if (h.status !== "active")
+              throw Error(
+                "Closed household capacity stays reserved until scheduled erasure succeeds.",
+              );
+            validAmounts(a.amounts);
+            h.allocations[u] = clone(a.amounts);
+            for (const k of keys) {
+              if (totals(s, personal(u))[k] < 0)
+                throw Error(
+                  "Your plan does not contain enough unallocated " +
+                    names[k].toLowerCase() +
+                    ".",
+                );
+              const beforeH = totals(original, a.space)[k],
+                afterH = totals(s, a.space)[k];
+              if (afterH < beforeH && usage(s, a.space)[k] > afterH)
+                throw Error(
+                  "Withdrawal blocked: retained household " +
+                    names[k].toLowerCase() +
+                    " would exceed remaining capacity. Obtain replacement capacity or erase retained content first.",
+                );
+              const beforeP = totals(original, personal(u))[k],
+                afterP = totals(s, personal(u))[k];
+              if (afterP < beforeP && usage(s, personal(u))[k] > afterP)
+                throw Error(
+                  "Allocation blocked: your personal space needs that capacity.",
+                );
+            }
+            audit(s, a.space, u, "Changed own capacity allocation");
+          } else if (a.type === "ceilings") {
+            requireAccess(s, u, a.space);
+            const h = s.households[a.space];
+            if (!h || a.target !== u)
+              throw Error("Each head can change only their own ceilings.");
+            validAmounts(a.amounts);
+            h.ceilings[u] = clone(a.amounts);
+            audit(s, a.space, u, "Changed own individual count ceilings");
+          } else if (a.type === "createHousehold") {
+            if (
+              Object.values(s.households).filter(
+                (h) => h.status === "active" && h.heads.includes(u),
+              ).length >= 3
+            )
+              throw Error(
+                "You have reached the example limit of three households headed.",
+              );
+            if (!a.title.trim() || a.title.trim().length > 100)
+              throw Error("Enter a household name of 1–100 characters.");
+            validAmounts(a.amounts);
+            const id = nextId(s);
+            s.households[id] = {
+              id,
+              name: a.title.trim(),
+              heads: [u],
+              status: "active",
+              allocations: { [u]: clone(a.amounts) },
+              ceilings: { [u]: clone(a.amounts) },
+              eraseAt: null,
+              erasureError: false,
+            };
+            for (const k of keys)
+              if (
+                usage(s, personal(u))[k] > totals(s, personal(u))[k] ||
+                totals(s, personal(u))[k] < 0
+              )
+                throw Error(
+                  "Your personal space cannot spare that " +
+                    names[k].toLowerCase() +
+                    ".",
+                );
+            audit(s, id, u, "Created household");
+            s.lastCreated = id;
+          } else if (a.type === "invite") {
+            requireAccess(s, u, a.space);
+            if (!s.households[a.space]) throw Error("Choose a household.");
+            requireUser(s, a.target);
+            if (s.households[a.space].heads.includes(a.target))
+              throw Error("This person is already a head.");
+            s.invitations.push({
+              id: nextId(s),
+              space: a.space,
+              target: a.target,
+              createdBy: u,
+              expires: s.now + 7 * 86400000,
+              status: "pending",
+            });
+            audit(s, a.space, u, "Created recipient-bound invitation");
+          } else if (a.type === "revokeInvite") {
+            const inv = s.invitations.find((i) => i.id === a.id);
+            if (!inv) throw Error("Invitation unavailable.");
+            requireAccess(s, u, inv.space);
+            inv.status = "revoked";
+            audit(s, inv.space, u, "Revoked invitation");
+          } else if (a.type === "accept") {
+            const inv = s.invitations.find((i) => i.id === a.id);
+            if (!inv || inv.target !== u)
+              throw Error(
+                "Use the approved Google identity named by this invitation.",
+              );
+            const h = s.households[inv.space];
+            if (
+              inv.status === "accepted" &&
+              h?.status === "active" &&
+              h.heads.includes(u)
+            )
+              return original;
+            if (
+              inv.status !== "pending" ||
+              s.now >= inv.expires ||
+              h?.status !== "active"
+            )
+              throw Error(
+                "This invitation has expired, was revoked, or its household is closed.",
+              );
+            if (!h.heads.includes(u)) {
+              if (
+                Object.values(s.households).filter(
+                  (h) => h.status === "active" && h.heads.includes(u),
+                ).length >= 3
+              )
+                throw Error(
+                  "Your household limit is reached. No membership was created.",
+                );
+              h.heads.push(u);
+              if (!h.ceilings[u]) h.ceilings[u] = totals(s, h.id);
+            }
+            inv.status = "accepted";
+            audit(s, h.id, u, "Accepted head membership");
+          } else if (a.type === "leave" || a.type === "remove") {
+            requireAccess(s, u, a.space);
+            const h = s.households[a.space],
+              target = a.type === "leave" ? u : a.target;
+            if (!h.heads.includes(target))
+              throw Error("This person is no longer a head.");
+            if (target === u && a.type === "remove")
+              throw Error("Use Leave household to leave yourself.");
+            if (h.heads.length === 1 && !a.close)
+              throw Error(
+                "You are now the last head. Review the separate closure confirmation.",
+              );
+            h.heads = h.heads.filter((x) => x !== target);
+            audit(
+              s,
+              h.id,
+              u,
+              a.type === "remove"
+                ? "Removed head membership"
+                : "Left household",
+            );
+            if (!h.heads.length) {
+              h.status = "closed";
+              const d = new Date(s.now);
+              h.eraseAt = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1);
+              for (const i of s.invitations)
+                if (i.space === h.id && i.status === "pending")
+                  i.status = "revoked";
+            }
+          } else if (a.type === "eraseHouseholdContent") {
+            requireAccess(s, u, a.space);
+            if (!s.households[a.space]) throw Error("Choose a household.");
+            const ids = s.collections
+              .filter((c) => c.space === a.space)
+              .flatMap((c) => [c.id, ...c.items.map((i) => i.id)]);
+            s.erased.push({
+              space: a.space,
+              ids,
+              protected: true,
+              time: now(s),
+            });
+            s.collections = s.collections.filter((c) => c.space !== a.space);
+            s.history = s.history.filter((h) => h.space !== a.space);
+            audit(
+              s,
+              a.space,
+              u,
+              "Explicitly erased all shared content and content History",
+            );
+          } else if (a.type === "eraseDue") {
+            for (const h of Object.values(s.households))
+              if (h.status === "closed" && s.now >= h.eraseAt) {
+                if (s.failErasure) {
+                  h.erasureError = true;
+                  continue;
+                }
+                const ids = s.collections
+                  .filter((c) => c.space === h.id)
+                  .map((c) => c.id);
+                s.erased.push({
+                  space: h.id,
+                  ids,
+                  releasedFor: Object.keys(h.allocations),
+                  protected: true,
+                  time: now(s),
+                });
+                s.collections = s.collections.filter((c) => c.space !== h.id);
+                s.history = s.history.filter((e) => e.space !== h.id);
+                s.admin = s.admin.filter((e) => e.space !== h.id);
+                s.invitations = s.invitations.filter((i) => i.space !== h.id);
+                h.status = "erased";
+                h.name = "Erased household";
+                h.erasureError = false;
+                h.allocations = {};
+                h.ceilings = {};
+              }
+            s.failErasure = false;
+          } else {
+            const space = a.type === "copy" ? a.destination : a.space;
+            requireAccess(s, u, space);
+            const before = usage(s, space),
+              ownBefore = usage(s, space, u);
+            let c,
+              old = null,
+              event = a.type;
+            if (a.type === "newCollection") {
+              if (!["task", "shopping", "template"].includes(a.kind))
+                throw Error("Choose a supported kind.");
+              c = {
+                id: nextId(s),
+                space,
+                kind: a.kind,
+                title: a.title.trim(),
+                notes: a.notes || "",
+                creator: u,
+                trashed: false,
+                archived: false,
+                finished: false,
+                checked: false,
+                version: 1,
+                sections: [],
+                items: [],
+              };
+              s.collections.push(c);
+              event = "Created " + a.kind;
+            } else if (a.type === "copy") {
+              const src = s.collections.find((x) => x.id === a.id);
+              if (!src) throw Error("Source unavailable.");
+              requireAccess(s, u, src.space);
+              if (src.trashed)
+                throw Error("Restore the source before copying.");
+              c = clone(src);
+              c.id = nextId(s);
+              c.space = space;
+              c.creator = u;
+              c.version = 1;
+              c.trashed = false;
+              c.archived = false;
+              c.finished = false;
+              const sectionIds = {};
+              c.sections = c.sections.map((x) => {
+                const id = nextId(s);
+                sectionIds[x.id] = id;
+                return { id, title: x.title };
+              });
+              c.items = c.items
+                .filter((i) => !i.trashed)
+                .map((i) => ({
+                  ...i,
+                  id: nextId(s),
+                  creator: u,
+                  section: sectionIds[i.section] || "",
+                }));
+              s.collections.push(c);
+              event = "Created independent copy";
+            } else if (a.type === "startRun") {
+              const src = getCollection(s, a);
+              if (src.kind !== "template" || src.trashed || src.archived)
+                throw Error("Open an active template to start a run.");
+              c = clone(src);
+              c.id = nextId(s);
+              c.kind = "run";
+              c.creator = u;
+              c.title = src.title + " · run";
+              c.version = 1;
+              c.finished = false;
+              const sectionIds = {};
+              c.sections = c.sections.map((x) => {
+                const id = nextId(s);
+                sectionIds[x.id] = id;
+                return { id, title: x.title };
+              });
+              c.items = c.items
+                .filter((i) => !i.trashed)
+                .map((i) => ({
+                  ...i,
+                  id: nextId(s),
+                  creator: u,
+                  checked: false,
+                  section: sectionIds[i.section] || "",
+                }));
+              s.collections.push(c);
+              event = "Started independent run";
+            } else {
+              c = getCollection(s, a);
+              if (c.space !== space) throw Error("The selected space changed.");
+              if (a.version !== undefined && a.version !== c.version)
+                throw Error(
+                  "Another head changed this record. Your draft is retained; review the latest version.",
+                );
+              old = clone(c);
+              if (a.type === "eraseCollection") {
+                if (!c.trashed)
+                  throw Error("Move content to Trash before erasing it.");
+                s.erased.push({
+                  space,
+                  ids: [c.id, ...c.items.map((i) => i.id)],
+                  protected: true,
+                  time: now(s),
+                });
+                s.collections = s.collections.filter((x) => x.id !== c.id);
+                s.history = s.history.filter((e) => e.collection !== c.id);
+                if (a.op) s.receipts.push(a.op);
+                return s;
+              }
+              if (c.trashed && a.type !== "restoreCollection")
+                throw Error("Restore this content before changing it.");
+              if (
+                c.archived &&
+                !["unarchive", "trashCollection"].includes(a.type)
+              )
+                throw Error("Unarchive this collection before editing.");
+              if (
+                c.finished &&
+                !["reopen", "trashCollection", "archive"].includes(a.type)
+              )
+                throw Error("Reopen this run before editing.");
+              if (a.type === "editCollection") {
+                c.title = a.title.trim();
+                c.notes = a.notes || "";
+              } else if (a.type === "toggleTask") {
+                if (c.kind !== "task") throw Error("Choose a task.");
+                c.checked = !c.checked;
+              } else if (a.type === "trashCollection") c.trashed = true;
+              else if (a.type === "restoreCollection") c.trashed = false;
+              else if (a.type === "archive") c.archived = true;
+              else if (a.type === "unarchive") c.archived = false;
+              else if (a.type === "finish") c.finished = true;
+              else if (a.type === "reopen") c.finished = false;
+              else if (a.type === "newSection") {
+                if (!a.title.trim() || a.title.length > 200)
+                  throw Error("Enter a section name of 1–200 characters.");
+                c.sections.push({ id: nextId(s), title: a.title.trim() });
+              } else if (a.type === "resetShopping") {
+                if (c.kind !== "shopping")
+                  throw Error("Choose a shopping list.");
+                for (const i of c.items) if (!i.trashed) i.checked = false;
+              } else if (
+                ["renameSection", "removeSection", "moveSection"].includes(
+                  a.type,
+                )
+              ) {
+                const index = c.sections.findIndex((x) => x.id === a.section);
+                if (index < 0) throw Error("Section unavailable.");
+                if (a.type === "renameSection") {
+                  if (!a.title.trim() || Array.from(a.title).length > 200)
+                    throw Error("Enter a section name of 1–200 characters.");
+                  c.sections[index].title = a.title.trim();
+                } else if (a.type === "removeSection") {
+                  c.sections.splice(index, 1);
+                  for (const i of c.items)
+                    if (i.section === a.section) i.section = "";
+                } else {
+                  const next = index + a.direction;
+                  if (next < 0 || next >= c.sections.length)
+                    throw Error("Section is already at that edge.");
+                  [c.sections[index], c.sections[next]] = [
+                    c.sections[next],
+                    c.sections[index],
+                  ];
+                }
+              } else if (a.type === "newItem")
+                c.items.push({
+                  id: nextId(s),
+                  title: a.title.trim(),
+                  quantity: a.quantity || "",
+                  notes: a.notes || "",
+                  creator: u,
+                  checked: false,
+                  trashed: false,
+                  section: a.section || "",
+                });
+              else {
+                const item = c.items.find((i) => i.id === a.item);
+                if (!item) throw Error("Item unavailable.");
+                if (
+                  item.trashed &&
+                  !["restoreItem", "eraseItem"].includes(a.type)
+                )
+                  throw Error("Restore this item before editing.");
+                if (a.type === "toggleItem") item.checked = !item.checked;
+                else if (a.type === "editItem") {
+                  item.title = a.title.trim();
+                  item.quantity = a.quantity || "";
+                  item.notes = a.notes || "";
+                  item.section = a.section || "";
+                } else if (a.type === "moveItem") {
+                  const siblings = c.items.filter(
+                      (i) => i.section === item.section && !i.trashed,
+                    ),
+                    index = siblings.indexOf(item),
+                    other = siblings[index + a.direction];
+                  if (!other) throw Error("Item is already at that edge.");
+                  const x = c.items.indexOf(item),
+                    y = c.items.indexOf(other);
+                  [c.items[x], c.items[y]] = [c.items[y], c.items[x]];
+                } else if (a.type === "trashItem") item.trashed = true;
+                else if (a.type === "restoreItem") item.trashed = false;
+                else if (a.type === "eraseItem") {
+                  if (!item.trashed)
+                    throw Error("Move this item to Trash first.");
+                  c.items = c.items.filter((i) => i.id !== item.id);
+                  s.history = s.history.filter((e) => e.collection !== c.id);
+                  s.erased.push({
+                    space,
+                    ids: [item.id],
+                    protected: true,
+                    time: now(s),
+                  });
+                  c.version++;
+                  if (a.op) s.receipts.push(a.op);
+                  return s;
+                } else throw Error("Unknown content action.");
+              }
+              c.version++;
+            }
+            if (!c.title || Array.from(c.title).length > 200)
+              throw Error("Enter a title of 1–200 characters.");
+            if (Array.from(c.notes).length > 10000)
+              throw Error("Notes are limited to 10,000 characters.");
+            for (const i of c.items)
+              if (
+                !i.title ||
+                Array.from(i.title).length > 200 ||
+                Array.from(i.quantity).length > 100 ||
+                Array.from(i.notes).length > 10000
+              )
+                throw Error(
+                  "Check item title (1–200), quantity (100) and notes (10,000) limits.",
+                );
+            if (c.items.length > 200 || c.sections.length > 20)
+              throw Error(
+                "Example structural cap reached: 200 retained items or 20 sections per collection.",
+              );
+            s.history.push({
+              id: nextId(s),
+              space,
+              collection: c.id,
+              actor: u,
+              time: now(s),
+              event,
+              before: old,
+              after: clone(c),
+            });
+            checkIncrease(
+              before,
+              usage(s, space),
+              totals(s, space),
+              space.startsWith("personal-") ? "Personal space" : "Household",
+            );
+            if (s.households[space])
+              checkIncrease(
+                ownBefore,
+                usage(s, space, u),
+                { ...s.households[space].ceilings[u], bytes: Infinity },
+                "Your individual ceiling",
+              );
+            s.lastCreated = c.id;
+          }
+          if (a.op) s.receipts.push(a.op);
+          return s;
+        }
+        return {
+          initial,
+          clone,
+          apply,
+          usage,
+          totals,
+          personal,
+          keys,
+          names,
+          requireAccess,
+        };
+      })();
+    </script>
+    <script>
+      // Page shell: independently implemented for local review, not production use.
+      const D = HouseholdDemo,
+        app = document.querySelector("#app"),
+        dialog = document.querySelector("#dialog"),
+        dialogBody = document.querySelector("#dialog-body");
+      let state = D.initial(),
+        operation = 0;
+      let ui = {
+        user: "alex",
+        space: "personal-alex",
+        nav: "tasks",
+        collection: null,
+        banner: "",
+        error: false,
+        invitation: null,
+        pending: null,
+        resume: null,
+        scenario: "invite",
+        step: 0,
+      };
+      let modalSubmit = null,
+        modalInitial = "",
+        modalBase = null,
+        returnFocus = null;
+      const e = (v) =>
+        String(v ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const view = () => ui.pending?.before || state;
+      const person = (s, u) => s.users[u]?.name || "Former head";
+      const bytes = (n) =>
+        n < 1024
+          ? `${n} B`
+          : n < 1048576
+            ? `${(n / 1024).toFixed(1)} KiB`
+            : `${(n / 1048576).toFixed(2)} MiB`;
+      const amount = (k, n) => (k === "bytes" ? bytes(n) : String(n));
+      const spaceName = (s, id) =>
+        s.households[id]?.name ||
+        (id.startsWith("personal-") ? "Personal" : "Unavailable");
+      const btn = (text, action, id = "", cls = "") =>
+        `<button type="button" data-action="${e(action)}" data-id="${e(id)}" class="${cls}">${e(text)}</button>`;
+      const note = (text, error = false) =>
+        `<div class="notice${error ? " error" : ""}">${e(text)}</div>`;
+      const field = (label, name, value = "", type = "text", attrs = "") =>
+        `<label class="field">${e(label)}<input name="${e(name)}" type="${type}" value="${e(value)}" ${attrs}></label>`;
+      const textfield = (label, name, value = "") =>
+        `<label class="field">${e(label)}<textarea name="${e(name)}">${e(value)}</textarea></label>`;
+      const formState = () => {
+        const f = dialog.querySelector("form");
+        return f ? JSON.stringify([...new FormData(f)]) : "";
+      };
+      const hasDraft = () =>
+        dialog.open &&
+        formState() !== modalInitial &&
+        !!dialog.querySelector("form");
+      function dismiss(force = false) {
+        if (ui.pending && !force) return;
+        if (!force && hasDraft() && !confirm("Discard your unsaved changes?"))
+          return;
+        dialog.close();
+        modalSubmit = null;
+        modalBase = null;
+        requestAnimationFrame(() => {
+          const target = returnFocus?.isConnected ? returnFocus : app;
+          target.focus();
+        });
+      }
+      function modal(title, html, submit, label = "Save", danger = false) {
+        if (dialog.open) dialog.close();
+        returnFocus = document.activeElement;
+        dialogBody.innerHTML = `<h2 id="dialog-title">${e(title)}</h2><div id="modal-notice" role="status" aria-live="polite"></div><form id="editor">${html}<div class="actions">${btn("Cancel", "cancel")}<button type="submit" class="${danger ? "danger" : "primary"}">${e(label)}</button></div></form>`;
+        modalSubmit = submit;
+        dialog.showModal();
+        modalInitial = formState();
+        dialog.querySelector("[data-action=cancel]").focus();
+      }
+      function message(text, error = false) {
+        ui.banner = text;
+        ui.error = error;
+        render();
+      }
+      function modalMessage(text, error = true) {
+        const node = dialog.querySelector("#modal-notice");
+        if (node) node.innerHTML = note(text, error);
+      }
+      function saveAction(action, content = false) {
+        const a = {
+          ...action,
+          user: ui.user,
+          op: "review-operation-" + ++operation,
+        };
+        if (content) {
+          const result = document.querySelector("#next-result").value;
+          document.querySelector("#next-result").value = "success";
+          if (result === "failure") {
+            modalMessage(
+              "The simulated save failed before committing. Your draft is unchanged; save again to retry.",
+            );
+            if (!dialog.open)
+              message(
+                "Save failed before committing. Nothing changed; retry the action.",
+                true,
+              );
+            return false;
+          }
+          if (result === "expired") {
+            const f = dialog.querySelector("form");
+            if (f) {
+              for (const el of f.elements) {
+                if (el instanceof HTMLInputElement)
+                  el.setAttribute("value", el.value);
+                if (el instanceof HTMLTextAreaElement)
+                  el.textContent = el.value;
+                if (el instanceof HTMLSelectElement)
+                  for (const opt of el.options)
+                    opt.toggleAttribute("selected", opt.selected);
+              }
+              ui.resume = {
+                user: ui.user,
+                html: dialogBody.innerHTML,
+                submit: modalSubmit,
+                base: modalBase,
+                initial: modalInitial,
+              };
+            }
+            dialog.close();
+            ui.user = null;
+            ui.space = "";
+            ui.collection = null;
+            message(
+              "Session expired. Sign in again as the same identity to resume your retained draft.",
+              true,
+            );
+            return false;
+          }
+          if (result === "conflict") {
+            const c = state.collections.find((c) => c.id === a.id);
+            if (c) {
+              c.notes += " Updated by another head.";
+              c.version++;
+              state.history.push({
+                id: "conflict-" + operation,
+                space: c.space,
+                collection: c.id,
+                actor: c.creator === "alex" ? "morgan" : "alex",
+                time: new Date(state.now).toISOString(),
+                event: "Another head edited notes",
+                before: null,
+                after: { notes: c.notes },
+              });
+              modalMessage(
+                "Another head changed this record. Your draft is retained.",
+              );
+              const node = dialog.querySelector("#modal-notice");
+              if (node)
+                node.innerHTML += `<p><strong>Latest saved title:</strong> ${e(c.title)}</p><p><strong>Latest saved notes:</strong> ${e(c.notes)}</p>${btn("I reviewed the latest revision; keep my draft", "review-conflict", c.id)}`;
+              if (!dialog.open)
+                message(
+                  "Another head changed this record. Refresh and review before trying again.",
+                  true,
+                );
+              render();
+              return false;
+            }
+          }
+          try {
+            const candidate = D.apply(state, a);
+            if (result === "lost") {
+              ui.pending = { before: D.clone(state), action: a };
+              state = candidate;
+              if (dialog.open) dialog.close();
+              dialogBody.innerHTML = `<h2 id="dialog-title">Save response lost</h2>${note("The simulated server accepted this operation, but the page has not received confirmation. Retrying will acknowledge the same operation, not create another copy.")}<div class="actions">${btn("Retry acknowledgment", "ack", "", "primary")}</div>`;
+              dialog.showModal();
+              dialog.querySelector("button").focus();
+              render();
+              return true;
+            }
+            state = candidate;
+          } catch (err) {
+            if (dialog.open) modalMessage(err.message);
+            else message(err.message, true);
+            render();
+            return false;
+          }
+        } else {
+          try {
+            state = D.apply(state, a);
+          } catch (err) {
+            if (dialog.open) modalMessage(err.message);
+            else message(err.message, true);
+            render();
+            return false;
+          }
+        }
+        if (dialog.open) dismiss(true);
+        ui.banner = "Saved in this tab’s synthetic memory.";
+        ui.error = false;
+        render();
+        return true;
+      }
+      function resourceInputs(values, storage = true) {
+        return `<div class="resource-grid">${D.keys
+          .filter((k) => storage || k !== "bytes")
+          .map((k) =>
+            field(
+              k === "bytes" ? "Storage (KiB)" : D.names[k],
+              k,
+              k === "bytes" ? values[k] / 1024 : values[k],
+              "number",
+              'min="0" step="1" required',
+            ),
+          )
+          .join("")}</div>`;
+      }
+      function readAmounts(data, storage = true) {
+        const r = {};
+        for (const k of D.keys)
+          r[k] =
+            k === "bytes"
+              ? storage
+                ? Number(data.get(k)) * 1024
+                : 0
+              : Number(data.get(k));
+        return r;
+      }
+      function render() {
+        const s = view(),
+          approved = s.users[ui.user]?.approved;
+        document.querySelector("#identity").value = ui.user || "";
+        document.querySelector("#identity").disabled = !!ui.pending;
+        document.querySelector("#next-result").disabled = !!ui.pending;
+        if (approved && ui.space) {
+          try {
+            D.requireAccess(s, ui.user, ui.space);
+          } catch {
+            ui.space = D.personal(ui.user);
+            ui.collection = null;
+            ui.nav = "tasks";
+            ui.banner =
+              "Household access ended. Content is hidden; retained contributions remain in My capacity.";
+            ui.error = true;
+          }
+        }
+        const h = s.households[ui.space],
+          spaces = approved
+            ? [
+                { id: D.personal(ui.user), name: "Personal" },
+                ...Object.values(s.households)
+                  .filter(
+                    (h) => h.status === "active" && h.heads.includes(ui.user),
+                  )
+                  .map((h) => ({ id: h.id, name: h.name })),
+              ]
+            : [];
+        document.querySelector("#state-summary").innerHTML =
+          `<div class="summary-card"><small>Review identity</small><strong>${e(approved ? person(s, ui.user) : ui.user ? "Unapproved account" : "Signed out")}</strong><small>${e(ui.space ? spaceName(s, ui.space) : "No content access")}</small></div><div class="summary-card"><small>Maple household · review only</small><strong>${e(state.households.maple.status)}</strong><small>${e(state.households.maple.heads.map((u) => person(state, u)).join(", ") || "No heads")} · ${state.households.maple.status === "erased" ? "capacity released" : "retained allocations remain reserved"}</small></div><div class="summary-card"><small>Simulated clock</small><strong>${e(new Date(state.now).toLocaleString(undefined, { timeZone: "UTC" }))} UTC</strong><small>${ui.pending ? "Save committed; acknowledgment pending" : "Changes affect this tab only"}</small></div>`;
+        document.querySelector("#state-inspector").textContent = JSON.stringify(
+          {
+            simulation: state,
+            display: {
+              user: ui.user,
+              space: ui.space,
+              nav: ui.nav,
+              collection: ui.collection,
+              acknowledgmentPending: !!ui.pending,
+            },
+          },
+          null,
+          2,
+        );
+        renderWalkthrough();
+        if (!approved) {
+          app.innerHTML = `<div class="content"><p class="eyebrow">Simulated Google sign-in</p><h1>${ui.user ? "This account does not have access" : "Your lists, privately and together"}</h1>${ui.banner ? note(ui.banner, ui.error) : ""}<p>${ui.user ? "Only operator-approved Google identities may enter this pilot." : "No real Google login is performed. Choose a synthetic approved identity to explore."}</p><div class="actions">${btn("Continue with Google · Alex", "signin", "alex", "primary")}${btn("Use Morgan", "signin", "morgan")}${btn("Use Casey", "signin", "casey")}</div></div>`;
+          return;
+        }
+        const nav = [
+          ["tasks", "Tasks"],
+          ["shopping", "Shopping"],
+          ["templates", "Checklists"],
+          ["usage", "Usage"],
+          ...(h ? [["heads", "Household"]] : []),
+          ["capacity", "My capacity"],
+        ];
+        let html = `<div class="top"><div class="brand"><span class="mark">✓</span>intrepion</div><div class="account">${e(person(s, ui.user))} · ${btn("Sign out", "signout")}</div></div><div class="spacebar"><label><small>Current space</small><select id="space-select" aria-label="Current space">${spaces.map((x) => `<option value="${e(x.id)}" ${x.id === ui.space ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label><span class="badge">${h ? "Shared · Head" : "Private"}</span></div><nav class="tabs" aria-label="Application navigation">${nav.map(([key, label]) => `<button data-action="nav" data-id="${key}" ${ui.nav === key || (key === "templates" && ui.nav === "runs") ? 'aria-current="page"' : ""}>${label}</button>`).join("")}</nav><div class="content">${ui.banner ? `<div role="status" aria-live="polite">${note(ui.banner, ui.error)}</div>` : ""}`;
+        if (ui.invitation) {
+          html += invitationView(s);
+        } else if (ui.nav === "capacity") html += capacityView(s);
+        else if (ui.nav === "allocation") html += allocationView(s);
+        else if (ui.nav === "usage") html += usageView(s);
+        else if (ui.nav === "heads") html += headsView(s);
+        else if (ui.nav === "activity") html += activityView(s);
+        else if (ui.nav === "history") html += historyView(s);
+        else if (ui.nav === "trash") html += trashView(s);
+        else if (ui.collection) html += collectionView(s);
+        else html += collectionList(s);
+        app.innerHTML =
+          html +
+          `</div><footer class="app-footer">${btn("Archive", "nav", "archive")}${btn("Trash", "nav", "trash")}${btn("Refresh", "refresh")}<span>Refresh to see shared changes · prototype saves are simulated</span></footer>`;
+      }
+      function heading(title, tools = "") {
+        return `<div class="heading"><h1>${e(title)}</h1><div class="actions">${tools}</div></div>`;
+      }
+      function collectionList(s) {
+        const labels = {
+            tasks: "Tasks",
+            shopping: "Shopping",
+            templates: "Checklist templates",
+            runs: "Checklist runs",
+            archive: "Archive",
+          },
+          kind = {
+            tasks: "task",
+            shopping: "shopping",
+            templates: "template",
+            runs: "run",
+          }[ui.nav];
+        const list = s.collections.filter(
+          (c) =>
+            c.space === ui.space &&
+            !c.trashed &&
+            (ui.nav === "archive"
+              ? c.archived
+              : !c.archived && c.kind === kind),
+        );
+        let html = heading(
+          labels[ui.nav] || "Tasks",
+          ui.nav === "archive" || ui.nav === "runs"
+            ? ""
+            : btn(
+                kind === "task"
+                  ? "New task"
+                  : kind === "shopping"
+                    ? "New shopping list"
+                    : "New template",
+                "new",
+                kind,
+                "primary",
+              ),
+        );
+        if (ui.nav === "templates" || ui.nav === "runs")
+          html += `<div class="actions">${btn("Templates", "nav", "templates", ui.nav === "templates" ? "quiet" : "")}${btn("Runs", "nav", "runs", ui.nav === "runs" ? "quiet" : "")}</div>`;
+        if (ui.space === D.personal(ui.user))
+          html += `<p class="muted">Private to you. ${btn("Create household", "create-household")}</p>`;
+        else
+          html += note(
+            "Shared with every head, including retained History. Changes become visible in other browsers on refresh.",
+          );
+        if (!list.length)
+          html +=
+            '<p class="empty">Nothing here yet. Create content or choose another view.</p>';
+        for (const c of list)
+          html += `<div class="row"><div><div class="row-title">${c.kind === "task" && ui.nav !== "archive" ? `<button class="check ${c.checked ? "checked" : ""}" data-action="toggle-task" data-id="${e(c.id)}" aria-label="${c.checked ? "Reopen" : "Complete"} ${e(c.title)}" aria-pressed="${c.checked}">${c.checked ? "✓" : ""}</button>` : ""}<strong class="${c.kind === "task" && c.checked ? "bought" : ""}">${e(c.title)}</strong></div><p>${e(c.notes)} ${c.kind !== "task" ? `${c.items.filter((i) => !i.trashed && i.checked).length}/${c.items.filter((i) => !i.trashed).length} checked · ` : ""}${e(person(s, c.creator))}${c.finished ? " · Finished · read-only" : ""}${c.archived ? " · Archived · read-only" : ""}</p></div><div class="actions">${btn("Open", "open", c.id, "quiet")}${ui.nav !== "archive" ? btn("History", "history", c.id) : ""}</div></div>`;
+        return html;
+      }
+      function collectionView(s) {
+        const c = s.collections.find(
+          (c) => c.id === ui.collection && c.space === ui.space,
+        );
+        if (!c) {
+          ui.collection = null;
+          return collectionList(s);
+        }
+        const read = c.trashed || c.archived || c.finished;
+        let html = heading(
+          c.title,
+          btn("Back", "back") + btn("History", "history", c.id),
+        );
+        if (c.notes)
+          html += `<p style="white-space:pre-wrap">${e(c.notes)}</p>`;
+        html += `<p class="muted">Created by ${e(person(s, c.creator))} · ${c.kind === "run" ? "Independent run" : e(c.kind)} · revision ${c.version}</p>`;
+        if (read)
+          html += note(
+            c.trashed
+              ? "In Trash. Restore or explicitly erase. Retained content still counts."
+              : c.archived
+                ? "Archived · read-only. Unarchive before editing."
+                : "Finished · read-only. Reopen before editing.",
+          );
+        html +=
+          '<div class="actions">' +
+          (c.trashed
+            ? btn("Restore", "restore-collection", c.id)
+            : c.archived
+              ? btn("Unarchive", "unarchive", c.id)
+              : c.finished
+                ? btn("Reopen run", "reopen", c.id)
+                : btn("Edit details", "edit", c.id) +
+                  (c.kind !== "task"
+                    ? btn("Add item", "new-item", c.id, "primary") +
+                      btn("Add section", "new-section", c.id)
+                    : "") +
+                  (c.kind === "shopping"
+                    ? btn("Mark all needed again", "reset-shopping", c.id)
+                    : "") +
+                  (c.kind === "template"
+                    ? btn("Start run", "start-run", c.id)
+                    : "") +
+                  (c.kind === "run" ? btn("Finish run", "finish", c.id) : ""));
+        if (!c.trashed) {
+          if (!c.archived && c.kind !== "task")
+            html += btn("Archive", "archive", c.id);
+          html += btn("Move to Trash", "trash-collection", c.id);
+          if (c.space === D.personal(ui.user))
+            html += btn("Copy to household", "copy", c.id);
+        }
+        html += "</div>";
+        if (c.kind === "task") return html;
+        const renderItem = (i) =>
+          `<div class="row"><div><div class="row-title">${c.kind !== "template" && !read ? `<button class="check ${i.checked ? "checked" : ""}" data-action="toggle-item" data-id="${e(i.id)}" aria-label="${i.checked ? "Mark needed again" : "Check"} ${e(i.title)}" aria-pressed="${i.checked}">${i.checked ? "✓" : ""}</button>` : ""}<strong class="${c.kind === "shopping" && i.checked ? "bought" : ""}">${e(i.title)}</strong></div><p>${e(i.quantity)}${i.quantity ? " · " : ""}${e(person(s, i.creator))}</p>${i.notes ? `<p style="white-space:pre-wrap">${e(i.notes)}</p>` : ""}</div>${!read ? `<div class="actions">${btn("Edit", "edit-item", i.id)}${btn("Move up", "item-up", i.id)}${btn("Move down", "item-down", i.id)}${btn("Trash", "trash-item", i.id)}</div>` : ""}</div>`;
+        const active = c.items.filter((i) => !i.trashed);
+        html += active
+          .filter(
+            (i) => !i.section || !c.sections.some((x) => x.id === i.section),
+          )
+          .map(renderItem)
+          .join("");
+        for (const section of c.sections)
+          html +=
+            `<h3 class="section-label">${e(section.title)}</h3>${!read ? `<div class="actions">${btn("Rename section", "rename-section", section.id)}${btn("Section up", "section-up", section.id)}${btn("Section down", "section-down", section.id)}${btn("Remove section", "remove-section", section.id)}</div>` : ""}` +
+            active
+              .filter((i) => i.section === section.id)
+              .map(renderItem)
+              .join("");
+        if (!active.length)
+          html +=
+            '<p class="empty">No items yet. Add an item or a section.</p>';
+        return html;
+      }
+      function usageView(s) {
+        const cap = D.totals(s, ui.space),
+          used = D.usage(s, ui.space),
+          own = D.usage(s, ui.space, ui.user),
+          h = s.households[ui.space];
+        let html =
+          heading("Usage") +
+          note(
+            "Active, archived, finished and trashed records count. History adds retained storage. The prototype meter is illustrative; launch measurements and caps need separate approval.",
+          );
+        for (const k of D.keys) {
+          const over = used[k] > cap[k];
+          html += `<div class="resource ${over ? "over" : ""}"><div class="numbers"><strong>${e(D.names[k])}</strong><span>${e(amount(k, used[k]))} / ${e(amount(k, cap[k]))}${over ? " · Over limit" : ""}</span></div><div class="meter" aria-hidden="true"><span style="width:${Math.min(100, cap[k] > 0 ? (used[k] / cap[k]) * 100 : used[k] ? 100 : 0)}%"></span></div>${h && k !== "bytes" ? `<p class="muted">Your retained count: ${own[k]} / individual ceiling ${h.ceilings[ui.user][k]}</p>` : ""}</div>`;
+        }
+        html += note(
+          "Example structural caps: 200 retained items and 20 sections per collection. Pooling contributions does not increase these caps.",
+        );
+        if (h) {
+          html += "<h2>Contributions to this household</h2>";
+          for (const [u, a] of Object.entries(h.allocations))
+            html += `<div class="row"><div><strong>${e(person(s, u))}${h.heads.includes(u) ? "" : " · former head"}</strong><p>${e(D.keys.map((k) => `${D.names[k]}: ${amount(k, a[k])}`).join(" · "))}</p></div>${u === ui.user ? btn("Manage mine", "allocation", h.id) : ""}</div>`;
+          html += btn("My count ceilings", "ceilings", h.id);
+        }
+        return html;
+      }
+      function headsView(s) {
+        const h = s.households[ui.space];
+        if (!h) return "<p>Choose a household.</p>";
+        let html =
+          heading("Heads", btn("Invite a head", "invite", h.id, "primary")) +
+          note(
+            "Every head has full shared-content authority. Each head controls only their own ceilings; contribution size does not buy extra rights.",
+          );
+        for (const u of h.heads) {
+          const own = D.usage(s, h.id, u);
+          html += `<div class="row"><div><strong>${e(person(s, u))}${u === ui.user ? " · you" : ""}</strong><p>${own.items} retained items · individual ceiling ${h.ceilings[u].items}</p></div><div class="actions">${u === ui.user ? btn("My ceilings", "ceilings", h.id) : btn("Remove head", "remove", u)}</div></div>`;
+        }
+        html += `<div class="actions">${btn("Household activity", "activity")}${btn("Leave household", "leave", h.id) + btn("Erase all shared content", "erase-household", h.id, "danger")}</div><h2>Invitations</h2>`;
+        const invs = s.invitations.filter((i) => i.space === h.id);
+        for (const inv of invs)
+          html += `<div class="row"><div><strong>${e(person(s, inv.target))}</strong><p>${e(inv.status)} · expires ${e(new Date(inv.expires).toLocaleString())}</p><p>Same-tab demo link: #invitation-${e(inv.id)}</p></div><div class="actions">${btn("Preview link", "preview-invite", inv.id)}${inv.status === "pending" ? btn("Revoke", "revoke-invite", inv.id) : ""}</div></div>`;
+        if (!invs.length)
+          html +=
+            '<p class="muted">No invitations yet. Only operator-approved identities are eligible.</p>';
+        return html;
+      }
+      function capacityView(s) {
+        const u = ui.user,
+          rem = D.totals(s, D.personal(u));
+        let html =
+          heading("My capacity", btn("Create household", "create-household")) +
+          note(
+            "Example pilot plan · manually assigned. No payments, prices or automatic upgrade. This page shows only your private plan and your contributions.",
+          );
+        for (const k of D.keys)
+          html += `<div class="row"><div><strong>${e(D.names[k])}</strong><p>Plan ${e(amount(k, s.users[u].plan[k]))} · reserved ${e(amount(k, s.users[u].plan[k] - rem[k]))}</p></div><span>Personal capacity ${e(amount(k, rem[k]))}</span></div>`;
+        html += '<h2 style="margin-top:24px">My allocations</h2>';
+        for (const h of Object.values(s.households).filter(
+          (h) =>
+            h.allocations[u] ||
+            (h.status === "erased" &&
+              s.erased.some(
+                (x) => x.space === h.id && x.releasedFor?.includes(u),
+              )),
+        )) {
+          const a = h.allocations[u];
+          html += `<div class="resource"><strong>${e(h.name)}</strong><p>${e(h.status)}${h.status === "closed" ? ` · erasure ${e(new Date(h.eraseAt).toLocaleString())}` : ""}</p>${a ? `<p class="muted">${e(D.keys.map((k) => `${D.names[k]}: ${amount(k, a[k])}`).join(" · "))}</p>` : "<p>Erased; allocation released.</p>"}${h.status === "closed" ? note(h.erasureError ? "Erasure delayed. Capacity stays reserved; the simulated operator has a GitHub alert." : "Closure is final. No content access or reopening; capacity stays reserved until protected erasure succeeds.", h.erasureError) : ""}${a ? btn(h.status === "active" ? "Manage my allocation" : "View reserved allocation", "allocation", h.id) : ""}</div>`;
+        }
+        html +=
+          '<p class="muted">Account deletion is operator-assisted in this MVP. It is separate from household departure or closure.</p>';
+        return html;
+      }
+      function allocationView(s) {
+        const h = s.households[ui.allocation],
+          a = h?.allocations[ui.user];
+        if (!h || !a) return "<p>This allocation is unavailable.</p>";
+        const member = h.heads.includes(ui.user) && h.status === "active";
+        return (
+          heading(
+            "My allocation · " + h.name,
+            btn("Back to my capacity", "nav", "capacity"),
+          ) +
+          note(
+            member
+              ? "You control only your contribution. Each resource is allocated independently."
+              : "You cannot access household content. This view exposes only your allocation and the minimum withdrawal eligibility information.",
+          ) +
+          D.keys
+            .map(
+              (k) =>
+                `<div class="row"><strong>${e(D.names[k])}</strong><span>${e(amount(k, a[k]))}</span></div>`,
+            )
+            .join("") +
+          (h.status === "closed"
+            ? note(
+                "Reserved until " +
+                  new Date(h.eraseAt).toLocaleString() +
+                  "; closure cannot be undone.",
+              )
+            : btn("Review a change", "edit-allocation", h.id, "primary"))
+        );
+      }
+      function trashView(s) {
+        let html =
+          heading("Trash") +
+          note(
+            "Trash still consumes capacity. Restoration counts no object twice, but its new History may need storage. Permanent erasure is explicit.",
+          );
+        const cols = s.collections.filter(
+          (c) => c.space === ui.space && c.trashed,
+        );
+        for (const c of cols)
+          html += `<div class="row"><div><strong>${e(c.title)}</strong><p>${e(c.kind)} · retained History</p></div><div class="actions">${btn("Restore", "restore-collection", c.id)}${btn("Erase permanently", "erase-collection", c.id, "danger")}</div></div>`;
+        for (const c of s.collections.filter(
+          (c) => c.space === ui.space && !c.trashed,
+        ))
+          for (const i of c.items.filter((i) => i.trashed))
+            html += `<div class="row"><div><strong>${e(i.title)}</strong><p>Item in ${e(c.title)}</p></div><div class="actions">${btn("Restore item", "restore-item", i.id)}${btn("Erase item", "erase-item", i.id, "danger")}</div></div>`;
+        if (
+          !cols.length &&
+          !s.collections.some(
+            (c) => c.space === ui.space && c.items.some((i) => i.trashed),
+          )
+        )
+          html += '<p class="empty">Trash is empty.</p>';
+        return html;
+      }
+      function historyView(s) {
+        const c = s.collections.find(
+          (c) => c.id === ui.history && c.space === ui.space,
+        );
+        if (!c) return "<p>Choose History on a task or collection.</p>";
+        return (
+          heading("History · " + c.title, btn("Back", "open", c.id)) +
+          s.history
+            .filter((x) => x.collection === c.id)
+            .slice()
+            .reverse()
+            .map(
+              (x) =>
+                `<article class="event"><strong>${e(x.event)}</strong><p class="muted">${e(person(s, x.actor))} · ${e(new Date(x.time).toLocaleString())}</p><details><summary>Previous and new values</summary><pre>${e(JSON.stringify({ before: x.before, after: x.after }, null, 2))}</pre></details></article>`,
+            )
+            .join("")
+        );
+      }
+      function activityView(s) {
+        return (
+          heading("Household activity", btn("Back to heads", "nav", "heads")) +
+          s.admin
+            .filter((x) => x.space === ui.space)
+            .slice()
+            .reverse()
+            .map(
+              (x) =>
+                `<div class="event"><strong>${e(x.event)}</strong><p class="muted">${e(person(s, x.actor))} · ${e(new Date(x.time).toLocaleString())}</p></div>`,
+            )
+            .join("")
+        );
+      }
+      function invitationView(s) {
+        const inv = s.invitations.find((i) => i.id === ui.invitation);
+        if (!inv || inv.target !== ui.user)
+          return (
+            heading("Invitation unavailable") +
+            note(
+              "Use the approved Google identity named by the invitation. No household content is available.",
+              true,
+            ) +
+            btn("Back to personal", "dismiss-invite")
+          );
+        const h = s.households[inv.space],
+          bad =
+            inv.status !== "pending" ||
+            s.now >= inv.expires ||
+            h?.status !== "active";
+        return (
+          heading("Join " + h.name + "?") +
+          (bad
+            ? note(
+                "This invitation was used, revoked, expired, or its household is closed.",
+                true,
+              )
+            : note(
+                "You will become a head and can see all retained content and History, including changes from before you joined. Heads can remove other heads and erase shared content. Your personal space stays private.",
+              )) +
+          `<p>Signed in as ${e(person(s, ui.user))}. Joining does not automatically contribute your capacity.</p><div class="actions">${btn("Back to personal", "dismiss-invite")}${!bad ? btn("Accept and join", "accept", inv.id, "primary") : h.heads.includes(ui.user) && h.status === "active" ? btn("Open household", "switch", h.id) : ""}</div>`
+        );
+      }
+      function openContentForm(type, id, kind) {
+        const s = view(),
+          c =
+            s.collections.find((c) => c.id === id) ||
+            s.collections.find((c) => c.items.some((i) => i.id === id));
+        const item = c?.items.find((i) => i.id === id),
+          editing = type === "editItem" || type === "editCollection",
+          isItem = type === "newItem" || type === "editItem";
+        const base = {
+          type,
+          space: ui.space,
+          id: c?.id,
+          version: c?.version,
+          kind: kind || c?.kind,
+          item: item?.id,
+        };
+        const title = editing ? (item || c).title : "",
+          notes = editing ? (item || c).notes : "";
+        let body =
+          field("Title", "title", title, "text", 'required maxlength="200"') +
+          (type === "newSection" ? "" : textfield("Notes", "notes", notes));
+        if (isItem) {
+          if (c.kind === "shopping")
+            body += field(
+              "Quantity",
+              "quantity",
+              item?.quantity || "",
+              "text",
+              'maxlength="100"',
+            );
+          body += `<label class="field">Section<select name="section"><option value="">No section</option>${c.sections.map((x) => `<option value="${e(x.id)}" ${item?.section === x.id ? "selected" : ""}>${e(x.title)}</option>`).join("")}</select></label>`;
+        }
+        body += `<p class="muted">Space: ${e(spaceName(s, ui.space))}. New History consumes retained storage. Unsaved changes stay in this dialog until saved or discarded.</p>`;
+        const titles = {
+          newCollection:
+            "New " +
+            (kind === "task"
+              ? "task"
+              : kind === "shopping"
+                ? "shopping list"
+                : "template"),
+          editCollection: "Edit details",
+          newItem: "Add item",
+          editItem: "Edit item",
+          newSection: "Add section",
+        };
+        modal(
+          titles[type],
+          body,
+          (data) => {
+            const a = {
+              ...modalBase,
+              title: data.get("title"),
+              notes: data.get("notes") || "",
+              quantity: data.get("quantity") || "",
+              section: data.get("section") || "",
+            };
+            if (saveAction(a, true) && !ui.pending) {
+              if (type === "newCollection" && kind !== "task")
+                ui.collection = state.lastCreated;
+              render();
+            }
+          },
+          "Save",
+        );
+        modalBase = base;
+      }
+      function confirmAction(
+        title,
+        description,
+        a,
+        content = false,
+        danger = false,
+      ) {
+        modal(
+          title,
+          note(description, danger),
+          () => {
+            const wasSpace = ui.space;
+            if (saveAction(a, content) && !ui.pending) {
+              if (a.type === "leave") {
+                ui.space = D.personal(ui.user);
+                ui.nav = "capacity";
+                ui.collection = null;
+              }
+              if (a.type === "eraseCollection" && ui.collection === a.id)
+                ui.collection = null;
+              if (state.households[wasSpace]?.status === "closed") {
+                ui.space = D.personal(ui.user);
+                ui.nav = "capacity";
+              }
+              render();
+            }
+          },
+          danger ? "Confirm" : "Continue",
+          danger,
+        );
+      }
+      function allocationForm(id) {
+        const h = state.households[id],
+          current =
+            h.allocations[ui.user] ||
+            Object.fromEntries(D.keys.map((k) => [k, 0]));
+        modal(
+          "Change my contribution",
+          note(
+            "Each amount is independent. The next screen previews all resources before confirming.",
+          ) + resourceInputs(current),
+          (data) => {
+            const a = {
+              type: "allocate",
+              space: id,
+              amounts: readAmounts(data),
+              user: ui.user,
+            };
+            let candidate;
+            try {
+              candidate = D.apply(state, a);
+            } catch (err) {
+              modalMessage(err.message);
+              return;
+            }
+            const member = h.heads.includes(ui.user);
+            const rows = D.keys
+              .map(
+                (k) =>
+                  `<div class="resource"><strong>${e(D.names[k])}</strong><p>Your allocation: ${e(amount(k, current[k]))} → ${e(amount(k, a.amounts[k]))}</p><p>Your personal capacity: ${e(amount(k, D.totals(state, D.personal(ui.user))[k]))} → ${e(amount(k, D.totals(candidate, D.personal(ui.user))[k]))}</p>${member ? `<p>Household capacity: ${e(amount(k, D.totals(state, id)[k]))} → ${e(amount(k, D.totals(candidate, id)[k]))}; retained usage ${e(amount(k, D.usage(state, id)[k]))}</p>` : "<p>Withdrawal eligibility: remaining retained usage fits.</p>"}</div>`,
+              )
+              .join("");
+            modal(
+              "Review my allocation",
+              rows,
+              () => {
+                saveAction(a);
+              },
+              "Confirm allocation",
+            );
+          },
+          "Preview allocation",
+        );
+      }
+      function signIn(user) {
+        ui.user = user;
+        ui.space = user ? D.personal(user) : "";
+        ui.nav = "tasks";
+        ui.collection = null;
+        ui.invitation = ui.invitation || null;
+        ui.banner = "";
+        ui.error = false;
+        render();
+        if (ui.resume) {
+          if (ui.resume.user === user) {
+            dialogBody.innerHTML = ui.resume.html;
+            modalSubmit = ui.resume.submit;
+            modalBase = ui.resume.base;
+            modalInitial = ui.resume.initial;
+            ui.resume = null;
+            dialog.showModal();
+            modalMessage(
+              "Signed in again as the same identity. Your draft is ready to review and save.",
+              false,
+            );
+          } else ui.resume = null;
+        }
+      }
+      function action(name, id) {
+        const s = view(),
+          c = s.collections.find((c) => c.id === id),
+          parent = s.collections.find((c) => c.items.some((i) => i.id === id));
+        if (ui.pending && name !== "ack" && name !== "reset") return;
+        if (name === "cancel") {
+          dismiss();
+          return;
+        }
+        if (name === "ack") {
+          if (!ui.pending) {
+            message("The saved task is already acknowledged and appears once.");
+            return;
+          }
+          state = D.apply(state, ui.pending.action);
+          ui.pending = null;
+          dismiss(true);
+          message(
+            "Acknowledged the same saved operation. No duplicate record was created.",
+          );
+          return;
+        }
+        if (name === "review-conflict") {
+          modalBase.version = state.collections.find(
+            (c) => c.id === id,
+          ).version;
+          modalMessage(
+            "Latest values reviewed. Your draft is still present; merge any changes you want before saving.",
+            false,
+          );
+          return;
+        }
+        if (name === "signin") {
+          signIn(id);
+          return;
+        }
+        if (name === "signout") {
+          dismiss(true);
+          ui.resume = null;
+          ui.user = null;
+          ui.space = "";
+          ui.collection = null;
+          ui.invitation = null;
+          message(
+            "Signed out. Synthetic content remains in memory until reset or reload.",
+          );
+          return;
+        }
+        if (name === "nav") {
+          ui.nav = id;
+          ui.collection = null;
+          ui.invitation = null;
+          ui.banner = "";
+          ui.error = false;
+          render();
+          return;
+        }
+        if (name === "switch") {
+          ui.space = id;
+          ui.invitation = null;
+          ui.collection = null;
+          ui.nav = "tasks";
+          ui.banner = "";
+          render();
+          return;
+        }
+        if (name === "refresh") {
+          render();
+          message(
+            "Refreshed. The demo has no network or second browser connection.",
+          );
+          return;
+        }
+        if (name === "back") {
+          ui.collection = null;
+          render();
+          return;
+        }
+        if (name === "open") {
+          ui.collection = id;
+          ui.nav =
+            c?.kind === "task"
+              ? "tasks"
+              : c?.kind === "shopping"
+                ? "shopping"
+                : c?.kind === "run"
+                  ? "runs"
+                  : "templates";
+          render();
+          return;
+        }
+        if (name === "new") {
+          openContentForm("newCollection", null, id);
+          return;
+        }
+        if (name === "edit") {
+          openContentForm("editCollection", id);
+          return;
+        }
+        if (name === "new-item") {
+          openContentForm("newItem", id);
+          return;
+        }
+        if (name === "edit-item") {
+          openContentForm("editItem", id);
+          return;
+        }
+        if (name === "new-section") {
+          openContentForm("newSection", id);
+          return;
+        }
+        if (name === "toggle-task") {
+          saveAction(
+            { type: "toggleTask", space: ui.space, id, version: c.version },
+            true,
+          );
+          return;
+        }
+        if (name === "toggle-item") {
+          saveAction(
+            {
+              type: "toggleItem",
+              space: ui.space,
+              id: parent.id,
+              item: id,
+              version: parent.version,
+            },
+            true,
+          );
+          return;
+        }
+        if (name === "history") {
+          ui.history = id;
+          ui.nav = "history";
+          ui.collection = null;
+          render();
+          return;
+        }
+        if (name === "activity") {
+          ui.nav = "activity";
+          ui.collection = null;
+          render();
+          return;
+        }
+        if (name === "allocation") {
+          ui.allocation = id;
+          ui.nav = "allocation";
+          ui.collection = null;
+          render();
+          return;
+        }
+        if (name === "edit-allocation") {
+          allocationForm(id);
+          return;
+        }
+        if (name === "ceilings") {
+          const h = s.households[id];
+          modal(
+            "My individual count ceilings",
+            note(
+              "Only your own ceilings are editable. Lowering them below usage keeps existing content but blocks further increases in that dimension.",
+            ) + resourceInputs(h.ceilings[ui.user], false),
+            (data) => {
+              const a = {
+                type: "ceilings",
+                space: id,
+                target: ui.user,
+                amounts: readAmounts(data, false),
+              };
+              confirmAction(
+                "Confirm my ceilings",
+                "This changes your own ceilings, not household capacity or another head’s allowance.",
+                a,
+              );
+            },
+            "Review my ceilings",
+          );
+          return;
+        }
+        if (name === "create-household") {
+          modal(
+            "Create household",
+            field(
+              "Household name",
+              "title",
+              "",
+              "text",
+              'required maxlength="100"',
+            ) +
+              note(
+                "You become the first head. These initial amounts are reserved from your plan; existing personal content must still fit.",
+              ) +
+              resourceInputs({
+                items: 80,
+                shopping: 4,
+                template: 2,
+                run: 4,
+                bytes: 262144,
+              }),
+            (data) => {
+              const a = {
+                type: "createHousehold",
+                title: data.get("title"),
+                amounts: readAmounts(data),
+                user: ui.user,
+              };
+              try {
+                const candidate = D.apply(state, a),
+                  rem = D.totals(candidate, D.personal(ui.user));
+                modal(
+                  "Review household creation",
+                  note(
+                    "Personal capacity after creating " +
+                      a.title +
+                      ": " +
+                      D.keys
+                        .map((k) => D.names[k] + " " + amount(k, rem[k]))
+                        .join(" · "),
+                  ),
+                  () => {
+                    if (saveAction(a)) {
+                      ui.space = state.lastCreated;
+                      ui.nav = "heads";
+                      ui.collection = null;
+                      render();
+                    }
+                  },
+                  "Create household",
+                );
+              } catch (err) {
+                modalMessage(err.message);
+              }
+            },
+            "Review capacity",
+          );
+          return;
+        }
+        if (name === "erase-household") {
+          confirmAction(
+            "Erase all household content?",
+            "Every task, list, template, run and associated content History in this household will be permanently erased. All heads remain; their allocations are unchanged until valid withdrawal. Other spaces and independent copies elsewhere are unaffected.",
+            { type: "eraseHouseholdContent", space: ui.space },
+            false,
+            true,
+          );
+          return;
+        }
+        if (name === "reset-shopping") {
+          confirmAction(
+            "Mark purchased items needed again?",
+            "All active items become needed without changing their order. This adds History and needs storage.",
+            { type: "resetShopping", space: ui.space, id, version: c.version },
+            true,
+          );
+          return;
+        }
+        if (
+          name === "rename-section" ||
+          name === "remove-section" ||
+          name === "section-up" ||
+          name === "section-down"
+        ) {
+          const col = s.collections.find((c) =>
+              c.sections.some((x) => x.id === id),
+            ),
+            section = col.sections.find((x) => x.id === id);
+          if (name === "rename-section") {
+            modal(
+              "Rename section",
+              field(
+                "Section name",
+                "title",
+                section.title,
+                "text",
+                'required maxlength="200"',
+              ),
+              (data) =>
+                saveAction(
+                  {
+                    type: "renameSection",
+                    space: ui.space,
+                    id: col.id,
+                    section: id,
+                    title: data.get("title"),
+                    version: col.version,
+                  },
+                  true,
+                ),
+            );
+          } else if (name === "remove-section") {
+            confirmAction(
+              "Remove section?",
+              "Retained items stay in this collection and become unsectioned. No items are erased.",
+              {
+                type: "removeSection",
+                space: ui.space,
+                id: col.id,
+                section: id,
+                version: col.version,
+              },
+              true,
+            );
+          } else
+            saveAction(
+              {
+                type: "moveSection",
+                space: ui.space,
+                id: col.id,
+                section: id,
+                direction: name === "section-up" ? -1 : 1,
+                version: col.version,
+              },
+              true,
+            );
+          return;
+        }
+        if (name === "item-up" || name === "item-down") {
+          saveAction(
+            {
+              type: "moveItem",
+              space: ui.space,
+              id: parent.id,
+              item: id,
+              direction: name === "item-up" ? -1 : 1,
+              version: parent.version,
+            },
+            true,
+          );
+          return;
+        }
+        if (name === "invite") {
+          const h = s.households[id],
+            people = Object.entries(s.users).filter(
+              ([u, x]) => x.approved && !h.heads.includes(u),
+            );
+          modal(
+            "Invite a head",
+            note(
+              "This person will see all retained household content and History, and may remove heads or explicitly erase shared content.",
+            ) +
+              `<label class="field">Known, operator-approved recipient<select name="target" required>${people.map(([u, x]) => `<option value="${e(u)}">${e(x.name)}</option>`).join("")}</select></label><p class="muted">Synthetic known recipients only. No email is sent; you deliver the link yourself. It expires in seven days.</p>`,
+            (data) => {
+              if (
+                saveAction({
+                  type: "invite",
+                  space: id,
+                  target: data.get("target"),
+                })
+              ) {
+                const inv = state.invitations.at(-1);
+                modal(
+                  "Invitation ready",
+                  field(
+                    "Demo link · this tab only",
+                    "link",
+                    location.href.split("#")[0] + "#invitation-" + inv.id,
+                    "text",
+                    "readonly",
+                  ) +
+                    note(
+                      "Switch to the named synthetic recipient with Review as, then open the invitation from the walkthrough or review link. A fresh tab starts a different in-memory demo.",
+                    ) +
+                    btn("Preview invitation", "preview-invite", inv.id),
+                  () => {
+                    dismiss(true);
+                  },
+                  "Done",
+                );
+              }
+            },
+            "Create invitation link",
+          );
+          return;
+        }
+        if (name === "preview-invite") {
+          dismiss(true);
+          ui.invitation = id;
+          ui.collection = null;
+          render();
+          return;
+        }
+        if (name === "dismiss-invite") {
+          ui.invitation = null;
+          ui.space = D.personal(ui.user);
+          ui.nav = "tasks";
+          render();
+          return;
+        }
+        if (name === "accept") {
+          const inv = s.invitations.find((i) => i.id === id);
+          if (saveAction({ type: "accept", id })) {
+            ui.invitation = null;
+            ui.space = inv.space;
+            ui.nav = "tasks";
+            render();
+          }
+          return;
+        }
+        if (name === "revoke-invite") {
+          confirmAction(
+            "Revoke invitation?",
+            "This link will stop working before acceptance. It grants no access now.",
+            { type: "revokeInvite", id },
+          );
+          return;
+        }
+        if (name === "remove") {
+          confirmAction(
+            "Remove " + person(s, id) + "?",
+            "They lose household access on subsequent requests. Their shared content and creator attribution remain. Retained contributions stay reserved until a valid withdrawal; their personal space is unaffected.",
+            { type: "remove", space: ui.space, target: id },
+            false,
+            true,
+          );
+          return;
+        }
+        if (name === "leave") {
+          const h = s.households[id],
+            last = h.heads.length === 1,
+            d = new Date(s.now),
+            deadline = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1);
+          confirmAction(
+            last ? "Leave and close " + h.name + "?" : "Leave " + h.name + "?",
+            last
+              ? "You are the last head. Closure is final, with no reopening. Content and History will be automatically erased at " +
+                  new Date(deadline).toISOString() +
+                  " (" +
+                  new Date(deadline).toLocaleString() +
+                  " local). Until protected erasure succeeds, capacity remains reserved. Pending invitations are revoked."
+              : "You lose content access immediately. Your shared content remains; your contribution stays reserved until withdrawing it leaves enough capacity. Manage your own retained allocation from My capacity.",
+            { type: "leave", space: id, close: last },
+            false,
+            true,
+          );
+          return;
+        }
+        if (name === "copy") {
+          const choices = Object.values(s.households).filter(
+            (h) => h.status === "active" && h.heads.includes(ui.user),
+          );
+          modal(
+            "Copy to a household",
+            note(
+              "The original stays private. The complete independent copy gets fresh household History and consumes your creator count allowances. All destination heads can view, edit or erase it.",
+            ) +
+              `<label class="field">Destination<select name="destination" required>${choices.map((h) => `<option value="${e(h.id)}">${e(h.name)}</option>`).join("")}</select></label>`,
+            (data) => {
+              const a = {
+                type: "copy",
+                id,
+                destination: data.get("destination"),
+                user: ui.user,
+              };
+              try {
+                const candidate = D.apply(state, a),
+                  before = D.usage(state, a.destination),
+                  after = D.usage(candidate, a.destination);
+                modal(
+                  "Review independent copy",
+                  note("Destination: " + spaceName(s, a.destination)) +
+                    D.keys
+                      .filter((k) => after[k] !== before[k])
+                      .map(
+                        (k) =>
+                          `<p>${e(D.names[k])}: +${e(amount(k, after[k] - before[k]))} · ${e(amount(k, after[k]))} / ${e(amount(k, D.totals(candidate, a.destination)[k]))}</p>`,
+                      )
+                      .join(""),
+                  () => {
+                    if (saveAction(a, true) && !ui.pending) {
+                      ui.space = a.destination;
+                      ui.collection = state.lastCreated;
+                      ui.nav =
+                        c.kind === "template"
+                          ? "templates"
+                          : c.kind === "task"
+                            ? "tasks"
+                            : c.kind === "shopping"
+                              ? "shopping"
+                              : "runs";
+                      render();
+                    }
+                  },
+                  "Copy to household",
+                );
+              } catch (err) {
+                modalMessage(err.message);
+              }
+            },
+            "Preview copy",
+          );
+          return;
+        }
+        if (name === "start-run") {
+          confirmAction(
+            "Start independent run?",
+            "Copies the active template’s retained items. Later template changes will not change this run. The starter owns its new count usage.",
+            { type: "startRun", space: ui.space, id, version: c.version },
+            true,
+          );
+          return;
+        }
+        const types = {
+          "trash-collection": "trashCollection",
+          "restore-collection": "restoreCollection",
+          "erase-collection": "eraseCollection",
+          archive: "archive",
+          unarchive: "unarchive",
+          finish: "finish",
+          reopen: "reopen",
+          "trash-item": "trashItem",
+          "restore-item": "restoreItem",
+          "erase-item": "eraseItem",
+        };
+        if (types[name]) {
+          const isItem = name.endsWith("-item"),
+            collection = isItem ? parent : c,
+            a = {
+              type: types[name],
+              space: ui.space,
+              id: collection.id,
+              version: collection.version,
+              ...(isItem ? { item: id } : {}),
+            };
+          const erase = name.startsWith("erase");
+          confirmAction(
+            erase
+              ? "Permanently erase retained content?"
+              : name.startsWith("trash")
+                ? "Move to Trash?"
+                : name.startsWith("restore")
+                  ? "Restore retained content?"
+                  : name === "finish"
+                    ? "Finish this run?"
+                    : name === "archive"
+                      ? "Archive this collection?"
+                      : "Confirm change",
+            erase
+              ? "This permanently removes the selected content and its associated list History in this demo. Erasure protection is simulated before releasing capacity. Independent copies and runs remain unchanged."
+              : name.startsWith("trash")
+                ? "This hides content from active views. It remains retained, restorable and counted toward limits."
+                : "Existing content is preserved. This change adds History and still needs storage capacity.",
+            a,
+            !erase,
+            erase,
+          );
+        }
+      }
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-action]");
+        if (button) action(button.dataset.action, button.dataset.id);
+      });
+      dialog.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (modalSubmit) modalSubmit(new FormData(event.target));
+      });
+      dialog.addEventListener("cancel", (event) => {
+        event.preventDefault();
+        dismiss();
+      });
+      document
+        .querySelector("#identity")
+        .addEventListener("change", (event) =>
+          signIn(event.target.value || null),
+        );
+      app.addEventListener("change", (event) => {
+        if (event.target.id === "space-select") {
+          ui.space = event.target.value;
+          ui.collection = null;
+          ui.invitation = null;
+          ui.nav = "tasks";
+          ui.banner = "";
+          render();
+        }
+      });
+      window.addEventListener("hashchange", () => {
+        const id = location.hash.replace("#invitation-", "");
+        if (location.hash.startsWith("#invitation-")) {
+          ui.invitation = id;
+          render();
+        }
+      });
+      function reset() {
+        if (
+          (hasDraft() || ui.pending) &&
+          !confirm("Reset all synthetic changes and discard any pending draft?")
+        )
+          return;
+        dismiss(true);
+        state = D.initial();
+        ui = {
+          user: "alex",
+          space: "personal-alex",
+          nav: "tasks",
+          collection: null,
+          banner: "Demo reset. All content is synthetic.",
+          error: false,
+          invitation: null,
+          pending: null,
+          resume: null,
+          scenario: ui.scenario,
+          step: 0,
+        };
+        document.querySelector("#next-result").value = "success";
+        render();
+      }
+      document.querySelector("#reset").addEventListener("click", reset);
+      const scenarios = {
+        invite: {
+          title: "Invite a head",
+          text: "An invitation grants no access until its named approved recipient accepts. A new head sees older household History without automatically contributing capacity.",
+          steps: [
+            [
+              "Alex invites Casey",
+              () => {
+                signIn("alex");
+                ui.space = "maple";
+                ui.nav = "heads";
+                saveAction({ type: "invite", space: "maple", target: "casey" });
+              },
+            ],
+            [
+              "Review as Casey and open the link",
+              () => {
+                const inv = state.invitations.find((i) => i.target === "casey");
+                signIn("casey");
+                ui.invitation = inv.id;
+                render();
+              },
+            ],
+            [
+              "Accept head membership",
+              () => {
+                const inv = state.invitations.find((i) => i.target === "casey");
+                action("accept", inv.id);
+              },
+            ],
+            [
+              "Open older shared History",
+              () => {
+                ui.space = "maple";
+                action("history", "groceries");
+              },
+            ],
+          ],
+        },
+        ceilings: {
+          title: "Own ceilings",
+          text: "A head can lower their own ceiling below usage. Existing data stays. Other heads cannot change it, and household capacity is still an independent limit.",
+          steps: [
+            [
+              "Set Alex’s own item ceiling to current usage",
+              () => {
+                signIn("alex");
+                ui.space = "maple";
+                ui.nav = "usage";
+                saveAction({
+                  type: "ceilings",
+                  space: "maple",
+                  target: "alex",
+                  amounts: {
+                    ...state.households.maple.ceilings.alex,
+                    items: D.usage(state, "maple", "alex").items,
+                    bytes: 0,
+                  },
+                });
+              },
+            ],
+            [
+              "Try adding another task — blocked",
+              () =>
+                saveAction(
+                  {
+                    type: "newCollection",
+                    space: "maple",
+                    kind: "task",
+                    title: "Would exceed my ceiling",
+                    notes: "",
+                  },
+                  true,
+                ),
+            ],
+            [
+              "Try changing Morgan’s ceiling — forbidden",
+              () =>
+                saveAction({
+                  type: "ceilings",
+                  space: "maple",
+                  target: "morgan",
+                  amounts: {
+                    ...state.households.maple.ceilings.morgan,
+                    items: 0,
+                    bytes: 0,
+                  },
+                }),
+            ],
+            [
+              "Raise your own ceiling and add a task",
+              () => {
+                saveAction({
+                  type: "ceilings",
+                  space: "maple",
+                  target: "alex",
+                  amounts: {
+                    ...state.households.maple.ceilings.alex,
+                    items: 120,
+                    bytes: 0,
+                  },
+                });
+                saveAction(
+                  {
+                    type: "newCollection",
+                    space: "maple",
+                    kind: "task",
+                    title: "Plan a shared dinner",
+                    notes: "",
+                  },
+                  true,
+                );
+                ui.nav = "tasks";
+                render();
+              },
+            ],
+          ],
+        },
+        allocation: {
+          title: "Retained contributions",
+          text: "Retaining content must not let someone withdraw and reuse its backing capacity. Leaving ends content access, while necessary contributed capacity can remain reserved.",
+          steps: [
+            [
+              "Prepare an item pool with no spare capacity",
+              () => {
+                signIn("alex");
+                ui.space = "maple";
+                ui.nav = "usage";
+                state.households.maple.allocations.alex.items = D.usage(
+                  state,
+                  "maple",
+                ).items;
+                state.households.maple.allocations.morgan.items = 0;
+                message(
+                  "Review-only operator change: item capacity now equals retained usage.",
+                );
+              },
+            ],
+            [
+              "Try withdrawing Alex’s item contribution — blocked",
+              () =>
+                saveAction({
+                  type: "allocate",
+                  space: "maple",
+                  amounts: {
+                    ...state.households.maple.allocations.alex,
+                    items: 0,
+                  },
+                }),
+            ],
+            [
+              "Morgan contributes replacement item capacity",
+              () => {
+                signIn("morgan");
+                ui.space = "maple";
+                saveAction({
+                  type: "allocate",
+                  space: "maple",
+                  amounts: {
+                    ...state.households.maple.allocations.morgan,
+                    items: 40,
+                  },
+                });
+                ui.nav = "usage";
+                render();
+              },
+            ],
+            [
+              "Alex leaves and manages their retained allocation",
+              () => {
+                signIn("alex");
+                ui.space = "maple";
+                saveAction({ type: "leave", space: "maple" });
+                ui.space = D.personal("alex");
+                ui.allocation = "maple";
+                ui.nav = "allocation";
+                render();
+              },
+            ],
+            [
+              "Withdraw Alex’s now-replaceable item capacity",
+              () =>
+                saveAction({
+                  type: "allocate",
+                  space: "maple",
+                  amounts: {
+                    ...state.households.maple.allocations.alex,
+                    items: 0,
+                  },
+                }),
+            ],
+          ],
+        },
+        sharing: {
+          title: "Independent copies",
+          text: "Sharing does not expose personal History. Starting a run makes another independent copy, with new creator counts attributed to its starter.",
+          steps: [
+            [
+              "Copy Alex’s packing template to Maple",
+              () => {
+                signIn("alex");
+                saveAction(
+                  { type: "copy", id: "personal-trip", destination: "maple" },
+                  true,
+                );
+                ui.sharedCopy = state.lastCreated;
+                ui.space = "maple";
+                ui.collection = ui.sharedCopy;
+                ui.nav = "templates";
+                render();
+              },
+            ],
+            [
+              "Start an independent household run",
+              () => {
+                saveAction(
+                  { type: "startRun", space: "maple", id: ui.sharedCopy },
+                  true,
+                );
+                ui.collection = state.lastCreated;
+                ui.nav = "runs";
+                render();
+              },
+            ],
+            [
+              "Edit the original private template",
+              () => {
+                ui.space = D.personal("alex");
+                const c = state.collections.find(
+                  (c) => c.id === "personal-trip",
+                );
+                saveAction(
+                  {
+                    type: "editCollection",
+                    space: ui.space,
+                    id: c.id,
+                    version: c.version,
+                    title: "Changed private packing template",
+                    notes: "Personal notes stay personal.",
+                  },
+                  true,
+                );
+                ui.collection = c.id;
+                ui.nav = "templates";
+                render();
+              },
+            ],
+            [
+              "Inspect the unchanged household copy",
+              () => {
+                ui.space = "maple";
+                ui.collection = ui.sharedCopy;
+                ui.nav = "templates";
+                render();
+              },
+            ],
+          ],
+        },
+        closure: {
+          title: "Close and erase",
+          text: "The last head can leave without a successor. Closure cannot be undone. Capacity remains reserved through failed scheduled erasure, then releases after protected erasure succeeds.",
+          steps: [
+            [
+              "Alex removes Morgan",
+              () => {
+                signIn("alex");
+                ui.space = "maple";
+                ui.nav = "heads";
+                saveAction({
+                  type: "remove",
+                  space: "maple",
+                  target: "morgan",
+                });
+              },
+            ],
+            [
+              "Last head leaves and closes Maple",
+              () => {
+                saveAction({ type: "leave", space: "maple", close: true });
+                ui.space = D.personal("alex");
+                ui.nav = "capacity";
+                render();
+              },
+            ],
+            ["Advance the simulated clock to month-end", () => review("month")],
+            [
+              "Fail scheduled erasure — retain capacity",
+              () => {
+                state.failErasure = true;
+                review("erase");
+              },
+            ],
+            [
+              "Retry protected erasure — release capacity",
+              () => review("erase"),
+            ],
+          ],
+        },
+        retry: {
+          title: "Lost save response",
+          text: "The simulated server can commit while the visible page still shows the old result. Retrying acknowledges the same operation rather than creating a duplicate.",
+          steps: [
+            [
+              "Save a task, but lose its response",
+              () => {
+                signIn("alex");
+                ui.space = "maple";
+                ui.nav = "tasks";
+                document.querySelector("#next-result").value = "lost";
+                saveAction(
+                  {
+                    type: "newCollection",
+                    space: "maple",
+                    kind: "task",
+                    title: "Retry check",
+                    notes: "This must appear once.",
+                  },
+                  true,
+                );
+              },
+            ],
+            ["Retry acknowledgment", () => action("ack")],
+            [
+              "Inspect the task and History",
+              () => {
+                const c = state.collections.find(
+                  (c) => c.title === "Retry check",
+                );
+                ui.space = "maple";
+                ui.history = c.id;
+                ui.nav = "history";
+                render();
+              },
+            ],
+          ],
+        },
+      };
+      function renderWalkthrough() {
+        const group = scenarios[ui.scenario];
+        document.querySelector("#scenario-tabs").innerHTML = Object.entries(
+          scenarios,
+        )
+          .map(
+            ([id, x]) =>
+              `<button type="button" role="tab" id="tab-${id}" aria-controls="walkthrough" aria-selected="${id === ui.scenario}" data-scenario="${id}">${e(x.title)}</button>`,
+          )
+          .join("");
+        document
+          .querySelector("#walkthrough")
+          .setAttribute("aria-labelledby", "tab-" + ui.scenario);
+        document.querySelector("#walkthrough").innerHTML =
+          `<h3>${e(group.title)}</h3><p>${e(group.text)}</p><p class="muted">Selecting a walkthrough resets the synthetic demo. Run the steps in order, then explore freely.</p><div class="steps">${group.steps.map(([title], i) => `<button type="button" data-step="${i}" ${ui.step !== i ? "disabled" : ""} ${ui.step === i ? 'aria-current="step"' : ""}>${i < ui.step ? "✓ " : ""}${i + 1}. ${e(title)}</button>`).join("")}</div>${ui.step >= group.steps.length ? note("Walkthrough complete. Explore freely or choose another scenario.") : ""}`;
+      }
+      function review(name) {
+        if (ui.pending) return;
+        const h = state.households.maple;
+        if (name === "month") {
+          const upcoming = Object.values(state.households)
+            .filter((x) => x.status === "closed")
+            .map((x) => x.eraseAt);
+          state.now = upcoming.length
+            ? Math.min(...upcoming)
+            : Date.UTC(
+                new Date(state.now).getUTCFullYear(),
+                new Date(state.now).getUTCMonth() + 1,
+                1,
+              );
+          message(
+            "Simulated clock advanced. Nothing is erased until scheduled erasure runs.",
+          );
+        }
+        if (name === "erase-fail") {
+          state.failErasure = true;
+          message(
+            "The next scheduled erasure will fail in this review simulation.",
+          );
+        }
+        if (name === "erase") {
+          if (!ui.user || !state.users[ui.user]?.approved) {
+            message(
+              "Choose an approved synthetic identity for this review control.",
+              true,
+            );
+            return;
+          }
+          saveAction({ type: "eraseDue" });
+          const failures = Object.values(state.households).some(
+            (x) => x.erasureError,
+          );
+          message(
+            failures
+              ? "Simulated erasure failed. Capacity remains reserved; the operator receives a simulated GitHub alert."
+              : "Scheduled erasure checked. Due closed households were erased with simulated recovery protection.",
+            failures,
+          );
+        }
+        if (name === "full") {
+          if (h.status !== "active") {
+            message("Reset the demo before preparing this scenario.", true);
+            return;
+          }
+          const b = D.usage(state, "maple").bytes;
+          h.allocations.alex.bytes = Math.floor(b / 2);
+          h.allocations.morgan.bytes = b - Math.floor(b / 2);
+          ui.space = "maple";
+          ui.collection = null;
+          ui.nav = "usage";
+          message(
+            "Review-only plan change: Maple storage now equals retained usage. History-producing changes will be blocked.",
+          );
+        }
+        if (name === "over") {
+          if (h.status !== "active") {
+            message("Reset the demo first.", true);
+            return;
+          }
+          h.allocations.alex.items = Math.max(
+            0,
+            D.usage(state, "maple").items - 1,
+          );
+          h.allocations.morgan.items = 0;
+          ui.space = "maple";
+          ui.collection = null;
+          ui.nav = "usage";
+          message(
+            "Review-only operator plan reduction. Saved data stays visible; item increases are blocked.",
+          );
+        }
+        if (name === "revoke") {
+          if (
+            ui.user &&
+            h.status === "active" &&
+            h.heads.includes(ui.user) &&
+            h.heads.length > 1
+          ) {
+            h.heads = h.heads.filter((x) => x !== ui.user);
+            ui.space = "maple";
+            render();
+          } else
+            message(
+              "Use a household with another remaining head, or reset the demo.",
+              true,
+            );
+        }
+      }
+      document.addEventListener("click", (event) => {
+        const tab = event.target.closest("[data-scenario]");
+        if (tab) {
+          if (hasDraft() || ui.pending) return;
+          ui.scenario = tab.dataset.scenario;
+          reset();
+          document.querySelector("#guided").open = true;
+          return;
+        }
+        const step = event.target.closest("[data-step]");
+        if (step && !step.disabled) {
+          const i = Number(step.dataset.step);
+          scenarios[ui.scenario].steps[i][1]();
+          ui.step = i + 1;
+          render();
+          return;
+        }
+        const control = event.target.closest("[data-review]");
+        if (control) review(control.dataset.review);
+      });
+      document
+        .querySelector("#scenario-tabs")
+        .addEventListener("keydown", (event) => {
+          if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
+            return;
+          const tabs = [...event.currentTarget.querySelectorAll("button")],
+            i = tabs.indexOf(document.activeElement);
+          if (i < 0) return;
+          event.preventDefault();
+          const next =
+            event.key === "Home"
+              ? 0
+              : event.key === "End"
+                ? tabs.length - 1
+                : (i + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) %
+                  tabs.length;
+          tabs[next].click();
+          document.getElementById(tabs[next].id)?.focus();
+        });
+      if (location.hash.startsWith("#invitation-"))
+        ui.invitation = location.hash.slice("#invitation-".length);
+      render();
+    </script>
+  </body>
+</html>

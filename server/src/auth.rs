@@ -41,6 +41,8 @@ pub struct Login {
 pub struct Session {
     pub csrf: String,
     pub expires_at: u64,
+    pub user_sub: String,
+    pub display_name: String,
 }
 
 #[derive(Debug)]
@@ -105,16 +107,15 @@ impl Auth {
     pub async fn authorize_rpc(
         &self,
         ctx: &connectrpc::RequestContext,
-    ) -> Result<(), connectrpc::ConnectError> {
+    ) -> Result<Session, connectrpc::ConnectError> {
         self.session(ctx.headers(), true)
             .await
-            .map(|_| ())
             .map_err(|error| match error.0 {
                 StatusCode::UNAUTHORIZED => {
                     connectrpc::ConnectError::unauthenticated("Please sign in again.")
                 }
                 StatusCode::FORBIDDEN => connectrpc::ConnectError::permission_denied(
-                    "Owner session and CSRF token required.",
+                    "Approved session and CSRF token required.",
                 ),
                 _ => connectrpc::ConnectError::unavailable(
                     "Session service temporarily unavailable.",
@@ -165,7 +166,7 @@ impl Auth {
         let token = cookie(headers, &self.name("session"))
             .filter(|value| value.len() == 64)
             .ok_or_else(unauthorized)?;
-        let mut rows = self.db.query::<Session>("SELECT csrf, expires_at FROM sessions WHERE token_hash = ? AND owner_sub = ? AND expires_at > ?", &[hash(token), self.config.owner_sub.clone(), now().to_string()]).await?;
+        let mut rows = self.db.query::<Session>("SELECT s.csrf,s.expires_at,s.owner_sub AS user_sub,a.display_name FROM sessions s JOIN pilot_accounts a ON a.subject=s.owner_sub AND a.approved=1 WHERE s.token_hash=? AND s.expires_at>?", &[hash(token), now().to_string()]).await?;
         let session = rows.pop().ok_or_else(unauthorized)?;
         if write {
             self.check_origin(headers)?;
@@ -205,7 +206,7 @@ impl Auth {
         }
         Ok(())
     }
-    async fn verify_google(&self, token: &str, nonce: &str) -> Result<(), AuthError> {
+    async fn verify_google(&self, token: &str, nonce: &str) -> Result<String, AuthError> {
         if token.len() > 16_384 {
             return Err(unauthorized());
         }
@@ -255,19 +256,39 @@ impl Auth {
             .and_then(|(_, _, keys)| keys.find(&kid))
             .ok_or_else(unauthorized)?;
         let key = DecodingKey::from_jwk(key).map_err(|_| unauthorized())?;
-        verify_identity(
-            token,
-            nonce,
-            &key,
-            &self.config.google_client_id,
-            &self.config.owner_sub,
-        )
+        let claims = verify_claims(token, nonce, &key, &self.config.google_client_id)?;
+        self.approved_identity(&claims.sub).await?;
+        Ok(claims.sub)
     }
-    async fn issue_session(&self) -> Result<Response, AuthError> {
+    async fn approved_identity(&self, subject: &str) -> Result<String, AuthError> {
+        if subject == self.config.owner_sub {
+            self.db.query::<serde_json::Value>(
+                "INSERT INTO pilot_accounts(subject,display_name) VALUES(?,'Owner') ON CONFLICT(subject) DO NOTHING",
+                &[subject.into()],
+            ).await?;
+        }
+        #[derive(Deserialize)]
+        struct Account {
+            display_name: String,
+        }
+        self.db
+            .query::<Account>(
+                "SELECT display_name FROM pilot_accounts WHERE subject=? AND approved=1",
+                &[subject.into()],
+            )
+            .await?
+            .pop()
+            .map(|account| account.display_name)
+            .ok_or_else(forbidden)
+    }
+    async fn issue_session(&self, subject: &str) -> Result<Response, AuthError> {
+        let display_name = self.approved_identity(subject).await?;
         let token = secret();
         let session = Session {
             csrf: secret(),
             expires_at: now() + 7 * 86400,
+            user_sub: subject.into(),
+            display_name,
         };
         self.db
             .query::<serde_json::Value>(
@@ -280,7 +301,7 @@ impl Auth {
                 "INSERT INTO sessions(token_hash, owner_sub, csrf, expires_at) VALUES(?, ?, ?, ?)",
                 &[
                     hash(&token),
-                    self.config.owner_sub.clone(),
+                    subject.into(),
                     session.csrf.clone(),
                     session.expires_at.to_string(),
                 ],
@@ -344,8 +365,8 @@ pub async fn login(
     auth.check_origin(&headers)?;
     auth.limit_login(&headers, peer.ip()).await?;
     auth.consume_challenge(&headers, &login.nonce).await?;
-    auth.verify_google(&login.credential, &login.nonce).await?;
-    auth.issue_session().await
+    let subject = auth.verify_google(&login.credential, &login.nonce).await?;
+    auth.issue_session(&subject).await
 }
 #[cfg(feature = "dev-auth")]
 pub async fn development_login(
@@ -359,7 +380,12 @@ pub async fn development_login(
     }
     auth.limit_login(&headers, peer.ip()).await?;
     auth.consume_challenge(&headers, &login.nonce).await?;
-    auth.issue_session().await
+    let subject = if login.credential.is_empty() {
+        &auth.config.owner_sub
+    } else {
+        &login.credential
+    };
+    auth.issue_session(subject).await
 }
 pub async fn current_session(
     State(auth): State<SharedAuth>,
@@ -384,13 +410,12 @@ pub async fn logout(
 }
 
 // Signature and required OIDC claims are checked together; no decoded claim is trusted first.
-fn verify_identity(
+fn verify_claims(
     token: &str,
     nonce: &str,
     key: &DecodingKey,
     client_id: &str,
-    owner_sub: &str,
-) -> Result<(), AuthError> {
+) -> Result<Claims, AuthError> {
     let mut validation = Validation::new(Algorithm::RS256);
     validation.set_audience(&[client_id]);
     validation.set_issuer(&["https://accounts.google.com", "accounts.google.com"]);
@@ -402,6 +427,21 @@ fn verify_identity(
     if claims.nonce != nonce {
         return Err(unauthorized());
     }
+    if claims.sub.is_empty() || claims.sub.len() > 255 || claims.sub.contains('\0') {
+        return Err(unauthorized());
+    }
+    Ok(claims)
+}
+
+#[cfg(test)]
+fn verify_identity(
+    token: &str,
+    nonce: &str,
+    key: &DecodingKey,
+    client_id: &str,
+    owner_sub: &str,
+) -> Result<(), AuthError> {
+    let claims = verify_claims(token, nonce, key, client_id)?;
     if claims.sub != owner_sub {
         return Err(forbidden());
     }

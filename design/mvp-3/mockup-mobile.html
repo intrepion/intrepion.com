@@ -1,0 +1,705 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Everyday lists on your phone — MVP 3 visual mockups</title><style>:root {
+  --canvas: #f4f5f1;
+  --surface: #fff;
+  --ink: #1b302c;
+  --muted: #596b65;
+  --line: #dce4de;
+  --outline: #7c8f85;
+  --primary: #185e52;
+  --soft: #eaf3ee;
+  --danger: #a52f2b;
+  --danger-soft: #fff2ef;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  color: var(--ink);
+  background: var(--canvas);
+  font-synthesis: none;
+  color-scheme: light;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+a {
+  color: var(--primary);
+  text-underline-offset: 4px;
+}
+button,
+input,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: default;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+header,
+main,
+footer {
+  max-width: 1380px;
+  margin: auto;
+  padding: 36px 30px;
+}
+h1 {
+  font-size: 44px;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+  max-width: 22ch;
+  margin: 14px 0;
+}
+header > p {
+  color: var(--muted);
+  max-width: 76ch;
+  margin: 12px 0;
+}
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+header nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  margin-top: 22px;
+}
+header nav a {
+  font-size: 13px;
+}
+.review-notice {
+  padding: 16px 20px;
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  background: var(--surface);
+  margin: 22px 0;
+  max-width: 100ch;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 38px 28px;
+  padding-top: 0;
+}
+.board {
+  min-width: 0;
+  scroll-margin-top: 24px;
+}
+.board > h2 {
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+}
+.screen {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  min-height: 620px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  box-shadow: 0 8px 32px #213b2f08;
+}
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+}
+.brand {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.brand svg {
+  width: 30px;
+  height: 30px;
+}
+.account {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  background: var(--soft);
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.space {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 24px;
+  background: #fafbf9;
+  border-bottom: 1px solid var(--line);
+}
+.space small {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.space-switch {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--outline);
+  border-radius: 9px;
+  background: white;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 14px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 650;
+  border-radius: 99px;
+  color: var(--primary);
+  background: var(--soft);
+}
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.nav-item {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 8px;
+  min-height: 44px;
+  padding: 9px 10px;
+  font-weight: 600;
+  font-size: 13px;
+}
+.nav-item.selected {
+  color: var(--primary);
+  background: var(--soft);
+  border-color: #bfd1c6;
+}
+.content {
+  padding: 26px 26px 30px;
+}
+.content > h3 {
+  font-size: 27px;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  margin: 0 0 20px;
+}
+.content > p {
+  margin: 12px 0;
+}
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--line);
+}
+.row > div {
+  min-width: 0;
+}
+.row strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+}
+.muted {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 4px;
+}
+.row > span {
+  flex-shrink: 0;
+  max-width: 38%;
+  font-size: 12px;
+  text-align: right;
+  color: var(--muted);
+}
+.row > button {
+  flex-shrink: 0;
+  max-width: 40%;
+}
+.row > .badge {
+  color: var(--primary);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 22px 0 8px;
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 1px solid var(--outline);
+  border-radius: 9px;
+  padding: 10px 15px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.45;
+  text-align: center;
+}
+.button.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+.button.danger {
+  color: white;
+  background: var(--danger);
+  border-color: var(--danger);
+}
+.button.quiet {
+  color: var(--primary);
+  background: var(--soft);
+  border-color: #bfd1c6;
+}
+.button.danger-outline {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.notice {
+  padding: 15px 16px;
+  border: 1px solid #bfd1c6;
+  border-radius: 10px;
+  background: var(--soft);
+  color: var(--primary);
+  font-size: 13px;
+  margin: 16px 0;
+  line-height: 1.65;
+}
+.caution .notice {
+  background: var(--danger-soft);
+  border-color: #cb766b;
+  color: #842d28;
+}
+.label {
+  display: block;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 650;
+  margin: 20px 0 7px;
+}
+.field {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 12px;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  line-height: 1.5;
+  font-size: 14px;
+  resize: none;
+}
+.note {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 12px 0 0;
+  margin-top: 8px;
+  line-height: 1.65;
+}
+.note strong {
+  color: var(--ink);
+}
+.mobile {
+  max-width: 366px;
+  margin: auto;
+}
+.mobile .content {
+  padding: 23px 20px;
+}
+.mobile .top,
+.mobile .space {
+  padding: 16px 20px;
+}
+.mobile .row {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 8px;
+}
+.mobile .row > span,
+.mobile .row > button {
+  max-width: 100%;
+  text-align: left;
+}
+.meter {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--line);
+  margin: 12px 0 18px;
+}
+.meter > span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  border-radius: 99px;
+}
+.meter-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.meter-caption strong {
+  color: var(--ink);
+}
+.usage-summary {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fafbf9;
+  margin: 16px 0;
+}
+.usage-summary h4 {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+.app-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  border-top: 1px solid var(--line);
+  padding: 14px 24px;
+  background: #fafbf9;
+  color: var(--muted);
+  font-size: 12px;
+}
+.app-footer span {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+.standalone .grid {
+  display: block;
+  max-width: 1200px;
+}
+.standalone .board {
+  margin-bottom: 38px;
+}
+.standalone .screen {
+  max-width: 1040px;
+  margin: auto;
+}
+.standalone .screen.mobile {
+  max-width: 366px;
+}
+.standalone .note {
+  max-width: 1040px;
+  margin: 12px auto;
+}
+.standalone .board > h2 {
+  max-width: 1040px;
+  margin: 0 auto 12px;
+}
+footer {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 10px;
+}
+footer p {
+  margin: 8px 0;
+}
+@media (max-width: 850px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  header,
+  main,
+  footer {
+    padding: 24px 18px;
+  }
+  main {
+    padding-top: 0;
+  }
+  h1 {
+    font-size: 35px;
+  }
+  .screen {
+    min-height: 0;
+  }
+}
+@media (max-width: 450px) {
+  header,
+  main,
+  footer {
+    padding: 20px 14px;
+  }
+  main {
+    padding-top: 0;
+  }
+  .top,
+  .space {
+    padding: 16px;
+  }
+  .content {
+    padding: 22px 16px;
+  }
+  .tabs {
+    padding: 8px 10px;
+    gap: 2px;
+  }
+  .nav-item {
+    padding: 9px 10px;
+  }
+  .top {
+    gap: 8px;
+  }
+  .account {
+    font-size: 11px;
+    gap: 5px;
+  }
+  .space {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .space-switch {
+    width: 100%;
+  }
+  .row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .row > span,
+  .row > button {
+    max-width: 100%;
+    text-align: left;
+  }
+  .content > h3 {
+    font-size: 25px;
+  }
+  .button {
+    padding: 10px 12px;
+  }
+  .mobile .top,
+  .mobile .space {
+    padding: 16px;
+  }
+  .mobile .content {
+    padding: 22px 16px;
+  }
+  h1 {
+    font-size: 32px;
+  }
+  .usage-summary {
+    padding: 14px;
+  }
+  .meter-caption {
+    flex-wrap: wrap;
+  }
+  .app-footer {
+    padding: 12px 16px;
+  }
+}
+@media print {
+  header nav {
+    display: none;
+  }
+  .grid {
+    display: block;
+  }
+  .board {
+    break-inside: avoid;
+    margin-bottom: 32px;
+  }
+  body {
+    background: white;
+  }
+  .screen {
+    box-shadow: none;
+  }
+}
+
+.resource-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.resource-fields > div {
+  min-width: 0;
+}
+.item-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.check-target {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  flex: 0 0 44px;
+  border: 1px solid var(--outline);
+  border-radius: 10px;
+  background: white;
+  color: var(--primary);
+  font-weight: 700;
+}
+.check-target.purchased {
+  background: var(--soft);
+  border-color: var(--primary);
+}
+.purchased-title {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+@media (max-width: 450px) {
+  .resource-fields {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+</style></head><body class="standalone"><header><p class="eyebrow">Design gate 2 · Visual mockups · Approved by owner</p><h1>Everyday lists on your phone</h1><p>A familiar home for your lists, with clear boundaries around what is private, shared and contributed.</p><div class="review-notice"><strong>Static visual review.</strong> All people, dates and numerical allowances are examples, not approved pilot caps. Application controls are presentation only; gallery links navigate. No scripts, login, saved data or external requests.</div><p><a href="mockups.html">All 23 screens</a> · <a href="mockup-household.html">Household</a> · <a href="mockup-capacity.html">Capacity</a> · <a href="mockup-mobile.html">Phone</a> · <a href="mockup-closure.html">Departure &amp; closure</a></p><nav aria-label="Mockup index"><a href="#mobile">22 — Phone: shared shopping</a><a href="#mobile-capacity">23 — Phone: capacity and own ceilings</a></nav></header><main class="grid"><section class="board" id="mobile">
+        <h2>22 — Phone: shared shopping</h2>
+        <div class="screen mobile">
+          <div class="top"><div class="brand"><svg viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="9" fill="#185e52"/><path d="m8 15 5 5 9-11" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>intrepion</span></div><div class="account"><span class="avatar">AL</span><span>Alex · Sign out</span></div></div>
+          <div class="space"><div><small>Current space</small><button type="button" class="space-switch" title="Static visual mockup">Maple household<span aria-hidden="true">⌄</span></button></div><span class="badge">Shared · Head</span></div>
+          <div class="tabs" aria-label="Application navigation"><button type="button" class="nav-item" title="Static visual mockup">Tasks</button><button type="button" class="nav-item selected" aria-current="page" title="Static visual mockup">Shopping</button><button type="button" class="nav-item" title="Static visual mockup">Checklists</button><button type="button" class="nav-item" title="Static visual mockup">Usage</button><button type="button" class="nav-item" title="Static visual mockup">Household</button></div>
+          <div class="content">
+            <h3>Weekly groceries</h3>
+            <div class="notice">Shared · updated on refresh</div>
+            <div class="actions">
+              <button type="button" class="button " title="Static visual mockup">Refresh</button><button type="button" class="button primary" title="Static visual mockup">Add item</button>
+            </div>
+            <div class="row">
+              <div>
+                <div class="item-title"><button type="button" class="check-target" aria-label="Mark purchased: Oats" title="Static visual mockup"></button><strong>Oats</strong></div>
+                <div class="muted">2 bags · Morgan</div>
+              </div>
+              <button type="button" class="button quiet" title="Static visual mockup">Edit</button>
+            </div>
+            <div class="row">
+              <div>
+                <div class="item-title"><button type="button" class="check-target" aria-label="Mark purchased: Apples" title="Static visual mockup"></button><strong>Apples</strong></div>
+                <div class="muted">6 · Alex</div>
+              </div>
+              <button type="button" class="button quiet" title="Static visual mockup">Edit</button>
+            </div>
+            <div class="row">
+              <div>
+                <div class="item-title"><button type="button" class="check-target purchased" aria-label="Mark needed again: Rice" title="Static visual mockup">✓</button><strong class="purchased-title">Rice</strong></div>
+                <div class="muted">1 bag · Alex</div>
+              </div>
+              <button type="button" class="button quiet" title="Static visual mockup">Edit</button>
+            </div>
+            <div class="actions">
+              <button type="button" class="button " title="Static visual mockup">History</button><button type="button" class="button " title="Static visual mockup">List actions</button>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Usage</strong>
+                <div class="muted">350 / 500 retained items</div>
+              </div>
+              <button type="button" class="button quiet" title="Static visual mockup">View</button>
+            </div>
+          </div><div class="app-footer"><span>Archive</span><span>Trash</span><span>Refresh to see shared changes</span></div></div><p class="note">
+          At phone width, wrap navigation and actions instead of hiding
+          household identity. Keep quantities, item controls and list actions
+          visible without horizontal scrolling. Structural caps and save
+          failures appear near the relevant action. Completion is shown as saved
+          only after confirmation.
+        </p>
+      </section><section class="board" id="mobile-capacity">
+        <h2>23 — Phone: capacity and own ceilings</h2>
+        <div class="screen mobile">
+          <div class="top"><div class="brand"><svg viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="9" fill="#185e52"/><path d="m8 15 5 5 9-11" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>intrepion</span></div><div class="account"><span class="avatar">AL</span><span>Alex · Sign out</span></div></div>
+          <div class="space"><div><small>Current space</small><button type="button" class="space-switch" title="Static visual mockup">Maple household<span aria-hidden="true">⌄</span></button></div><span class="badge">Shared · Head</span></div>
+          <div class="tabs" aria-label="Application navigation"><button type="button" class="nav-item" title="Static visual mockup">Tasks</button><button type="button" class="nav-item" title="Static visual mockup">Shopping</button><button type="button" class="nav-item" title="Static visual mockup">Checklists</button><button type="button" class="nav-item selected" aria-current="page" title="Static visual mockup">Usage</button><button type="button" class="nav-item" title="Static visual mockup">Household</button></div>
+          <div class="content">
+            <h3>My household limits</h3><div class="usage-summary"><h4>Household capacity · example</h4><div class="meter-caption"><strong>350 of 500 retained items</strong><span>70% used</span></div><div class="meter" aria-hidden="true"><span style="width:70%"></span></div><div class="meter-caption"><strong>520 of 768 KiB retained</strong><span>Content + History</span></div><div class="meter" aria-hidden="true"><span style="width:67.71%"></span></div></div>
+            <div class="row">
+              <div>
+                <strong>Your retained items</strong>
+                <div class="muted">230 / 300</div>
+              </div>
+              <button type="button" class="button quiet" title="Static visual mockup">Edit mine</button>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Household retained items</strong>
+                <div class="muted">350 / 500</div>
+              </div>
+              <button type="button" class="button quiet" title="Static visual mockup">View usage</button>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Your contribution</strong>
+                <div class="muted">300 items · 512 KiB</div>
+              </div>
+              <button type="button" class="button quiet" title="Static visual mockup">Manage mine</button>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Household storage</strong>
+                <div class="muted">520 / 768 KiB</div>
+              </div>
+              <span></span>
+            </div>
+            <div class="notice">
+              Other heads’ ceilings are read-only. Contributions do not reserve
+              a personal share.
+            </div>
+            <div class="actions">
+              <button type="button" class="button " title="Static visual mockup">Heads</button><button type="button" class="button " title="Static visual mockup">My capacity</button>
+            </div>
+          </div><div class="app-footer"><span>Archive</span><span>Trash</span><span>Refresh to see shared changes</span></div></div><p class="note">
+          Use stacked resource rows on mobile; no wide allocation matrix. Each
+          allocation review still shows every affected resource and
+          personal/household before-and-after capacity. Do not collapse a
+          multi-resource decision into one percentage slider.
+        </p>
+      </section></main><footer><p>Approved scope and wireframes remain the behavioral baseline. Review colors, typography, hierarchy, controls and clarity of consequences.</p><p>After visual approval: a separate server-free local prototype, followed by its own approval. These documents are not production or prototype UI code.</p></footer></body></html>

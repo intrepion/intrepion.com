@@ -85,8 +85,8 @@ impl TaskService for Tasks {
         ctx: RequestContext,
         _r: ServiceRequest<'_, Empty>,
     ) -> ServiceResult<TaskList> {
-        self.0.authorize_rpc(&ctx).await?;
-        let rows=self.0.db.query::<Row>("SELECT id,title,notes,completed,revision,sequence FROM collections WHERE owner_sub=? AND kind=1 AND trashed=0 ORDER BY completed,sequence DESC",std::slice::from_ref(&self.0.config.owner_sub)).await?;
+        let lists = Lists::authorized(self.0.clone(), &ctx).await?;
+        let rows=self.0.db.query::<Row>("SELECT id,title,notes,completed,revision,sequence FROM collections WHERE owner_sub=? AND kind=1 AND trashed=0 ORDER BY completed,sequence DESC",&[lists.owner()]).await?;
         Response::ok(TaskList {
             tasks: rows.into_iter().map(Into::into).collect(),
             ..Default::default()
@@ -97,10 +97,9 @@ impl TaskService for Tasks {
         ctx: RequestContext,
         r: ServiceRequest<'_, Task>,
     ) -> ServiceResult<Task> {
-        self.0.authorize_rpc(&ctx).await?;
+        let lists = Lists::authorized(self.0.clone(), &ctx).await?;
         let t = r.to_owned_message();
         validate(&t)?;
-        let lists = Lists(self.0.clone());
         match lists.get(&t.id).await {
             Ok(existing) => {
                 let saved = task(existing)?;
@@ -122,7 +121,7 @@ impl TaskService for Tasks {
             .db
             .query::<serde_json::Value>(
                 "SELECT id FROM retired_task_ids WHERE owner_sub=? AND id=?",
-                &[self.0.config.owner_sub.clone(), t.id.clone()],
+                &[lists.owner(), t.id.clone()],
             )
             .await?;
         if !retired.is_empty() {
@@ -144,10 +143,9 @@ impl TaskService for Tasks {
         ctx: RequestContext,
         r: ServiceRequest<'_, Task>,
     ) -> ServiceResult<Task> {
-        self.0.authorize_rpc(&ctx).await?;
+        let lists = Lists::authorized(self.0.clone(), &ctx).await?;
         let t = r.to_owned_message();
         validate(&t)?;
-        let lists = Lists(self.0.clone());
         let saved = task(lists.get(&t.id).await?)?;
         if saved.title == t.title && saved.notes == t.notes && saved.completed == t.completed {
             return Response::ok(saved);
@@ -171,7 +169,7 @@ impl TaskService for Tasks {
         ctx: RequestContext,
         r: ServiceRequest<'_, TaskId>,
     ) -> ServiceResult<Empty> {
-        self.0.authorize_rpc(&ctx).await?;
+        let lists = Lists::authorized(self.0.clone(), &ctx).await?;
         if !valid_id(r.id) {
             return Err(ConnectError::invalid_argument("Invalid task ID."));
         }
@@ -180,7 +178,6 @@ impl TaskService for Tasks {
                 "Reload the application before removing this task; its current revision is required.",
             ));
         }
-        let lists = Lists(self.0.clone());
         match lists.get(r.id).await {
             Ok(c) if c.kind.as_known() != Some(CollectionKind::Task) => {
                 return Err(ConnectError::not_found("Task no longer exists."));
