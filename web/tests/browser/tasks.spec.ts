@@ -36,6 +36,7 @@ test("real API task lifecycle persists across reload and logout", async ({
     .getByLabel("Notes", { exact: false })
     .fill("Notes survive the server acknowledgment.");
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect(taskRow(page, "Browser edited task")).toBeVisible();
   await page.reload();
   row = taskRow(page, "Browser edited task");
   await expect(row).toBeVisible();

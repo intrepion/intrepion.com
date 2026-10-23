@@ -706,6 +706,8 @@ const spaces = new Households(
       return true;
     },
     busy: setBusy,
+    // Newly rendered controls inherit the current in-flight state.
+    syncBusyControls: () => setBusy(busy),
     expired,
     confirm,
   },

@@ -25,6 +25,7 @@ type Hooks = {
   openCopy(space: string, id: string): Promise<void>;
   invitationArrived(): Promise<void>;
   busy(value: boolean): void;
+  syncBusyControls(): void;
   expired(): void;
   confirm(
     title: string,
@@ -161,6 +162,7 @@ export class Households {
     this.toolbar.replaceChildren(label, select, capacity);
     if (this.api.space !== "personal")
       this.toolbar.append(button("Household", () => void this.openHousehold()));
+    this.hooks.syncBusyControls();
   }
   async openCapacity() {
     if (!(await this.hooks.prepare())) return;

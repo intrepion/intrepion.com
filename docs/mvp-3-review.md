@@ -17,3 +17,11 @@ One P2 finding: operator replacement allocations could withdraw required househo
 Resolution: preview now rejects a reduced household dimension below retained usage unless that same plan dimension genuinely decreases. Apply recomputes that preview and retains its transactional usage/revision checks. Existing overages may remain unchanged during unrelated policy edits. The generated-client/local-D1 regression failed before the fix and passes for unchanged plans, increased item allowances and an unrelated byte reduction; genuine item-plan loss remains allowed with explicit replacements. The three affected household/allocation/operator regressions pass. The Spec reviewer inspected the correction and confirmed the finding resolved.
 
 Spec total: one finding, corrected and verified. No other missing requirement or scope creep was confirmed by the review.
+
+## Subsequent browser validation
+
+A complete browser run exposed an additional timing bug: toolbar replacement during a space load created enabled controls even though navigation was still busy, so an early click could be ignored. A deterministic browser regression holds the real task-list request and checks that the new Household control remains disabled. It failed before the correction. Toolbar rendering now asks the parent to synchronize the existing busy state; the Spec reviewer inspected this small follow-up and found no scope or identity regression. Final browser verification is recorded in the implementation log.
+
+The legacy persistence browser test also needed to wait for the server-confirmed edited task before reloading; clicking Submit alone does not guarantee the response has arrived.
+
+Review totals: Standards — zero hard violations, one addressed heuristic; Spec — one corrected P2, no unresolved review findings.

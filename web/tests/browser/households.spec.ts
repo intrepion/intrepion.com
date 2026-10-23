@@ -36,9 +36,32 @@ test("a head creates a household and switches between private and shared task li
       exact: true,
     }),
   ).toBeVisible();
-  await page
-    .getByRole("combobox", { name: "Space", exact: true })
-    .selectOption({ label: "Everyday family · Shared · Head" });
+  let releaseTasks!: () => void;
+  const taskGate = new Promise<void>((resolve) => {
+    releaseTasks = resolve;
+  });
+  let markTasksRequested!: () => void;
+  const tasksRequested = new Promise<void>((resolve) => {
+    markTasksRequested = resolve;
+  });
+  const taskRoute = "**/life.v1.TaskService/ListTasks";
+  await page.route(taskRoute, async (route) => {
+    markTasksRequested();
+    await taskGate;
+    await route.continue();
+  });
+  try {
+    await page
+      .getByRole("combobox", { name: "Space", exact: true })
+      .selectOption({ label: "Everyday family · Shared · Head" });
+    await tasksRequested;
+    await expect(
+      page.getByRole("button", { name: "Household", exact: true }),
+    ).toBeDisabled();
+  } finally {
+    releaseTasks();
+    await page.unrouteAll({ behavior: "wait" });
+  }
   await expect(
     page.getByText("Private household planning", { exact: true }),
   ).toBeHidden();
