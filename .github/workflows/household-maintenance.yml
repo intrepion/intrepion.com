@@ -1,0 +1,28 @@
+name: Household retention maintenance
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: household-retention-maintenance
+  cancel-in-progress: false
+jobs:
+  erase:
+    # Enable only after the MVP 3 API, recovery drill and credential are deployed.
+    if: vars.HOUSEHOLD_OPERATIONS_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    environment: operations
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .node-version
+      - name: Protect closures and erase households whose UTC deadline passed
+        env:
+          HOUSEHOLD_MAINTENANCE_TOKEN: ${{ secrets.HOUSEHOLD_MAINTENANCE_TOKEN }}
+        run: node scripts/household-maintenance.mjs
