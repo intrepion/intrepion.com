@@ -1,6 +1,6 @@
 # MVP 3 implementation record
 
-Status: in progress. Scope, wireframes, mockups and the standalone prototype are approved. Numerical launch limits and deployment are separate gates. Review baseline: `d5f2fda` (requested by the owner). The owner requested a commit of current local work as the review baseline; that commit includes the first account-isolation slice as well as the approved planning/design artifacts. Review the final behavior against the complete scope, including that baseline slice.
+Status: implementation and two-axis review complete locally; final browser validation in progress. Scope, wireframes, mockups and the standalone prototype are approved. Numerical launch limits and deployment are separate gates. Review baseline: `d5f2fda` (requested by the owner). The owner requested a commit of current local work as the review baseline; that commit includes the first account-isolation slice as well as the approved planning/design artifacts. Review the final behavior against the complete scope, including that baseline slice.
 
 ## Test boundaries
 
@@ -41,10 +41,16 @@ The owner approved explicitly confirmed erasure of selected active content when 
 - Production allocation controls pass a real-browser regression: preview exact reserved/remainder changes, explicitly confirm, persist the caller's allocation, and explain a blocked withdrawal without changing it.
 - The approved full-storage browser flow passes: failed Trash History offers selected active-content recovery, the confirmation names the task and space, Cancel retains it, lost ledger acknowledgment retains data, and a browser reload resumes the saved confirmed-erasure identity. Other shared content survives. Task compatibility responses expose pending erasure without exposing its token/fingerprint; the collection API supplies the complete retry request.
 
-## Final validation pending
+## Final validation
 
-- Run complete browser workflows together, required full checks, local-only coverage/E2E and production visual review.
-- Review both standards and the complete approved scope against `d5f2fda`, fix findings and commit the completed implementation. No production deployment is included.
+- Full generated-client/local-D1 suite: 44 passed. After review corrections, the three affected household creation/allocation/operator regressions passed again, including unchanged/increased/mixed-resource plans and genuine plan loss. Both review findings are addressed; see [the review record](mvp-3-review.md).
+- Rust: formatting, both normal and development-auth Clippy builds with warnings denied, six unit tests and production release build passed. Thirty generated documentation examples are ignored, not counted as passing tests.
+- Web/tooling: generated clients reproduce, formatting, ESLint, TypeScript and Astro checks passed; two model tests and the static production build passed. Local model-only coverage is 83.33% lines, 78.57% branches and 100% functions; it is not whole-application coverage.
+- Encrypted backup/recovery, provider validation and readiness regressions: 11 passed, including migrations through 0014 and all three independent erasure-record versions. The standalone prototype checks/build and full-storage recovery browser exercise passed independently of production.
+- Full browser suite initially passed 31 of 32; the new identity-switch test used the wrong Notes label. Corrected the locator and added explicit loaded-page waits to the mobile captures; final run pending.
+- Local production container build remains unverified: this process cannot access the Docker socket, and noninteractive sudo requires the owner's password. Rust release build passed. Run `sudo docker build -f server/Dockerfile -t intrepion-server:mvp3-local .` from the repository root for this remaining build check. No daemon permissions were changed and no password was requested.
+
+No production deployment, production plan assignment or retention-workflow activation is included.
 
 D1's documented [batch transaction rollback](https://developers.cloudflare.com/d1/worker-api/d1-database/#batch) is relevant to concurrent membership/quota enforcement. The implementation must verify the behavior through local D1, including rollback when a final invariant check fails; a successful preflight alone is insufficient.
 

@@ -181,6 +181,7 @@ impl Operator {
         let mut next_reserved = Amounts::default();
         let mut next_capacities = std::collections::BTreeMap::new();
         let mut own_allocations = std::collections::BTreeMap::new();
+        let mut withdraws_required_capacity = false;
         for room in &state.rooms {
             let own: Amounts = serde_json::from_str(&room.row.amounts_json)
                 .map_err(|_| ConnectError::internal("Invalid retained allocation."))?;
@@ -215,10 +216,18 @@ impl Operator {
                 room.row.household_id.clone(),
                 (own.clone(), proposed.clone()),
             );
-            next_capacities.insert(
-                room.row.household_id.clone(),
-                room.capacity.subtract(&own)?.add(&proposed)?,
-            );
+            let next_capacity = room.capacity.subtract(&own)?.add(&proposed)?;
+            // The overage exception belongs only to genuinely reduced plan dimensions.
+            // Existing overages may remain unchanged during unrelated policy edits.
+            for (index, cap) in next_capacity.values().iter().enumerate() {
+                if *cap < room.capacity.values()[index]
+                    && *cap < room.usage.values()[index]
+                    && plan.values()[index] >= current.values()[index]
+                {
+                    withdraws_required_capacity = true;
+                }
+            }
+            next_capacities.insert(room.row.household_id.clone(), next_capacity);
         }
         if !replacements.is_empty() {
             return Err(ConnectError::invalid_argument(
@@ -230,8 +239,10 @@ impl Operator {
         clean.preview_token.clear();
         let token = hash(&(&clean, &state))?;
         let mut preview = PilotPolicyPreview {
-            allowed: after.is_ok(),
-            reason: if after.is_err() {
+            allowed: after.is_ok() && !withdraws_required_capacity,
+            reason: if withdraws_required_capacity {
+                "Voluntary withdrawals must leave retained household usage funded. Only a genuine reduction of the corresponding plan allowance permits an overage.".into()
+            } else if after.is_err() {
                 "Existing household allocations exceed the proposed plan. Supply explicit replacements; closed allocations remain reserved.".into()
             } else {
                 String::new()

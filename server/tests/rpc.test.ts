@@ -3016,6 +3016,28 @@ test("operator plan reductions require explicit allocation replacements and reje
       },
     ],
   };
+  // Only genuinely reduced plan dimensions may leave retained content unfunded.
+  for (const plan of [
+    initial.plan,
+    { ...initial.plan, bytes: initial.plan.bytes - 1n },
+    { ...initial.plan, items: initial.plan.items + 1n },
+  ]) {
+    const voluntary = {
+      ...explicit,
+      operationId: crypto.randomUUID(),
+      plan,
+    };
+    const blocked = await operator.previewAccountPolicy(voluntary, admin);
+    assert.equal(blocked.allowed, false);
+    await assert.rejects(
+      operator.applyAccountPolicy(
+        { ...voluntary, previewToken: blocked.previewToken },
+        admin,
+      ),
+      (e: unknown) =>
+        e instanceof ConnectError && e.code === Code.FailedPrecondition,
+    );
+  }
   const preview = await operator.previewAccountPolicy(explicit, admin);
   assert.equal(preview.allowed, true);
   assert.equal(

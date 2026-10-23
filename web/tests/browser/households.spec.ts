@@ -71,6 +71,9 @@ test("a head creates a household and switches between private and shared task li
   ).toBe(true);
   await page.setViewportSize({ width: 320, height: 844 });
   await page.getByRole("button", { name: "Household", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Heads", exact: true }),
+  ).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -81,6 +84,9 @@ test("a head creates a household and switches between private and shared task li
     fullPage: true,
   });
   await page.getByRole("button", { name: "My capacity", exact: true }).click();
+  await expect(
+    page.getByLabel("Your account ID", { exact: true }),
+  ).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -768,7 +774,7 @@ test("signing in as a different approved identity after expiry does not recover 
     .getByLabel("Title", { exact: true })
     .fill("Private draft belonging to Owner");
   await page
-    .getByLabel("Notes", { exact: true })
+    .getByLabel("Notes (optional)", { exact: true })
     .fill("Owner-only unsaved notes");
   await page.context().clearCookies();
   await page.getByRole("button", { name: "Save task", exact: true }).click();
@@ -792,5 +798,7 @@ test("signing in as a different approved identity after expiry does not recover 
   ).toBeVisible();
   await page.getByRole("button", { name: "New task", exact: true }).click();
   await expect(page.getByLabel("Title", { exact: true })).toHaveValue("");
-  await expect(page.getByLabel("Notes", { exact: true })).toHaveValue("");
+  await expect(
+    page.getByLabel("Notes (optional)", { exact: true }),
+  ).toHaveValue("");
 });

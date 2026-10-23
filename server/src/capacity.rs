@@ -128,8 +128,11 @@ pub(crate) async fn personal_capacity(
 }
 // Correlated SQL is evaluated inside the same D1 transaction as the allocation.
 // A Rust preflight alone would race with another household reserving this plan.
+fn account_resource_checks() -> [String; 5] {
+    RESOURCES.map(|key|format!("coalesce((SELECT {key} FROM space_usage WHERE owner_sub=a.subject),0)+coalesce((SELECT sum(json_extract(x.amounts_json,'$.{key}')) FROM household_allocations x JOIN households h ON h.id=x.household_id WHERE x.subject=a.subject AND h.status<>'erased'),0)<=json_extract(a.plan_json,'$.{key}')"))
+}
 pub(crate) fn account_guard(subject: &str) -> Statement {
-    let checks=RESOURCES.map(|key|format!("coalesce((SELECT {key} FROM space_usage WHERE owner_sub=a.subject),0)+coalesce((SELECT sum(json_extract(x.amounts_json,'$.{key}')) FROM household_allocations x JOIN households h ON h.id=x.household_id WHERE x.subject=a.subject AND h.status<>'erased'),0)<=json_extract(a.plan_json,'$.{key}')"));
+    let checks = account_resource_checks();
     Statement::new(
         &format!(
             "INSERT INTO invariant_guards(valid) SELECT EXISTS(SELECT 1 FROM pilot_accounts a WHERE a.subject=? AND a.approved=1 AND a.plan_revision>0 AND {} AND (SELECT count(*) FROM household_heads m JOIN households h ON h.id=m.household_id WHERE m.subject=a.subject AND m.active=1 AND h.status='active')<=json_extract(a.plan_json,'$.households'))",
@@ -269,7 +272,7 @@ impl Amounts {
     }
 }
 pub(crate) fn allocation_account_guard(subject: &str) -> Statement {
-    let checks=RESOURCES.map(|key|format!("coalesce((SELECT {key} FROM space_usage WHERE owner_sub=a.subject),0)+coalesce((SELECT sum(json_extract(x.amounts_json,'$.{key}')) FROM household_allocations x JOIN households h ON h.id=x.household_id WHERE x.subject=a.subject AND h.status<>'erased'),0)<=json_extract(a.plan_json,'$.{key}')"));
+    let checks = account_resource_checks();
     Statement::new(
         &format!(
             "INSERT INTO invariant_guards(valid) SELECT EXISTS(SELECT 1 FROM pilot_accounts a WHERE a.subject=? AND a.approved=1 AND a.plan_revision>0 AND {})",
