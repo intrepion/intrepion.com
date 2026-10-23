@@ -1,8 +1,8 @@
 # Astro Everyday lists client
 
-This static Astro/TypeScript client independently implements the approved MVP 1 and MVP 2 prototype interactions. It imports no prototype application code. It uses generated ConnectRPC clients and real server acknowledgments; lists, tasks, drafts and credentials are never persisted in browser storage.
+This static Astro/TypeScript client independently implements the approved MVP 1, MVP 2 and MVP 3 prototype interactions. It imports no prototype application code. It uses generated ConnectRPC clients and real server acknowledgments; lists, tasks, drafts and credentials are never persisted in browser storage.
 
-After `npm ci` and `npm --prefix web ci` at the repository root, run `npm run dev` there to start the complete development stack, then open <http://127.0.0.1:4322>. The visible development-owner button appears only when the local server advertises development mode. Production renders Google's official SDK button.
+After `npm ci` and `npm --prefix web ci` at the repository root, run `npm run dev` there to start the complete development stack, then open <http://127.0.0.1:4322>. The Owner and Morgan development buttons appear only when the local server advertises development mode. Production renders Google's official SDK button.
 
 For a production static build, set `PUBLIC_API_ORIGIN` to the HTTPS API origin and run `npm --prefix web run build`. The fallback `http://127.0.0.1:8788` is for local builds. The deployment workflow requires an explicit origin. The API owns Google credentials, authorization, CSRF validation, sessions, and persistence; a public client ID is not a secret.
 
@@ -21,3 +21,5 @@ E2E and coverage are local-only. Stop the development stack before E2E: it start
 No theme selector or later-client features are included in MVP 1. The original standalone `/prototype` remains runnable on port 4321 and separate from this application.
 
 MVP 2 adds Shopping, checklist templates and independent runs, section/item ordering, History, Archive, and Trash. Permanent erasure has a separate scope confirmation and a retry identity recoverable after a reload. The [release and recovery guide](../docs/mvp-2-release.md) separates local proof from hosted readiness.
+
+MVP 3 adds a private/shared space selector, household heads/invitations, own count ceilings, personal plan/reallocation previews, independent personal-to-household copies and final closure. Administrative History reports actual actors and changes. Removed household access clears its cached content and drafts; signing in as another identity cannot restore the previous person's draft. Unknown writes keep stable retry identities and prevent an accidental space switch. Full-storage recovery offers explicitly scoped active-content erasure and resumes protected erasure after reload.

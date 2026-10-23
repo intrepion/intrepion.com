@@ -573,3 +573,54 @@ footer .everyday-actions {
     padding: 12px 20px;
   }
 }
+
+.space-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 0;
+}
+.space-controls[hidden] {
+  display: none;
+}
+.space-controls select {
+  font: inherit;
+  max-width: 100%;
+  min-height: 44px;
+  flex: 1 1 180px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: white;
+}
+.household-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+  overflow-wrap: anywhere;
+}
+#household-view dd {
+  margin: 0 0 14px;
+  overflow-wrap: anywhere;
+}
+#household-view dt {
+  font-weight: 600;
+}
+#household-view .editor input {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#household-view select {
+  font: inherit;
+  min-height: 44px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: white;
+}

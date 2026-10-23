@@ -1,0 +1,50 @@
+syntax = "proto3";
+package life.v1;
+import "life/v1/households.proto";
+import "life/v1/tasks.proto";
+
+// Separate operator credential, never a Google session or maintenance token.
+service PilotOperatorService {
+ rpc GetStructuralPolicy(Empty) returns (PilotStructuralPolicy);
+ rpc SetStructuralPolicy(PilotStructuralChange) returns (PilotStructuralPolicy);
+ rpc GetAccountPolicy(PilotAccountKey) returns (PilotPolicyAccount);
+ rpc PreviewAccountPolicy(PilotPolicyChange) returns (PilotPolicyPreview);
+ rpc ApplyAccountPolicy(PilotPolicyChange) returns (PilotPolicyResult);
+}
+message PilotAccountKey { string subject = 1; }
+message PilotPolicyAccount {
+ string subject = 1; string display_name = 2; bool approved = 3;
+ ResourceAmounts plan = 4; uint64 revision = 5; string public_id = 6;
+}
+message PilotAllocationReplacement {
+ string household_id = 1; uint64 expected_revision = 2; ResourceAmounts amounts = 3;
+}
+message PilotPolicyChange {
+ string operation_id = 1; string subject = 2; string display_name = 3;
+ bool approved = 4; ResourceAmounts plan = 5; uint64 expected_revision = 6;
+ bool create_account = 7; repeated PilotAllocationReplacement replacements = 8;
+ string preview_token = 9;
+}
+message PilotPolicySpace {
+ string id = 1; string name = 2; string status = 3; uint64 revision = 4;
+ ResourceAmounts usage = 5; ResourceAmounts before = 6; ResourceAmounts after = 7;
+ bool exceeds_after = 8;
+ ResourceAmounts own_allocation_before = 9; ResourceAmounts own_allocation_after = 10;
+}
+message PilotPolicyPreview {
+ bool allowed = 1; string reason = 2; string preview_token = 3;
+ bool account_exists = 4; uint64 current_revision = 5;
+ ResourceAmounts current_plan = 6; repeated PilotPolicySpace spaces = 7;
+}
+message PilotPolicyResult { string public_id = 1; uint64 revision = 2; }
+
+message PilotStructuralPolicy {
+ uint64 revision = 1; uint64 max_items_per_collection = 2; uint64 max_sections_per_collection = 3;
+ // Observed retained maxima are supplied by GetStructuralPolicy for operator review.
+ uint64 largest_retained_item_count = 4; uint64 largest_retained_section_count = 5;
+}
+message PilotStructuralChange {
+ string operation_id = 1; uint64 expected_revision = 2;
+ uint64 max_items_per_collection = 3; uint64 max_sections_per_collection = 4;
+ bool confirmed = 5;
+}

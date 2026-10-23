@@ -21,6 +21,38 @@ pub struct ErasureRecord {
     pub collection_id: String,
     pub scope: String,
     pub target_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub erase_due_at: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub collection_ids: Option<Vec<String>>,
+}
+impl ErasureRecord {
+    // Client action IDs belong to a data scope. Publication IDs must be unique
+    // across scopes because the independent ledger is shared by the database.
+    pub fn namespaced(mut self, scope_key: &str) -> Self {
+        use sha2::{Digest, Sha256};
+        let identity = serde_json::to_vec(&(
+            "intrepion-ledger",
+            self.version,
+            &self.database_id,
+            scope_key,
+            &self.operation_id,
+            &self.collection_id,
+            &self.scope,
+            &self.target_id,
+        ))
+        .expect("serializable ledger identity");
+        let hex = format!("{:x}", Sha256::digest(identity));
+        self.operation_id = format!(
+            "{}-{}-4{}-a{}-{}",
+            &hex[..8],
+            &hex[8..12],
+            &hex[13..16],
+            &hex[17..20],
+            &hex[20..32]
+        );
+        self
+    }
 }
 pub struct ErasureLedger {
     settings: LedgerSettings,

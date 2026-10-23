@@ -23,5 +23,7 @@ message Task {
   bool completed = 4;
   uint32 revision = 5;
   uint64 created_order = 6;
+  // The collection API exposes the complete retry identity for this erasure.
+  bool erasure_pending = 7;
 }
 message TaskList { repeated Task tasks = 1; }

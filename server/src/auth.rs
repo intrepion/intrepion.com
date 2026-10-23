@@ -267,6 +267,7 @@ impl Auth {
                 &[subject.into()],
             ).await?;
         }
+        self.db.query::<serde_json::Value>("UPDATE pilot_accounts SET public_id=? WHERE subject=? AND public_id='' AND approved=1", &[secret()[..32].into(),subject.into()]).await?;
         #[derive(Deserialize)]
         struct Account {
             display_name: String,
@@ -327,7 +328,7 @@ impl Auth {
 
 pub async fn configuration(State(auth): State<SharedAuth>) -> Json<serde_json::Value> {
     Json(
-        serde_json::json!({"google_client_id":auth.config.google_client_id,"development":auth.config.local,"erasure_storage_configured":auth.erasure_ledger.is_some(),"schema_version":2}),
+        serde_json::json!({"google_client_id":auth.config.google_client_id,"development":auth.config.local,"erasure_storage_configured":auth.erasure_ledger.is_some(),"schema_version":3}),
     )
 }
 pub async fn challenge(

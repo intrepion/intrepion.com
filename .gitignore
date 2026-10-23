@@ -127,3 +127,4 @@ coverage/
 *.sqlite3
 *.sql.age
 server/wrangler.production.json
+*.pilot-policy-review.json

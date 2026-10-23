@@ -833,7 +833,10 @@
           }
           if (!creator)
             r.bytes = new TextEncoder().encode(
-              JSON.stringify(records) +
+              (s.households[space]?.status !== "erased"
+                ? s.households[space]?.name || ""
+                : "") +
+                JSON.stringify(records) +
                 JSON.stringify(s.history.filter((h) => h.space === space)),
             ).length;
           return r;
@@ -940,6 +943,10 @@
                     names[k].toLowerCase() +
                     ".",
                 );
+            if (usage(s, id).bytes > totals(s, id).bytes)
+              throw Error(
+                "Allocate enough storage for the household name and retained metadata.",
+              );
             audit(s, id, u, "Created household");
             s.lastCreated = id;
           } else if (a.type === "invite") {
@@ -1170,8 +1177,10 @@
                 );
               old = clone(c);
               if (a.type === "eraseCollection") {
-                if (!c.trashed)
-                  throw Error("Move content to Trash before erasing it.");
+                if (!c.trashed && !a.confirmActive)
+                  throw Error(
+                    "Move content to Trash before erasing it, or explicitly confirm storage-recovery erasure.",
+                  );
                 s.erased.push({
                   space,
                   ids: [c.id, ...c.items.map((i) => i.id)],
@@ -1277,8 +1286,10 @@
                 } else if (a.type === "trashItem") item.trashed = true;
                 else if (a.type === "restoreItem") item.trashed = false;
                 else if (a.type === "eraseItem") {
-                  if (!item.trashed)
-                    throw Error("Move this item to Trash first.");
+                  if (!item.trashed && !a.confirmActive)
+                    throw Error(
+                      "Move this item to Trash first, or explicitly confirm storage-recovery erasure.",
+                    );
                   c.items = c.items.filter((i) => i.id !== item.id);
                   s.history = s.history.filter((e) => e.collection !== c.id);
                   s.erased.push({
@@ -1768,6 +1779,16 @@
           if (c.space === D.personal(ui.user))
             html += btn("Copy to household", "copy", c.id);
         }
+        if (
+          !c.trashed &&
+          D.usage(s, ui.space).bytes >= D.totals(s, ui.space).bytes
+        )
+          html += btn(
+            "Erase permanently · storage recovery",
+            "erase-active-collection",
+            c.id,
+            "danger",
+          );
         html += "</div>";
         if (c.kind === "task") return html;
         const renderItem = (i) =>
@@ -2575,6 +2596,22 @@
                   " local). Until protected erasure succeeds, capacity remains reserved. Pending invitations are revoked."
               : "You lose content access immediately. Your shared content remains; your contribution stays reserved until withdrawing it leaves enough capacity. Manage your own retained allocation from My capacity.",
             { type: "leave", space: id, close: last },
+            false,
+            true,
+          );
+          return;
+        }
+        if (name === "erase-active-collection") {
+          confirmAction(
+            "Erase “" + c.title + "” permanently?",
+            "Storage recovery: permanently erase this selected content, all child items and sections, and associated content History. It cannot be restored. Independent copies elsewhere remain. Any unsaved edits to this target will be discarded only on confirmation. Recovery protection must succeed before capacity is released.",
+            {
+              type: "eraseCollection",
+              space: ui.space,
+              id: c.id,
+              version: c.version,
+              confirmActive: true,
+            },
             false,
             true,
           );

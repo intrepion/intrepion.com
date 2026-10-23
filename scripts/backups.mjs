@@ -109,6 +109,114 @@ export function verifySql(sql) {
           "Backup contains invalid MVP 2 relationships or resurrected content.",
         );
     }
+    if (
+      db
+        .prepare(
+          "SELECT 1 FROM sqlite_master WHERE type='table' AND name='households'",
+        )
+        .get()
+    ) {
+      for (const query of [
+        "SELECT subject,public_id,display_name,approved,plan_json,plan_revision FROM pilot_accounts LIMIT 1",
+        "SELECT id,scope_sub,name,status,revision,created_by,last_operation,erase_due_at,erasure_delayed FROM households LIMIT 1",
+        "SELECT household_id,subject,active,ceilings_json FROM household_heads LIMIT 1",
+        "SELECT household_id,subject,amounts_json FROM household_allocations LIMIT 1",
+        "SELECT id,household_id,recipient_sub,token_hash,status,expires_at,created_by FROM household_invitations LIMIT 1",
+        "SELECT actor_sub,operation_id,fingerprint,household_id,result_id FROM household_operations LIMIT 1",
+        "SELECT household_id,actor_sub,operation_id,erase_due_at,closure_published FROM household_lifecycle LIMIT 1",
+        "SELECT household_id,subject,released_at FROM household_releases LIMIT 1",
+        "SELECT id,erase_due_at,erased FROM closed_household_ids LIMIT 1",
+        "SELECT owner_sub,items,shopping,templates,runs,bytes,households FROM space_usage LIMIT 1",
+        "SELECT * FROM space_capacity LIMIT 1",
+        "SELECT confirmed_active_erasure FROM erasure_intents LIMIT 1",
+      ])
+        db.prepare(query).all();
+      for (const name of [
+        "no_closed_household_insert",
+        "no_household_reopening",
+      ])
+        if (
+          !db
+            .prepare(
+              "SELECT 1 FROM sqlite_master WHERE type='trigger' AND name=?",
+            )
+            .get(name)
+        )
+          throw new Error("Backup is missing household protection.");
+      if (
+        db
+          .prepare(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='household_content_erasures'",
+          )
+          .get()
+      ) {
+        db.prepare(
+          "SELECT household_id,operation_id,actor_sub,fingerprint,expected_revision,target_json,published_batches,completed FROM household_content_erasures LIMIT 1",
+        ).all();
+        for (const name of [
+          "one_pending_household_erasure",
+          "content_erasure_requires_unused_operation",
+          "household_receipt_requires_matching_erasure",
+        ])
+          if (!db.prepare("SELECT 1 FROM sqlite_master WHERE name=?").get(name))
+            throw new Error(
+              "Backup is missing shared-content erasure protection.",
+            );
+        if (
+          db
+            .prepare(
+              "SELECT 1 FROM household_content_erasures e JOIN households h ON h.id=e.household_id WHERE h.status='erased' LIMIT 1",
+            )
+            .get()
+        )
+          throw new Error(
+            "Backup retains an erased household's content-erasure manifest.",
+          );
+      }
+      if (
+        db
+          .prepare(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='pilot_operator_operations'",
+          )
+          .get()
+      ) {
+        db.prepare(
+          "SELECT last_policy_operation FROM pilot_accounts LIMIT 1",
+        ).all();
+        db.prepare(
+          "SELECT revision,last_operation FROM operator_settings LIMIT 1",
+        ).all();
+        db.prepare(
+          "SELECT operation_id,fingerprint,subject,public_id,revision,max_items,max_sections FROM pilot_operator_operations LIMIT 1",
+        ).all();
+      }
+      for (const table of ["invariant_guards", "limit_guards", "write_budgets"])
+        if (db.prepare(`SELECT 1 FROM ${table} LIMIT 1`).get())
+          throw new Error(
+            "Backup contains an unfinished household write guard.",
+          );
+      if (
+        db.prepare("PRAGMA foreign_key_check").all().length ||
+        db
+          .prepare(
+            "SELECT 1 FROM households h WHERE scope_sub<>'household:'||id OR (status<>'active' AND EXISTS(SELECT 1 FROM household_heads m WHERE m.household_id=h.id AND m.active=1)) OR (status IN('closed','erasing','erased') AND NOT EXISTS(SELECT 1 FROM closed_household_ids x WHERE x.id=h.id AND x.erase_due_at=h.erase_due_at)) LIMIT 1",
+          )
+          .get() ||
+        db
+          .prepare(
+            "SELECT 1 FROM closed_household_ids x JOIN households h ON h.id=x.id WHERE h.status='active' OR (x.erased=1 AND h.status<>'erased') LIMIT 1",
+          )
+          .get() ||
+        db
+          .prepare(
+            "SELECT 1 FROM households h WHERE status='erased' AND (name<>'Erased household' OR EXISTS(SELECT 1 FROM collections c WHERE c.owner_sub=h.scope_sub) OR EXISTS(SELECT 1 FROM household_allocations a WHERE a.household_id=h.id) OR EXISTS(SELECT 1 FROM household_heads a WHERE a.household_id=h.id) OR EXISTS(SELECT 1 FROM household_lifecycle a WHERE a.household_id=h.id) OR EXISTS(SELECT 1 FROM household_invitations a WHERE a.household_id=h.id) OR EXISTS(SELECT 1 FROM household_operations a WHERE a.household_id=h.id) OR EXISTS(SELECT 1 FROM household_activity a WHERE a.household_id=h.id)) LIMIT 1",
+          )
+          .get()
+      )
+        throw new Error(
+          "Backup contains invalid household relationships or reopened/erased data.",
+        );
+    }
   } finally {
     db.close();
   }

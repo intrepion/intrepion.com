@@ -1,6 +1,12 @@
+import { PilotOperatorService } from "../../web/src/gen/life/v1/operator_pb.js";
 import assert from "node:assert/strict";
 import test, { before, after } from "node:test";
 import { Code, ConnectError, createClient } from "@connectrpc/connect";
+import {
+  HouseholdService,
+  HouseholdMaintenanceService,
+  HouseholdAction,
+} from "../../web/src/gen/life/v1/households_pb.js";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import { TaskService } from "../../web/src/gen/life/v1/tasks_pb.js";
 import {
@@ -18,6 +24,18 @@ import type { ChildProcess } from "node:child_process";
 const baseUrl = process.env.TEST_API_URL ?? "http://127.0.0.1:8788";
 const client = createClient(TaskService, createConnectTransport({ baseUrl }));
 const lists = createClient(ListService, createConnectTransport({ baseUrl }));
+const households = createClient(
+  HouseholdService,
+  createConnectTransport({ baseUrl }),
+);
+const maintenance = createClient(
+  HouseholdMaintenanceService,
+  createConnectTransport({ baseUrl }),
+);
+const operator = createClient(
+  PilotOperatorService,
+  createConnectTransport({ baseUrl }),
+);
 const origin = "http://127.0.0.1:4322";
 let server: ChildProcess;
 before(async () => {
@@ -69,7 +87,20 @@ test("anonymous callers cannot list private tasks", async () => {
   );
 });
 
+type RpcSession = {
+  headers: { origin: string; "x-csrf-token": string; cookie: string };
+};
+const sessionFixtures = new Map<string, RpcSession>();
 async function login(credential = "") {
+  const identity = credential || "development-owner";
+  const existing = sessionFixtures.get(identity);
+  if (existing) {
+    const current = await fetch(`${baseUrl}/auth/session`, {
+      headers: existing.headers,
+    });
+    if (current.ok) return { headers: { ...existing.headers } };
+    sessionFixtures.delete(identity);
+  }
   const challenge = await fetch(`${baseUrl}/auth/challenge`, {
     method: "POST",
     headers: { origin },
@@ -90,7 +121,7 @@ async function login(credential = "") {
   });
   assert.equal(response.status, 200);
   const { csrf } = (await response.json()) as { csrf: string };
-  return {
+  const session = {
     headers: {
       origin,
       "x-csrf-token": csrf,
@@ -100,6 +131,8 @@ async function login(credential = "") {
         .join("; "),
     },
   };
+  sessionFixtures.set(identity, session);
+  return { headers: { ...session.headers } };
 }
 
 test("approved pilot users have separate personal tasks and cannot read each other's collections", async () => {
@@ -207,6 +240,13 @@ test("create, update and delete retries are idempotent and stale edits do not ov
 
 test("server enforces Unicode limits, plaintext and incomplete-first creation ordering", async () => {
   const owner = await login();
+  const original = (await client.listTasks({}, owner)).tasks;
+  const originalOpen = original
+    .filter((task) => !task.completed)
+    .map((task) => task.id);
+  const originalCompleted = original
+    .filter((task) => task.completed)
+    .map((task) => task.id);
   for (const task of [
     { title: "   " },
     { title: "🦀".repeat(201) },
@@ -233,12 +273,12 @@ test("server enforces Unicode limits, plaintext and incomplete-first creation or
   );
   assert.deepEqual(
     (await client.listTasks({}, owner)).tasks.map((t) => t.id),
-    [second.id, first.id],
+    [second.id, first.id, ...originalOpen, ...originalCompleted],
   );
   await client.updateTask({ ...second, completed: true }, owner);
   assert.deepEqual(
     (await client.listTasks({}, owner)).tasks.map((t) => t.id),
-    [first.id, second.id],
+    [first.id, ...originalOpen, second.id, ...originalCompleted],
   );
   await client.deleteTask({ id: first.id, revision: first.revision }, owner);
   await client.deleteTask(
@@ -1030,9 +1070,21 @@ test("permanent item erasure waits for an independent ledger and survives uncert
   );
   const records = (await (
     await fetch("http://127.0.0.1:8792/records", { headers: ledgerHeaders })
-  ).json()) as { records: { operation_id: string }[] };
+  ).json()) as {
+    records: {
+      operation_id: string;
+      collection_id: string;
+      target_id: string;
+      scope: string;
+    }[];
+  };
   assert.equal(
-    records.records.filter((r) => r.operation_id === erase.operationId).length,
+    records.records.filter(
+      (r) =>
+        r.collection_id === c.id &&
+        r.target_id === item.id &&
+        r.scope === "item",
+    ).length,
     1,
   );
   assert.equal(JSON.stringify(records).includes("Private erased item"), false);
@@ -1200,10 +1252,13 @@ test("Backblaze publication rejects broad keys and verifies the independently st
     );
     const before = (await (
       await fetch("http://127.0.0.1:8792/records", { headers })
-    ).json()) as { records: { operation_id: string }[] };
+    ).json()) as {
+      records: { operation_id: string; collection_id: string; scope: string }[];
+    };
     assert.equal(
       before.records.some(
-        (record) => record.operation_id === erase.operationId,
+        (record) =>
+          record.collection_id === c.id && record.scope === "collection",
       ),
       false,
     );
@@ -1215,10 +1270,19 @@ test("Backblaze publication rejects broad keys and verifies the independently st
     assert.equal((await lists.applyChange(erase, owner)).erased, true);
     const after = (await (
       await fetch("http://127.0.0.1:8792/records", { headers })
-    ).json()) as { records: { operation_id: string; database_id: string }[] };
+    ).json()) as {
+      records: {
+        operation_id: string;
+        database_id: string;
+        collection_id: string;
+        scope: string;
+      }[];
+    };
     assert.equal(
-      after.records.find((record) => record.operation_id === erase.operationId)
-        ?.database_id,
+      after.records.find(
+        (record) =>
+          record.collection_id === c.id && record.scope === "collection",
+      )?.database_id,
       "00000000-0000-0000-0000-000000000001",
     );
   } finally {
@@ -1555,4 +1619,1554 @@ test("a run can copy many maximum-length Unicode notes without a bound-value ove
     run.items.every((item) => !item.completed),
     true,
   );
+});
+
+test("a head creates a household using reserved capacity without sharing personal content", async () => {
+  const owner = await login();
+  const before = await households.getOverview({}, owner);
+  const operation = {
+    operationId: crypto.randomUUID(),
+    householdId: crypto.randomUUID(),
+    action: HouseholdAction.CREATE,
+    name: "Household foundation",
+    amounts: {
+      items: 20n,
+      shopping: 4n,
+      templates: 2n,
+      runs: 2n,
+      bytes: 64000n,
+    },
+  };
+  const created = await households.changeHousehold(operation, owner);
+  assert.equal(created.householdId, operation.householdId);
+  const after = await households.getOverview({}, owner);
+  assert.equal(
+    after.personalCapacity!.items,
+    before.personalCapacity!.items - 20n,
+  );
+  const shared = await households.getHousehold(
+    { id: created.householdId },
+    owner,
+  );
+  assert.equal(shared.household!.name, "Household foundation");
+  assert.equal(shared.household!.isHead, true);
+  assert.equal(shared.heads[0].ceilings!.bytes, 0n);
+  assert.equal(shared.heads[0].ceilings!.households, 0n);
+  assert.equal(shared.usage!.items, 0n);
+  assert.equal(shared.heads.length, 1);
+  assert.equal(
+    (await households.changeHousehold(operation, owner)).householdId,
+    created.householdId,
+  );
+  assert.equal(
+    (await households.getOverview({}, owner)).personalCapacity!.items,
+    after.personalCapacity!.items,
+  );
+});
+
+test("recipient-bound head invitations grant shared access and removal revokes the same active session", async () => {
+  const owner = await login();
+  const other = await login("development-second");
+  const otherIdentity = (await households.getOverview({}, other)).identity!;
+  const householdId = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      action: HouseholdAction.CREATE,
+      name: "Invitation household",
+      amounts: {
+        items: 30n,
+        shopping: 4n,
+        templates: 2n,
+        runs: 2n,
+        bytes: 128000n,
+      },
+    },
+    owner,
+  );
+  const scopedOwner = {
+    headers: { ...owner.headers, "x-space-id": householdId },
+  };
+  const scopedOther = {
+    headers: { ...other.headers, "x-space-id": householdId },
+  };
+  const shared = await client.createTask(
+    { id: crypto.randomUUID(), title: "Shared household task" },
+    scopedOwner,
+  );
+  assert.equal(
+    (await client.listTasks({}, owner)).tasks.some((t) => t.id === shared.id),
+    false,
+  );
+  await assert.rejects(
+    client.listTasks({}, scopedOther),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.PermissionDenied,
+  );
+  const invitationToken = "a7".repeat(32);
+  const beforeInvite = await households.getHousehold(
+    { id: householdId },
+    owner,
+  );
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      expectedRevision: beforeInvite.household!.revision,
+      action: HouseholdAction.INVITE,
+      targetId: otherIdentity.id,
+      invitationToken,
+    },
+    owner,
+  );
+  await assert.rejects(
+    households.getInvitation({ token: invitationToken }, owner),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.PermissionDenied,
+  );
+  const preview = await households.getInvitation(
+    { token: invitationToken },
+    other,
+  );
+  assert.equal(preview.householdId, householdId);
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      action: HouseholdAction.ACCEPT_INVITATION,
+      invitationToken,
+    },
+    other,
+  );
+  assert.equal(
+    (await client.listTasks({}, scopedOther)).tasks.some(
+      (t) => t.id === shared.id,
+    ),
+    true,
+  );
+  const authored = await client.createTask(
+    { id: crypto.randomUUID(), title: "Written by second head" },
+    scopedOther,
+  );
+  assert.equal(
+    (await lists.listHistory({ collectionId: authored.id }, scopedOwner))
+      .entries[0]!.actor,
+    "Second pilot user",
+  );
+  const current = await households.getHousehold({ id: householdId }, owner);
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      expectedRevision: current.household!.revision,
+      action: HouseholdAction.REMOVE_HEAD,
+      targetId: otherIdentity.id,
+    },
+    owner,
+  );
+  await assert.rejects(
+    client.listTasks({}, scopedOther),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.PermissionDenied,
+  );
+  assert.equal(
+    (await client.listTasks({}, scopedOwner)).tasks.some(
+      (t) => t.id === authored.id,
+    ),
+    true,
+  );
+  assert.ok(await client.listTasks({}, other));
+});
+
+test("own ceilings and retained household capacity cannot be bypassed by concurrent writes or Trash", async () => {
+  const owner = await login();
+  const other = await login("development-second");
+  const otherIdentity = (await households.getOverview({}, other)).identity!;
+  const householdId = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      action: HouseholdAction.CREATE,
+      name: "One retained task",
+      amounts: {
+        items: 1n,
+        shopping: 2n,
+        templates: 2n,
+        runs: 2n,
+        bytes: 128000n,
+      },
+    },
+    owner,
+  );
+  let detail = await households.getHousehold({ id: householdId }, owner);
+  const ceiling = {
+    operationId: crypto.randomUUID(),
+    householdId,
+    expectedRevision: detail.household!.revision,
+    action: HouseholdAction.SET_OWN_CEILINGS,
+    amounts: { items: 1n, shopping: 2n, templates: 2n, runs: 2n },
+  };
+  await households.changeHousehold(ceiling, owner);
+  detail = await households.getHousehold({ id: householdId }, owner);
+  await assert.rejects(
+    households.changeHousehold(
+      {
+        ...ceiling,
+        operationId: crypto.randomUUID(),
+        expectedRevision: detail.household!.revision,
+        targetId: otherIdentity.id,
+      },
+      owner,
+    ),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.PermissionDenied,
+  );
+  const scoped = { headers: { ...owner.headers, "x-space-id": householdId } };
+  const requests = [0, 1].map((n) => ({
+    id: crypto.randomUUID(),
+    title: `Concurrent task ${n}`,
+  }));
+  const results = await Promise.allSettled(
+    requests.map((request) => client.createTask(request, scoped)),
+  );
+  assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+  const rejected = results.find((r) => r.status === "rejected");
+  assert.ok(
+    rejected &&
+      rejected.status === "rejected" &&
+      rejected.reason instanceof ConnectError &&
+      rejected.reason.code === Code.ResourceExhausted,
+  );
+  const saved = (await client.listTasks({}, scoped)).tasks[0]!;
+  await client.deleteTask({ id: saved.id, revision: saved.revision }, scoped);
+  assert.equal(
+    (await households.getHousehold({ id: householdId }, owner)).usage!.items,
+    1n,
+  );
+  await assert.rejects(
+    client.createTask(
+      { id: crypto.randomUUID(), title: "Trash is still retained" },
+      scoped,
+    ),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.ResourceExhausted,
+  );
+  const trash = await lists.getCollection({ id: saved.id }, scoped);
+  assert.equal(trash.trashed, true);
+  await lists.applyChange(
+    changeRequest(trash, ChangeAction.ERASE_COLLECTION),
+    scoped,
+  );
+  assert.equal(
+    (await households.getHousehold({ id: householdId }, owner)).usage!.items,
+    0n,
+  );
+  const afterErasure = await client.createTask(
+    { id: crypto.randomUUID(), title: "Freed after protected erasure" },
+    scoped,
+  );
+  assert.equal(afterErasure.title, "Freed after protected erasure");
+});
+
+test("a departed contributor manages only their allocation and cannot withdraw capacity still backing shared content", async () => {
+  const owner = await login();
+  const other = await login("development-second");
+  const target = (await households.getOverview({}, other)).identity!;
+  const householdId = crypto.randomUUID();
+  const original = {
+    items: 3n,
+    shopping: 2n,
+    templates: 2n,
+    runs: 2n,
+    bytes: 128000n,
+  };
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      action: HouseholdAction.CREATE,
+      name: "Retained contribution",
+      amounts: original,
+    },
+    owner,
+  );
+  let detail = await households.getHousehold({ id: householdId }, owner);
+  const token = "b8".repeat(32);
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      expectedRevision: detail.household!.revision,
+      action: HouseholdAction.INVITE,
+      targetId: target.id,
+      invitationToken: token,
+    },
+    owner,
+  );
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      action: HouseholdAction.ACCEPT_INVITATION,
+      invitationToken: token,
+    },
+    other,
+  );
+  const scoped = { headers: { ...owner.headers, "x-space-id": householdId } };
+  await client.createTask(
+    { id: crypto.randomUUID(), title: "Retained shared task" },
+    scoped,
+  );
+  detail = await households.getHousehold({ id: householdId }, owner);
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      expectedRevision: detail.household!.revision,
+      action: HouseholdAction.LEAVE,
+    },
+    owner,
+  );
+  await assert.rejects(
+    households.getHousehold({ id: householdId }, owner),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.PermissionDenied,
+  );
+  const blocked = await households.previewAllocation(
+    { householdId, amounts: { ...original, items: 0n } },
+    owner,
+  );
+  assert.equal(blocked.allowed, false);
+  assert.equal(blocked.householdUsage, undefined);
+  const afterLeave = (await households.getOverview({}, owner)).households.find(
+    (h) => h.id === householdId,
+  )!;
+  assert.equal(afterLeave.isHead, false);
+  assert.equal(afterLeave.ownContribution!.items, 3n);
+  detail = await households.getHousehold({ id: householdId }, other);
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      expectedRevision: detail.household!.revision,
+      action: HouseholdAction.ALLOCATE,
+      amounts: { items: 3n },
+    },
+    other,
+  );
+  const valid = await households.previewAllocation(
+    { householdId, amounts: { ...original, items: 0n } },
+    owner,
+  );
+  assert.equal(valid.allowed, true);
+  assert.equal(valid.householdUsage, undefined);
+  const current = (await households.getOverview({}, owner)).households.find(
+    (h) => h.id === householdId,
+  )!;
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      expectedRevision: current.revision,
+      action: HouseholdAction.ALLOCATE,
+      amounts: { ...original, items: 0n },
+    },
+    owner,
+  );
+  assert.equal(
+    (await households.getOverview({}, owner)).households.find(
+      (h) => h.id === householdId,
+    )!.ownContribution!.items,
+    0n,
+  );
+});
+
+test("personal sharing copies a complete snapshot with fresh History and rejects insufficient destination capacity atomically", async () => {
+  const owner = await login();
+  let source = (
+    await lists.applyChange(
+      {
+        operationId: crypto.randomUUID(),
+        collectionId: crypto.randomUUID(),
+        action: ChangeAction.CREATE_COLLECTION,
+        details: {
+          kind: CollectionKind.TEMPLATE,
+          title: "Private earlier title",
+          notes: "Private earlier notes",
+        },
+      },
+      owner,
+    )
+  ).collection!;
+  source = (
+    await lists.applyChange(
+      changeRequest(source, ChangeAction.UPDATE_METADATA, {
+        details: {
+          title: "Packing to share",
+          notes: "Current shared instructions",
+        },
+      }),
+      owner,
+    )
+  ).collection!;
+  source = (
+    await lists.applyChange(
+      changeRequest(source, ChangeAction.CREATE_ITEM, {
+        item: { id: crypto.randomUUID(), title: "Pack chargers" },
+      }),
+      owner,
+    )
+  ).collection!;
+  source = (
+    await lists.applyChange(
+      changeRequest(source, ChangeAction.CREATE_ITEM, {
+        item: { id: crypto.randomUUID(), title: "Check documents" },
+      }),
+      owner,
+    )
+  ).collection!;
+  const householdId = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      action: HouseholdAction.CREATE,
+      name: "Independent sharing",
+      amounts: { items: 4n, templates: 2n, runs: 2n, bytes: 128000n },
+    },
+    owner,
+  );
+  const copy = {
+    operationId: crypto.randomUUID(),
+    sourceCollectionId: source.id,
+    expectedSourceRevision: source.revision,
+    householdId,
+    destinationCollectionId: crypto.randomUUID(),
+  };
+  const preview = await households.previewCopy(copy, owner);
+  assert.equal(preview.allowed, true);
+  assert.equal(preview.required!.items, 2n);
+  assert.equal(preview.required!.templates, 1n);
+  const copied = (await households.copyCollection(copy, owner)).collection!;
+  assert.equal(copied.title, "Packing to share");
+  assert.deepEqual(
+    copied.items.map((i) => i.title),
+    ["Pack chargers", "Check documents"],
+  );
+  assert.ok(
+    copied.items.every(
+      (item) => !source.items.some((original) => original.id === item.id),
+    ),
+  );
+  const shared = { headers: { ...owner.headers, "x-space-id": householdId } };
+  const freshHistory = await lists.listHistory(
+    { collectionId: copied.id },
+    shared,
+  );
+  assert.equal(
+    freshHistory.entries.some((entry) =>
+      [entry.targetTitle, entry.beforeJson, entry.afterJson].some((value) =>
+        value.includes("Private earlier"),
+      ),
+    ),
+    false,
+  );
+  assert.equal(
+    (await households.getHousehold({ id: householdId }, owner)).usage!.bytes,
+    preview.destinationUsage!.bytes + preview.required!.bytes,
+  );
+  assert.equal(
+    (await households.copyCollection(copy, owner)).collection!.id,
+    copied.id,
+  );
+  assert.equal(
+    (await households.getHousehold({ id: householdId }, owner)).usage!.items,
+    2n,
+  );
+  source = (
+    await lists.applyChange(
+      changeRequest(source, ChangeAction.UPDATE_METADATA, {
+        details: { title: "Changed private original" },
+      }),
+      owner,
+    )
+  ).collection!;
+  assert.equal(
+    (await lists.getCollection({ id: copied.id }, shared)).title,
+    "Packing to share",
+  );
+  const second = {
+    ...copy,
+    operationId: crypto.randomUUID(),
+    expectedSourceRevision: source.revision,
+    destinationCollectionId: crypto.randomUUID(),
+  };
+  const before = await households.getHousehold({ id: householdId }, owner);
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      expectedRevision: before.household!.revision,
+      action: HouseholdAction.SET_OWN_CEILINGS,
+      amounts: { items: 2n, templates: 2n, runs: 2n },
+    },
+    owner,
+  );
+  assert.equal((await households.previewCopy(second, owner)).allowed, false);
+  await assert.rejects(
+    households.copyCollection(second, owner),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.ResourceExhausted,
+  );
+  await assert.rejects(
+    lists.getCollection({ id: second.destinationCollectionId }, shared),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.NotFound,
+  );
+  assert.equal(
+    (await households.getHousehold({ id: householdId }, owner)).usage!.items,
+    2n,
+  );
+});
+
+test("full storage recovery requires explicit active-erasure confirmation and retains content until protected erasure is acknowledged", async () => {
+  const owner = await login();
+  const householdId = crypto.randomUUID();
+  const amounts = {
+    items: 3n,
+    shopping: 2n,
+    templates: 2n,
+    runs: 2n,
+    bytes: 128000n,
+  };
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      action: HouseholdAction.CREATE,
+      name: "Storage recovery",
+      amounts,
+    },
+    owner,
+  );
+  const scoped = { headers: { ...owner.headers, "x-space-id": householdId } };
+  const task = await client.createTask(
+    {
+      id: crypto.randomUUID(),
+      title: "Storage recovery target",
+      notes: "Retained notes that stay until explicit protected erasure.",
+    },
+    scoped,
+  );
+  const detail = await households.getHousehold({ id: householdId }, owner);
+  const full = { ...amounts, bytes: detail.usage!.bytes };
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      expectedRevision: detail.household!.revision,
+      action: HouseholdAction.ALLOCATE,
+      amounts: full,
+    },
+    owner,
+  );
+  await assert.rejects(
+    client.updateTask({ ...task, notes: "Shorter" }, scoped),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.ResourceExhausted,
+  );
+  await assert.rejects(
+    client.deleteTask({ id: task.id, revision: task.revision }, scoped),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.ResourceExhausted,
+  );
+  const active = await lists.getCollection({ id: task.id }, scoped);
+  assert.equal(active.trashed, false);
+  assert.equal(active.notes, task.notes);
+  await assert.rejects(
+    lists.applyChange(
+      changeRequest(active, ChangeAction.ERASE_COLLECTION),
+      scoped,
+    ),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.FailedPrecondition,
+  );
+  const erase = changeRequest(active, ChangeAction.ERASE_COLLECTION, {
+    confirmedActiveErasure: true,
+  });
+  await fetch("http://127.0.0.1:8792/fault", {
+    method: "POST",
+    headers: {
+      authorization: "Bearer local-erasure-only",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ fail_next: "after" }),
+  });
+  await assert.rejects(
+    lists.applyChange(erase, scoped),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.Unavailable,
+  );
+  const pending = await lists.getCollection({ id: task.id }, scoped);
+  assert.equal(pending.notes, task.notes);
+  assert.equal(pending.pendingErasure!.confirmedActiveErasure, true);
+  assert.equal(
+    (await households.getHousehold({ id: householdId }, owner)).usage!.bytes,
+    full.bytes,
+  );
+  const recoveredRequest = changeRequest(
+    pending,
+    ChangeAction.ERASE_COLLECTION,
+    {
+      operationId: pending.pendingErasure!.operationId,
+      expectedRevision: pending.pendingErasure!.expectedRevision,
+      confirmedActiveErasure: pending.pendingErasure!.confirmedActiveErasure,
+    },
+  );
+  assert.equal(
+    (await lists.applyChange(recoveredRequest, scoped)).erased,
+    true,
+  );
+  assert.equal((await lists.applyChange(erase, scoped)).erased, true);
+  assert.equal(
+    (await households.getHousehold({ id: householdId }, owner)).usage!.bytes,
+    16n,
+  );
+  await assert.rejects(
+    lists.getCollection({ id: task.id }, scoped),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.NotFound,
+  );
+});
+
+test("the last head can leave and permanently close a household while retained capacity waits for month-end erasure", async () => {
+  const owner = await login();
+  const other = await login("development-second");
+  const target = (await households.getOverview({}, other)).identity!;
+  const householdId = crypto.randomUUID();
+  const amounts = { items: 3n, templates: 2n, runs: 2n, bytes: 128000n };
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      action: HouseholdAction.CREATE,
+      name: "Final closure",
+      amounts,
+    },
+    owner,
+  );
+  const scoped = { headers: { ...owner.headers, "x-space-id": householdId } };
+  await client.createTask(
+    { id: crypto.randomUUID(), title: "Retained until month-end" },
+    scoped,
+  );
+  let detail = await households.getHousehold({ id: householdId }, owner);
+  const token = "c9".repeat(32);
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      expectedRevision: detail.household!.revision,
+      action: HouseholdAction.INVITE,
+      targetId: target.id,
+      invitationToken: token,
+    },
+    owner,
+  );
+  detail = await households.getHousehold({ id: householdId }, owner);
+  const due = detail.closureEraseDueAt;
+  const deadline = new Date(Number(due) * 1000);
+  assert.ok(Number(due) > Date.now() / 1000);
+  assert.equal(deadline.getUTCDate(), 1);
+  assert.equal(deadline.getUTCHours(), 0);
+  assert.equal(deadline.getUTCMinutes(), 0);
+  const leave = {
+    operationId: crypto.randomUUID(),
+    householdId,
+    expectedRevision: detail.household!.revision,
+    action: HouseholdAction.LEAVE,
+  };
+  await assert.rejects(
+    households.changeHousehold(leave, owner),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.FailedPrecondition,
+  );
+  await assert.rejects(
+    households.changeHousehold(
+      { ...leave, confirmClose: true, expectedEraseDueAt: due + 1n },
+      owner,
+    ),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.FailedPrecondition,
+  );
+  const confirmed = { ...leave, confirmClose: true, expectedEraseDueAt: due };
+  assert.equal(
+    (await households.changeHousehold(confirmed, owner)).householdId,
+    householdId,
+  );
+  assert.equal(
+    (await households.changeHousehold(confirmed, owner)).householdId,
+    householdId,
+  );
+  await assert.rejects(
+    client.listTasks({}, scoped),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.PermissionDenied,
+  );
+  const closed = (await households.getOverview({}, owner)).households.find(
+    (h) => h.id === householdId,
+  )!;
+  assert.equal(closed.status, "closed");
+  assert.equal(closed.isHead, false);
+  assert.equal(closed.eraseDueAt, due);
+  assert.equal(closed.ownContribution!.bytes, amounts.bytes);
+  assert.equal(
+    (await households.getInvitation({ token }, other)).status,
+    "closed",
+  );
+  await assert.rejects(
+    households.changeHousehold(
+      {
+        operationId: crypto.randomUUID(),
+        householdId,
+        action: HouseholdAction.ACCEPT_INVITATION,
+        invitationToken: token,
+      },
+      other,
+    ),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.FailedPrecondition,
+  );
+  assert.equal(
+    (await households.previewAllocation({ householdId, amounts: {} }, owner))
+      .allowed,
+    false,
+  );
+});
+
+test("separate approved accounts cannot poison each other's erasure ledger by reusing an action UUID", async () => {
+  const owner = await login();
+  const other = await login("development-second");
+  const first = await client.createTask(
+    { id: crypto.randomUUID(), title: "First private erasure" },
+    owner,
+  );
+  const second = await client.createTask(
+    { id: crypto.randomUUID(), title: "Second private erasure" },
+    other,
+  );
+  await client.deleteTask({ id: first.id, revision: first.revision }, owner);
+  await client.deleteTask({ id: second.id, revision: second.revision }, other);
+  const firstTrash = await lists.getCollection({ id: first.id }, owner);
+  const secondTrash = await lists.getCollection({ id: second.id }, other);
+  const operationId = crypto.randomUUID();
+  const eraseFirst = changeRequest(firstTrash, ChangeAction.ERASE_COLLECTION, {
+    operationId,
+  });
+  const eraseSecond = changeRequest(
+    secondTrash,
+    ChangeAction.ERASE_COLLECTION,
+    { operationId },
+  );
+  assert.equal((await lists.applyChange(eraseFirst, owner)).erased, true);
+  assert.equal((await lists.applyChange(eraseSecond, other)).erased, true);
+  assert.equal((await lists.applyChange(eraseFirst, owner)).erased, true);
+  assert.equal((await lists.applyChange(eraseSecond, other)).erased, true);
+  const { records } = (await (
+    await fetch("http://127.0.0.1:8792/records", {
+      headers: { authorization: "Bearer local-erasure-only" },
+    })
+  ).json()) as { records: { operation_id: string; collection_id: string }[] };
+  const published = records.filter((record) =>
+    [first.id, second.id].includes(record.collection_id),
+  );
+  assert.equal(published.length, 2);
+  assert.equal(new Set(published.map((record) => record.operation_id)).size, 2);
+});
+
+test("household names consume UTF-8 storage and a rejected creation reserves nothing", async () => {
+  const owner = await login();
+  const before = await households.getOverview({}, owner);
+  const request = {
+    operationId: crypto.randomUUID(),
+    householdId: crypto.randomUUID(),
+    action: HouseholdAction.CREATE,
+    name: "家🏡",
+    amounts: { bytes: 0n },
+  };
+  await assert.rejects(
+    households.changeHousehold(request, owner),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.ResourceExhausted,
+  );
+  const rejected = await households.getOverview({}, owner);
+  assert.equal(
+    rejected.households.some((h) => h.id === request.householdId),
+    false,
+  );
+  assert.equal(
+    rejected.personalCapacity!.bytes,
+    before.personalCapacity!.bytes,
+  );
+  await households.changeHousehold(
+    { ...request, amounts: { bytes: 7n } },
+    owner,
+  );
+  const shared = await households.getHousehold(
+    { id: request.householdId },
+    owner,
+  );
+  assert.equal(shared.usage!.bytes, 7n);
+  const after = await households.getOverview({}, owner);
+  assert.equal(
+    after.personalCapacity!.bytes,
+    before.personalCapacity!.bytes - 7n,
+  );
+  assert.equal(
+    after.personalUsage!.households,
+    before.personalUsage!.households + 1n,
+  );
+});
+
+test("heads can identify and revoke an invitation from administrative History without exposing the link token", async () => {
+  const owner = await login();
+  const other = await login("development-second");
+  const recipient = (await households.getOverview({}, other)).identity!;
+  const householdId = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      action: HouseholdAction.CREATE,
+      name: "Invitation management",
+      amounts: { bytes: 4096n },
+    },
+    owner,
+  );
+  const invitationToken =
+    crypto.randomUUID().replaceAll("-", "") +
+    crypto.randomUUID().replaceAll("-", "");
+  const request = {
+    operationId: crypto.randomUUID(),
+    householdId,
+    expectedRevision: (
+      await households.getHousehold({ id: householdId }, owner)
+    ).household!.revision,
+    action: HouseholdAction.INVITE,
+    targetId: recipient.id,
+    invitationToken,
+  };
+  const results = await Promise.allSettled([
+    households.changeHousehold(request, owner),
+    households.changeHousehold(request, owner),
+  ]);
+  const retry = await households.changeHousehold(request, owner);
+  for (const result of results) {
+    if (result.status === "fulfilled")
+      assert.equal(result.value.invitationId, retry.invitationId);
+  }
+  let detail = await households.getHousehold({ id: householdId }, owner);
+  assert.equal(detail.invitations.length, 1);
+  assert.equal(detail.invitations[0].id, retry.invitationId);
+  assert.equal(detail.invitations[0].recipient!.id, recipient.id);
+  assert.equal(detail.invitations[0].status, "pending");
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      expectedRevision: detail.household!.revision,
+      action: HouseholdAction.REVOKE_INVITATION,
+      targetId: retry.invitationId,
+    },
+    owner,
+  );
+  detail = await households.getHousehold({ id: householdId }, owner);
+  assert.equal(detail.invitations[0].status, "revoked");
+  assert.equal(
+    (await households.getInvitation({ token: invitationToken }, other)).status,
+    "revoked",
+  );
+  await assert.rejects(
+    households.changeHousehold(
+      {
+        operationId: crypto.randomUUID(),
+        householdId,
+        expectedRevision: detail.household!.revision,
+        action: HouseholdAction.ACCEPT_INVITATION,
+        invitationToken,
+      },
+      other,
+    ),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.FailedPrecondition,
+  );
+  const activity = await households.listHouseholdActivity(
+    { householdId },
+    owner,
+  );
+  assert.deepEqual(
+    activity.entries.map((e) => e.action),
+    [
+      "Revoked invitation",
+      "Invited an approved person as a head",
+      "Created household",
+    ],
+  );
+  assert.equal(
+    activity.entries.every((e) => e.actor!.id === detail.heads[0].identity!.id),
+    true,
+  );
+  assert.equal(
+    activity.entries.some((e) => e.detailsJson.includes(invitationToken)),
+    false,
+  );
+  assert.equal(
+    activity.entries[0].detailsJson.includes(retry.invitationId),
+    true,
+  );
+  const older = await households.listHouseholdActivity(
+    { householdId, beforeSequence: activity.entries[0].sequence },
+    owner,
+  );
+  assert.equal(older.entries.length, 2);
+  await assert.rejects(
+    households.listHouseholdActivity({ householdId }, other),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.PermissionDenied,
+  );
+});
+
+test("final closure ends access immediately but its acknowledgment waits for independent recovery protection", async () => {
+  const owner = await login();
+  const householdId = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      action: HouseholdAction.CREATE,
+      name: "Protected final closure",
+      amounts: { bytes: 4096n },
+    },
+    owner,
+  );
+  const detail = await households.getHousehold({ id: householdId }, owner);
+  const request = {
+    operationId: crypto.randomUUID(),
+    householdId,
+    expectedRevision: detail.household!.revision,
+    action: HouseholdAction.LEAVE,
+    confirmClose: true,
+    expectedEraseDueAt: detail.closureEraseDueAt,
+  };
+  const fault = await fetch("http://127.0.0.1:8792/fault", {
+    method: "POST",
+    headers: { authorization: "Bearer local-erasure-only" },
+    body: JSON.stringify({ fail_next: "after" }),
+  });
+  assert.equal(fault.ok, true);
+  await assert.rejects(
+    households.changeHousehold(request, owner),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.Unavailable,
+  );
+  await assert.rejects(
+    households.getHousehold({ id: householdId }, owner),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.PermissionDenied,
+  );
+  let summary = (await households.getOverview({}, owner)).households.find(
+    (h) => h.id === householdId,
+  )!;
+  assert.equal(summary.status, "closed");
+  assert.equal(summary.ownContribution!.bytes, 4096n);
+  // The record exists even though the provider response was lost.
+  const ledger = await fetch("http://127.0.0.1:8792/records", {
+    headers: { authorization: "Bearer local-erasure-only" },
+  }).then((r) => r.json());
+  const protectedClosure = ledger.records.filter(
+    (r: { collection_id: string }) => r.collection_id === householdId,
+  );
+  assert.equal(protectedClosure.length, 1);
+  assert.equal(protectedClosure[0].scope, "household_closed");
+  assert.equal(
+    protectedClosure[0].erase_due_at,
+    Number(detail.closureEraseDueAt),
+  );
+  assert.equal(
+    JSON.stringify(protectedClosure).includes("Protected final closure"),
+    false,
+  );
+  assert.equal(
+    (await households.changeHousehold(request, owner)).householdId,
+    householdId,
+  );
+  summary = (await households.getOverview({}, owner)).households.find(
+    (h) => h.id === householdId,
+  )!;
+  assert.equal(summary.ownContribution!.bytes, 4096n);
+});
+
+test("scheduled household erasure requires operator authentication and releases capacity only after protected deletion succeeds", async () => {
+  const owner = await login();
+  const other = await login("development-second");
+  const householdId = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      action: HouseholdAction.CREATE,
+      name: "Scheduled erasure",
+      amounts: { items: 10n, bytes: 8192n },
+    },
+    owner,
+  );
+  const scoped = { headers: { ...owner.headers, "x-space-id": householdId } };
+  const content = await client.createTask(
+    { id: crypto.randomUUID(), title: "Must disappear at the deadline" },
+    scoped,
+  );
+  const detail = await households.getHousehold({ id: householdId }, owner);
+  const ownBefore = await households.getOverview({}, owner);
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      expectedRevision: detail.household!.revision,
+      action: HouseholdAction.LEAVE,
+      confirmClose: true,
+      expectedEraseDueAt: detail.closureEraseDueAt,
+    },
+    owner,
+  );
+  await assert.rejects(
+    maintenance.eraseDueHouseholds({ householdId }, owner),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.Unauthenticated,
+  );
+  const operator = { headers: { authorization: `Bearer ${"ab".repeat(32)}` } };
+  assert.equal(
+    (await maintenance.eraseDueHouseholds({ householdId }, operator))
+      .erasedHouseholds,
+    0,
+  );
+  const futureEnv = {
+    ...localEnv,
+    HOUSEHOLD_TEST_NOW: String(detail.closureEraseDueAt),
+  };
+  await stop(server);
+  server = start("target/debug/intrepion-server", [], { env: futureEnv });
+  await ready(`${baseUrl}/health/live`);
+  try {
+    await fetch("http://127.0.0.1:8792/fault", {
+      method: "POST",
+      headers: { authorization: "Bearer local-erasure-only" },
+      body: JSON.stringify({ fail_next: "after" }),
+    });
+    await assert.rejects(
+      maintenance.eraseDueHouseholds({ householdId }, operator),
+      (error: unknown) =>
+        error instanceof ConnectError && error.code === Code.Unavailable,
+    );
+    let closed = (await households.getOverview({}, owner)).households.find(
+      (h) => h.id === householdId,
+    )!;
+    assert.equal(closed.ownContribution!.bytes, 8192n);
+    assert.equal(closed.erasureDelayed, true);
+    await maintenance.eraseDueHouseholds({ householdId }, operator);
+    const after = await households.getOverview({}, owner);
+    closed = after.households.find((h) => h.id === householdId)!;
+    assert.equal(closed.status, "erased");
+    assert.equal(closed.name, "Erased household");
+    assert.equal(closed.ownContribution, undefined);
+    assert.equal(
+      after.personalCapacity!.bytes,
+      ownBefore.personalCapacity!.bytes + 8192n,
+    );
+    assert.equal(
+      (await households.getOverview({}, other)).households.some(
+        (h) => h.id === householdId,
+      ),
+      false,
+    );
+    await assert.rejects(
+      client.listTasks({}, scoped),
+      (error: unknown) =>
+        error instanceof ConnectError && error.code === Code.PermissionDenied,
+    );
+    await assert.rejects(
+      client.createTask(
+        { id: content.id, title: "Cannot resurrect globally retired content" },
+        owner,
+      ),
+      (error: unknown) =>
+        error instanceof ConnectError && error.code === Code.NotFound,
+    );
+    await assert.rejects(
+      households.changeHousehold(
+        {
+          operationId: crypto.randomUUID(),
+          householdId,
+          action: HouseholdAction.CREATE,
+          name: "Cannot reopen",
+          amounts: { bytes: 100n },
+        },
+        owner,
+      ),
+    );
+    assert.equal(
+      (await maintenance.eraseDueHouseholds({ householdId }, operator))
+        .erasedHouseholds,
+      0,
+    );
+  } finally {
+    await stop(server);
+    server = start("target/debug/intrepion-server", [], { env: localEnv });
+    await ready(`${baseUrl}/health/live`);
+  }
+});
+
+test("whole-household content erasure freezes its snapshot until protected completion and never expands on retry", async () => {
+  const owner = await login();
+  const other = await login("development-second");
+  const householdId = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      action: HouseholdAction.CREATE,
+      name: "Bulk recovery",
+      amounts: { items: 10n, bytes: 128000n },
+    },
+    owner,
+  );
+  const scoped = { headers: { ...owner.headers, "x-space-id": householdId } };
+  const privateTask = await client.createTask(
+    { id: crypto.randomUUID(), title: "Independent private task" },
+    owner,
+  );
+  const first = await client.createTask(
+    { id: crypto.randomUUID(), title: "Shared snapshot one" },
+    scoped,
+  );
+  await client.createTask(
+    { id: crypto.randomUUID(), title: "Shared snapshot two" },
+    scoped,
+  );
+  const detail = await households.getHousehold({ id: householdId }, owner);
+  const erase = {
+    operationId: crypto.randomUUID(),
+    householdId,
+    expectedRevision: detail.household!.revision,
+    action: HouseholdAction.ERASE_CONTENT,
+  };
+  await assert.rejects(
+    households.changeHousehold(erase, owner),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.FailedPrecondition,
+  );
+  const confirmed = { ...erase, confirmContentErasure: true };
+  await assert.rejects(
+    households.changeHousehold(confirmed, other),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.PermissionDenied,
+  );
+  await fetch("http://127.0.0.1:8792/fault", {
+    method: "POST",
+    headers: { authorization: "Bearer local-erasure-only" },
+    body: JSON.stringify({ fail_next: "after" }),
+  });
+  await assert.rejects(
+    households.changeHousehold(confirmed, owner),
+    (e: unknown) => e instanceof ConnectError && e.code === Code.Unavailable,
+  );
+  const pending = await households.getHousehold({ id: householdId }, owner);
+  assert.equal(pending.pendingContentErasure!.operationId, erase.operationId);
+  assert.equal(pending.pendingContentErasure!.collections, 2n);
+  assert.equal(pending.usage!.items, 2n);
+  await assert.rejects(
+    client.createTask(
+      { id: crypto.randomUUID(), title: "Must wait for erasure" },
+      scoped,
+    ),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.FailedPrecondition,
+  );
+  assert.equal((await client.listTasks({}, scoped)).tasks.length, 2);
+  await households.changeHousehold(confirmed, owner);
+  assert.equal((await client.listTasks({}, scoped)).tasks.length, 0);
+  await assert.rejects(
+    lists.getCollection({ id: first.id }, scoped),
+    (e: unknown) => e instanceof ConnectError && e.code === Code.NotFound,
+  );
+  const after = await households.getHousehold({ id: householdId }, owner);
+  assert.equal(after.pendingContentErasure, undefined);
+  assert.equal(after.household!.isHead, true);
+  assert.equal(after.capacity!.bytes, 128000n);
+  assert.equal(
+    (await client.listTasks({}, owner)).tasks.some(
+      (t) => t.id === privateTask.id,
+    ),
+    true,
+  );
+  const later = await client.createTask(
+    { id: crypto.randomUUID(), title: "Created after protected erasure" },
+    scoped,
+  );
+  await households.changeHousehold(confirmed, owner);
+  assert.deepEqual(
+    (await client.listTasks({}, scoped)).tasks.map((t) => t.id),
+    [later.id],
+  );
+});
+
+test("operator-only policy previews admit a pilot, preserve over-quota content, and revoke an existing session", async () => {
+  const owner = await login();
+  const subject = `development-policy-${crypto.randomUUID()}`;
+  const request = {
+    operationId: crypto.randomUUID(),
+    subject,
+    displayName: "Policy tester",
+    approved: true,
+    createAccount: true,
+    plan: {
+      items: 20n,
+      shopping: 2n,
+      templates: 2n,
+      runs: 2n,
+      bytes: 128000n,
+      households: 3n,
+    },
+  };
+  await assert.rejects(
+    operator.previewAccountPolicy(request, owner),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.Unauthenticated,
+  );
+  await assert.rejects(
+    operator.previewAccountPolicy(request, {
+      headers: { authorization: `Bearer ${"ab".repeat(32)}` },
+    }),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.Unauthenticated,
+  );
+  const admin = { headers: { authorization: `Bearer ${"cd".repeat(32)}` } };
+  const preview = await operator.previewAccountPolicy(request, admin);
+  assert.equal(preview.allowed, true);
+  assert.equal(preview.accountExists, false);
+  await assert.rejects(
+    operator.applyAccountPolicy(request, admin),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.FailedPrecondition,
+  );
+  const admitted = await operator.applyAccountPolicy(
+    { ...request, previewToken: preview.previewToken },
+    admin,
+  );
+  assert.equal(admitted.revision, 1n);
+  assert.equal(
+    (
+      await operator.applyAccountPolicy(
+        { ...request, previewToken: preview.previewToken },
+        admin,
+      )
+    ).publicId,
+    admitted.publicId,
+  );
+  const policy = await operator.getAccountPolicy({ subject }, admin);
+  assert.equal(policy.displayName, "Policy tester");
+  const person = await login(subject);
+  const task = await client.createTask(
+    { id: crypto.randomUUID(), title: "Preserve this saved task" },
+    person,
+  );
+  const reduction = {
+    ...request,
+    operationId: crypto.randomUUID(),
+    createAccount: false,
+    expectedRevision: 1n,
+    plan: { ...request.plan, items: 0n },
+  };
+  const smaller = await operator.previewAccountPolicy(reduction, admin);
+  assert.equal(smaller.allowed, true);
+  assert.equal(
+    smaller.spaces.find((s) => s.id === "personal")!.exceedsAfter,
+    true,
+  );
+  await operator.applyAccountPolicy(
+    { ...reduction, previewToken: smaller.previewToken },
+    admin,
+  );
+  assert.equal((await client.listTasks({}, person)).tasks[0].id, task.id);
+  await assert.rejects(
+    client.createTask(
+      { id: crypto.randomUUID(), title: "Cannot grow over quota" },
+      person,
+    ),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.ResourceExhausted,
+  );
+  const revoked = {
+    ...reduction,
+    operationId: crypto.randomUUID(),
+    expectedRevision: 2n,
+    approved: false,
+  };
+  const revocation = await operator.previewAccountPolicy(revoked, admin);
+  await operator.applyAccountPolicy(
+    { ...revoked, previewToken: revocation.previewToken },
+    admin,
+  );
+  await assert.rejects(
+    client.listTasks({}, person),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.Unauthenticated,
+  );
+  const restored = {
+    ...revoked,
+    operationId: crypto.randomUUID(),
+    expectedRevision: 3n,
+    approved: true,
+  };
+  const restoration = await operator.previewAccountPolicy(restored, admin);
+  await operator.applyAccountPolicy(
+    { ...restored, previewToken: restoration.previewToken },
+    admin,
+  );
+  await assert.rejects(
+    client.listTasks({}, person),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.Unauthenticated,
+  );
+  const fresh = await login(subject);
+  assert.equal((await client.listTasks({}, fresh)).tasks[0].id, task.id);
+  await assert.rejects(
+    operator.previewAccountPolicy(
+      { ...request, subject: `household:${crypto.randomUUID()}` },
+      admin,
+    ),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.InvalidArgument,
+  );
+});
+
+test("operator plan reductions require explicit allocation replacements and reject a stale retained-usage preview", async () => {
+  const admin = { headers: { authorization: `Bearer ${"cd".repeat(32)}` } };
+  const subject = `development-replacement-${crypto.randomUUID()}`;
+  const initial = {
+    operationId: crypto.randomUUID(),
+    subject,
+    displayName: "Replacement tester",
+    approved: true,
+    createAccount: true,
+    plan: {
+      items: 20n,
+      shopping: 2n,
+      templates: 2n,
+      runs: 2n,
+      bytes: 128000n,
+      households: 3n,
+    },
+  };
+  const admission = await operator.previewAccountPolicy(initial, admin);
+  await operator.applyAccountPolicy(
+    { ...initial, previewToken: admission.previewToken },
+    admin,
+  );
+  const person = await login(subject);
+  const householdId = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      action: HouseholdAction.CREATE,
+      name: "Explicit replacement",
+      amounts: { items: 5n, bytes: 32000n },
+    },
+    person,
+  );
+  const scoped = { headers: { ...person.headers, "x-space-id": householdId } };
+  await client.createTask(
+    {
+      id: crypto.randomUUID(),
+      title: "Preserve shared content despite plan loss",
+    },
+    scoped,
+  );
+  const detail = await households.getHousehold({ id: householdId }, person);
+  const reduction = {
+    ...initial,
+    operationId: crypto.randomUUID(),
+    createAccount: false,
+    expectedRevision: 1n,
+    plan: { ...initial.plan, items: 1n },
+  };
+  assert.equal(
+    (await operator.previewAccountPolicy(reduction, admin)).allowed,
+    false,
+  );
+  const explicit = {
+    ...reduction,
+    replacements: [
+      {
+        householdId,
+        expectedRevision: detail.household!.revision,
+        amounts: { items: 0n, bytes: 32000n },
+      },
+    ],
+  };
+  const preview = await operator.previewAccountPolicy(explicit, admin);
+  assert.equal(preview.allowed, true);
+  assert.equal(
+    preview.spaces.find((s) => s.id === householdId)!.exceedsAfter,
+    true,
+  );
+  const cut = preview.spaces.find((space) => space.id === householdId)!;
+  assert.equal(cut.ownAllocationBefore!.items, 5n);
+  assert.equal(cut.ownAllocationAfter!.items, 0n);
+  await client.createTask(
+    { id: crypto.randomUUID(), title: "Changed after preview" },
+    scoped,
+  );
+  await assert.rejects(
+    operator.applyAccountPolicy(
+      { ...explicit, previewToken: preview.previewToken },
+      admin,
+    ),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.FailedPrecondition,
+  );
+  const updated = await operator.previewAccountPolicy(explicit, admin);
+  await operator.applyAccountPolicy(
+    { ...explicit, previewToken: updated.previewToken },
+    admin,
+  );
+  assert.equal(
+    (await households.getHousehold({ id: householdId }, person)).capacity!
+      .items,
+    0n,
+  );
+  assert.equal((await client.listTasks({}, scoped)).tasks.length, 2);
+  await assert.rejects(
+    client.createTask(
+      { id: crypto.randomUUID(), title: "No growth in unfunded space" },
+      scoped,
+    ),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.ResourceExhausted,
+  );
+  const privateTask = await client.createTask(
+    { id: crypto.randomUUID(), title: "Remaining personal item slot" },
+    person,
+  );
+  assert.equal(
+    (
+      await operator.applyAccountPolicy(
+        { ...explicit, previewToken: updated.previewToken },
+        admin,
+      )
+    ).revision,
+    2n,
+  );
+  assert.equal(
+    (await client.listTasks({}, person)).tasks[0].id,
+    privateTask.id,
+  );
+});
+
+test("operator structural caps preserve oversized collections and reject further growth", async () => {
+  const owner = await login();
+  const admin = { headers: { authorization: `Bearer ${"cd".repeat(32)}` } };
+  await assert.rejects(
+    operator.getStructuralPolicy({}, owner),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.Unauthenticated,
+  );
+  const initial = await operator.getStructuralPolicy({}, admin);
+  let collection = (
+    await lists.applyChange(
+      {
+        operationId: crypto.randomUUID(),
+        collectionId: crypto.randomUUID(),
+        action: ChangeAction.CREATE_COLLECTION,
+        details: {
+          kind: CollectionKind.SHOPPING,
+          title: "Retained structural overage",
+        },
+      },
+      owner,
+    )
+  ).collection!;
+  for (const title of ["Existing first item", "Existing second item"])
+    collection = (
+      await lists.applyChange(
+        changeRequest(collection, ChangeAction.CREATE_ITEM, {
+          item: { id: crypto.randomUUID(), title },
+          position: collection.items.length,
+        }),
+        owner,
+      )
+    ).collection!;
+  const change = {
+    operationId: crypto.randomUUID(),
+    expectedRevision: initial.revision,
+    maxItemsPerCollection: 1n,
+    maxSectionsPerCollection: 0n,
+  };
+  await assert.rejects(
+    operator.setStructuralPolicy(change, admin),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.FailedPrecondition,
+  );
+  try {
+    const saved = await operator.setStructuralPolicy(
+      { ...change, confirmed: true },
+      admin,
+    );
+    assert.equal(saved.maxItemsPerCollection, 1n);
+    assert.equal(
+      (
+        await operator.setStructuralPolicy(
+          { ...change, confirmed: true },
+          admin,
+        )
+      ).revision,
+      saved.revision,
+    );
+    assert.equal(
+      (await lists.getCollection({ id: collection.id }, owner)).items.length,
+      2,
+    );
+    await assert.rejects(
+      lists.applyChange(
+        changeRequest(collection, ChangeAction.CREATE_ITEM, {
+          item: {
+            id: crypto.randomUUID(),
+            title: "Cannot exceed the structural cap",
+          },
+          position: 2,
+        }),
+        owner,
+      ),
+      (e: unknown) =>
+        e instanceof ConnectError && e.code === Code.ResourceExhausted,
+    );
+    assert.equal(
+      (await lists.getCollection({ id: collection.id }, owner)).items.length,
+      2,
+    );
+  } finally {
+    const current = await operator.getStructuralPolicy({}, admin);
+    await operator.setStructuralPolicy(
+      {
+        operationId: crypto.randomUUID(),
+        expectedRevision: current.revision,
+        maxItemsPerCollection: initial.maxItemsPerCollection,
+        maxSectionsPerCollection: initial.maxSectionsPerCollection,
+        confirmed: true,
+      },
+      admin,
+    );
+  }
 });

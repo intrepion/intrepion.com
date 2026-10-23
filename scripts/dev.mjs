@@ -1,3 +1,4 @@
+import { seedLocalPilot } from "./local-pilot.mjs";
 import {
   start,
   stop,
@@ -18,6 +19,7 @@ process.once("SIGTERM", () => void close());
 try {
   await run("cargo", ["build", "--locked", "--features", "dev-auth"]);
   await run("npm", ["run", "db:migrate"], { env: localEnv });
+  await seedLocalPilot();
   children.push(
     start(
       "node",

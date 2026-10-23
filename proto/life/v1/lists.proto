@@ -96,6 +96,7 @@ message PendingErasure {
   uint32 expected_revision = 2;
   string target_id = 3;
   bool whole_collection = 4;
+  bool confirmed_active_erasure = 5;
 }
 message CollectionDetails {
   CollectionKind kind = 1;
@@ -117,6 +118,9 @@ message ChangeRequest {
   uint32 position = 9;
   // START_RUN: collection_id is the new run ID; expected_revision is the source's revision.
   string source_id = 10;
+  // Separate explicit confirmation for storage recovery; never inferred from Trash.
+  // Allows erasing the selected active target without first adding Trash History.
+  bool confirmed_active_erasure = 11;
 }
 message ChangeResult {
   Collection collection = 1;

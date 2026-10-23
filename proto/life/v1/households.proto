@@ -1,0 +1,125 @@
+syntax = "proto3";
+package life.v1;
+import "life/v1/tasks.proto";
+import "life/v1/lists.proto";
+
+service HouseholdService {
+  rpc GetOverview(Empty) returns (AccountOverview);
+  rpc GetHousehold(HouseholdKey) returns (HouseholdDetails);
+  rpc ChangeHousehold(HouseholdChange) returns (HouseholdMutationResult);
+  rpc PreviewAllocation(AllocationRequest) returns (AllocationPreview);
+  rpc GetInvitation(InvitationKey) returns (InvitationPreview);
+  rpc PreviewCopy(CopyRequest) returns (CopyPreview);
+  rpc CopyCollection(CopyRequest) returns (ChangeResult);
+  rpc ListHouseholdActivity(HouseholdActivityQuery) returns (HouseholdActivityPage);
+}
+message ResourceAmounts {
+  uint64 items = 1;
+  uint64 shopping = 2;
+  uint64 templates = 3;
+  uint64 runs = 4;
+  uint64 bytes = 5;
+  uint64 households = 6;
+}
+message PilotIdentity { string id = 1; string name = 2; }
+message HouseholdKey { string id = 1; }
+message HouseholdSummary {
+  string id = 1;
+  string name = 2;
+  string status = 3;
+  bool is_head = 4;
+  ResourceAmounts own_contribution = 5;
+  int64 erase_due_at = 6;
+  bool erasure_delayed = 7;
+  uint64 revision = 8;
+  bool closure_protection_pending = 9;
+}
+message AccountOverview {
+  PilotIdentity identity = 1;
+  ResourceAmounts plan = 2;
+  ResourceAmounts personal_capacity = 3;
+  ResourceAmounts personal_usage = 4;
+  repeated HouseholdSummary households = 5;
+  bool plan_configured = 6;
+  uint64 max_items_per_collection = 7;
+  uint64 max_sections_per_collection = 8;
+}
+message HouseholdHead { PilotIdentity identity = 1; ResourceAmounts ceilings = 2; ResourceAmounts usage = 3; }
+message HouseholdContribution { PilotIdentity identity = 1; ResourceAmounts capacity = 2; bool is_head = 3; }
+message HouseholdInvitation { string id = 1; PilotIdentity recipient = 2; string status = 3; int64 expires_at = 4; }
+message HouseholdDetails {
+  HouseholdSummary household = 1;
+  ResourceAmounts capacity = 2;
+  ResourceAmounts usage = 3;
+  repeated HouseholdHead heads = 4;
+  repeated HouseholdContribution contributions = 5;
+  repeated HouseholdInvitation invitations = 6;
+  // Preview only: the exact UTC month boundary if the last head leaves now.
+  int64 closure_erase_due_at = 7;
+  PendingHouseholdErasure pending_content_erasure = 8;
+}
+enum HouseholdAction {
+  HOUSEHOLD_ACTION_UNSPECIFIED = 0;
+  HOUSEHOLD_ACTION_CREATE = 1;
+  HOUSEHOLD_ACTION_INVITE = 2;
+  HOUSEHOLD_ACTION_REVOKE_INVITATION = 3;
+  HOUSEHOLD_ACTION_ACCEPT_INVITATION = 4;
+  HOUSEHOLD_ACTION_REMOVE_HEAD = 5;
+  HOUSEHOLD_ACTION_LEAVE = 6;
+  HOUSEHOLD_ACTION_SET_OWN_CEILINGS = 7;
+  HOUSEHOLD_ACTION_ALLOCATE = 8;
+  HOUSEHOLD_ACTION_ERASE_CONTENT = 9;
+}
+message HouseholdChange {
+  string operation_id = 1;
+  string household_id = 2;
+  uint64 expected_revision = 3;
+  HouseholdAction action = 4;
+  string name = 5;
+  string target_id = 6;
+  ResourceAmounts amounts = 7;
+  // The inviter generates 32 random bytes as lowercase hex and retains them for retry.
+  // Only its SHA-256 digest is stored by the server; the link is recipient-bound.
+  string invitation_token = 8;
+  bool confirm_close = 9;
+  // Reconfirm if the UTC month boundary changed since the closure preview.
+  int64 expected_erase_due_at = 10;
+  bool confirm_content_erasure = 11;
+}
+message HouseholdMutationResult { string household_id = 1; string invitation_id = 2; }
+message AllocationRequest { string household_id = 1; ResourceAmounts amounts = 2; }
+message AllocationPreview {
+  bool allowed = 1;
+  string reason = 2;
+  ResourceAmounts current = 3;
+  ResourceAmounts requested = 4;
+  ResourceAmounts personal_before = 5;
+  ResourceAmounts personal_after = 6;
+  // Shared totals are omitted for former heads. Eligibility does not grant content access.
+  ResourceAmounts household_before = 7;
+  ResourceAmounts household_after = 8;
+  ResourceAmounts household_usage = 9;
+}
+message InvitationKey { string token = 1; }
+message InvitationPreview { string household_id = 1; string household_name = 2; string status = 3; int64 expires_at = 4; }
+message CopyRequest {
+  string operation_id = 1;
+  string source_collection_id = 2;
+  uint32 expected_source_revision = 3;
+  string household_id = 4;
+  string destination_collection_id = 5;
+}
+message CopyPreview { bool allowed = 1; string reason = 2; ResourceAmounts required = 3; ResourceAmounts destination_usage = 4; ResourceAmounts destination_capacity = 5; }
+message HouseholdActivityQuery { string household_id = 1; uint64 before_sequence = 2; }
+message HouseholdActivityEntry { uint64 sequence = 1; PilotIdentity actor = 2; string action = 3; int64 occurred_at = 4; string details_json = 5; }
+message HouseholdActivityPage { repeated HouseholdActivityEntry entries = 1; uint64 next_before_sequence = 2; }
+
+// Private operator automation; never authorized by a household session.
+service HouseholdMaintenanceService {
+  rpc EraseDueHouseholds(HouseholdMaintenanceQuery) returns (HouseholdMaintenanceResult);
+}
+message HouseholdMaintenanceResult { uint32 protected_closures = 1; uint32 erased_households = 2; }
+
+message HouseholdMaintenanceQuery { string household_id = 1; }
+
+message PendingHouseholdErasure { string operation_id = 1; uint64 expected_revision = 2; uint64 collections = 3; }

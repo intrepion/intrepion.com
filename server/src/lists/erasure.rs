@@ -8,6 +8,7 @@ pub(super) struct Intent {
     pub(super) expected_revision: u32,
     pub(super) target_id: String,
     pub(super) scope: String,
+    pub(super) confirmed_active_erasure: i32,
 }
 impl Lists {
     pub(super) async fn ensure_not_retired(
@@ -60,9 +61,9 @@ impl Lists {
             return Err(conflict());
         }
         if whole {
-            if !c.trashed {
+            if !c.trashed && !r.confirmed_active_erasure {
                 return Err(ConnectError::failed_precondition(
-                    "Move this collection to Trash before erasing it.",
+                    "Move this collection to Trash or explicitly confirm active-content recovery erasure.",
                 ));
             }
         } else {
@@ -71,20 +72,21 @@ impl Lists {
                 .iter()
                 .find(|i| i.id == r.target_id)
                 .ok_or_else(|| ConnectError::not_found("Item no longer exists."))?;
-            if !item.trashed {
+            if !item.trashed && !r.confirmed_active_erasure {
                 return Err(ConnectError::failed_precondition(
-                    "Move this item to Trash before erasing it.",
+                    "Move this item to Trash or explicitly confirm active-content recovery erasure.",
                 ));
             }
             c.revision.checked_add(1).ok_or_else(conflict)?;
         }
-        self.0.db.query::<serde_json::Value>("INSERT INTO erasure_intents(owner_sub,collection_id,operation_id,fingerprint,expected_revision,target_id,scope) SELECT ?,?,?,?,?,?,? FROM collections WHERE owner_sub=? AND id=? AND revision=? ON CONFLICT(collection_id) DO NOTHING",&[self.owner(),c.id.clone(),r.operation_id.clone(),fingerprint.into(),r.expected_revision.to_string(),r.target_id.clone(),scope.into(),self.owner(),c.id.clone(),r.expected_revision.to_string()]).await?;
-        let intent=self.0.db.query::<Intent>("SELECT operation_id,fingerprint,expected_revision,target_id,scope FROM erasure_intents WHERE owner_sub=? AND collection_id=?",&[self.owner(),c.id.clone()]).await?.pop().ok_or_else(conflict)?;
+        self.0.db.query::<serde_json::Value>("INSERT INTO erasure_intents(owner_sub,collection_id,operation_id,fingerprint,expected_revision,target_id,scope,confirmed_active_erasure) SELECT ?,?,?,?,?,?,?,? FROM collections WHERE owner_sub=? AND id=? AND revision=? ON CONFLICT(collection_id) DO NOTHING",&[self.owner(),c.id.clone(),r.operation_id.clone(),fingerprint.into(),r.expected_revision.to_string(),r.target_id.clone(),scope.into(),i32::from(r.confirmed_active_erasure).to_string(),self.owner(),c.id.clone(),r.expected_revision.to_string()]).await?;
+        let intent=self.0.db.query::<Intent>("SELECT operation_id,fingerprint,expected_revision,target_id,scope,confirmed_active_erasure FROM erasure_intents WHERE owner_sub=? AND collection_id=?",&[self.owner(),c.id.clone()]).await?.pop().ok_or_else(conflict)?;
         if intent.operation_id != r.operation_id
             || intent.fingerprint != fingerprint
             || intent.target_id != r.target_id
             || intent.scope != scope
             || intent.expected_revision != r.expected_revision
+            || intent.confirmed_active_erasure != i32::from(r.confirmed_active_erasure)
         {
             return Err(ConnectError::failed_precondition(
                 "Another erasure is pending for this collection. Retry that action first.",
@@ -102,14 +104,19 @@ impl Lists {
                 .into()
         };
         ledger
-            .publish(&ErasureRecord {
-                version: 1,
-                database_id,
-                operation_id: r.operation_id.clone(),
-                collection_id: c.id.clone(),
-                scope: scope.into(),
-                target_id: r.target_id.clone(),
-            })
+            .publish(
+                &ErasureRecord {
+                    version: 1,
+                    erase_due_at: None,
+                    collection_ids: None,
+                    database_id,
+                    operation_id: r.operation_id.clone(),
+                    collection_id: c.id.clone(),
+                    scope: scope.into(),
+                    target_id: r.target_id.clone(),
+                }
+                .namespaced(&self.owner()),
+            )
             .await?;
         let guard = "EXISTS(SELECT 1 FROM erasure_intents e JOIN collections c ON c.id=e.collection_id AND c.owner_sub=e.owner_sub WHERE e.owner_sub=? AND e.collection_id=? AND e.operation_id=? AND e.fingerprint=? AND c.revision=e.expected_revision)";
         let guard_params = vec![
@@ -178,9 +185,7 @@ impl Lists {
             statements.push(Statement::new(&sql.replace("@guard", guard), params));
         }
         statements.push(Statement::new("DELETE FROM erasure_intents WHERE owner_sub=? AND collection_id=? AND operation_id=? AND EXISTS(SELECT 1 FROM collection_operations WHERE owner_sub=? AND operation_id=? AND fingerprint=? AND erased_scope=?)",vec![self.owner(),c.id.clone(),r.operation_id.clone(),self.owner(),r.operation_id.clone(),fingerprint.into(),scope.into()]));
-        self.0
-            .db
-            .batch(&statements)
+        self.write_batch(statements, &r.operation_id, &r.collection_id)
             .await
             .map_err(|_| unavailable())?;
         let receipt = self

@@ -11,11 +11,12 @@ import {
   type HistoryEntry,
   type TrashedItem,
 } from "../gen/life/v1/lists_pb";
-import { Api, needsLogin } from "../lib/api";
+import { Api, needsLogin, ContextChanged } from "../lib/api";
 
 type Hooks = {
   show(): void;
   tasks(): void;
+  copy(source: Collection): void;
   busy(value: boolean): void;
   expired(): void;
   announce(message: string): void;
@@ -87,11 +88,15 @@ export class Everyday {
   private problem = "";
   private working = false;
   private reviewed = false;
+  private storageRecoveryAvailable = false;
   constructor(
     private root: HTMLElement,
     private api: Api,
     private hooks: Hooks,
   ) {}
+  hasPending() {
+    return !!this.pending;
+  }
   dirty() {
     return (
       !!this.pending ||
@@ -111,6 +116,7 @@ export class Everyday {
   }
   reset() {
     this.active = false;
+    this.storageRecoveryAvailable = false;
     this.listLoaded = false;
     this.collection = undefined;
     this.history = undefined;
@@ -169,6 +175,36 @@ export class Everyday {
       this.render();
     });
   }
+  async openCollection(id: string) {
+    this.reset();
+    this.active = true;
+    this.area = "normal";
+    this.hooks.show();
+    await this.run(async () => {
+      this.collection = await this.api.lists.getCollection(
+        { id },
+        { timeoutMs: 90000 },
+      );
+      this.kind = this.collection.kind;
+      this.render();
+    });
+  }
+  async storageRecovery(id: string) {
+    this.reset();
+    this.active = true;
+    this.kind = Kind.TASK;
+    this.area = "normal";
+    this.hooks.show();
+    await this.run(async () => {
+      this.collection = await this.api.lists.getCollection(
+        { id },
+        { timeoutMs: 90000 },
+      );
+      this.kind = this.collection.kind;
+      this.storageRecoveryAvailable = true;
+      this.render();
+    });
+  }
   private async run(work: () => Promise<void>) {
     if (this.working) return;
     this.working = true;
@@ -176,17 +212,30 @@ export class Everyday {
     try {
       await work();
     } catch (error) {
+      if (error instanceof ContextChanged) return;
       if (needsLogin(error)) {
         this.problem =
           "Your session expired before this action was confirmed. Your draft is preserved. Retry the same action after signing in.";
         this.hooks.expired();
         return;
       }
+      if (
+        error instanceof ConnectError &&
+        error.code === Code.ResourceExhausted
+      ) {
+        this.pending = undefined;
+        this.storageRecoveryAvailable =
+          error.rawMessage.includes("storage allowance");
+      }
       this.problem =
         error instanceof ConnectError &&
-        [Code.FailedPrecondition, Code.InvalidArgument, Code.NotFound].includes(
-          error.code,
-        )
+        [
+          Code.FailedPrecondition,
+          Code.InvalidArgument,
+          Code.NotFound,
+          Code.ResourceExhausted,
+          Code.Unavailable,
+        ].includes(error.code)
           ? error.rawMessage
           : "The action could not be confirmed. Your draft and last confirmed state are unchanged.";
       this.render();
@@ -267,7 +316,8 @@ export class Everyday {
         this.trashedItems = this.trashedItems.filter(
           (i) => i.parent?.id !== request.collectionId,
         );
-        await this.fetchList();
+        if (this.kind === Kind.TASK) this.hooks.tasks();
+        else await this.fetchList();
       } else this.render();
       this.hooks.announce("Saved.");
     });
@@ -324,6 +374,20 @@ export class Everyday {
         );
       this.root.append(box);
     }
+    if (
+      this.storageRecoveryAvailable &&
+      this.collection &&
+      !this.collection.trashed &&
+      !this.collection.erasurePending &&
+      !this.pending
+    )
+      this.root.append(
+        button(
+          "Erase active content permanently",
+          () => void this.eraseActive(),
+          "danger",
+        ),
+      );
     if (this.history) {
       this.renderHistory();
       return;
@@ -480,6 +544,13 @@ export class Everyday {
     this.root.append(heading);
     const actions = el("div", "", "everyday-actions");
     actions.append(button("History", () => void this.loadHistory()));
+    if (
+      this.api.space === "personal" &&
+      !c.trashed &&
+      !c.erasurePending &&
+      !this.pending
+    )
+      actions.append(button("Copy to household", () => this.hooks.copy(c)));
     if (this.writable()) {
       actions.append(button("Edit collection", () => this.edit("collection")));
       if (c.kind !== Kind.TASK)
@@ -585,6 +656,7 @@ export class Everyday {
                     ? Action.ERASE_COLLECTION
                     : Action.ERASE_ITEM,
                   targetId: pending.targetId,
+                  confirmedActiveErasure: pending.confirmedActiveErasure,
                 }),
               ),
           ),
@@ -1111,6 +1183,27 @@ export class Everyday {
       this.collection = undefined;
       await this.load();
     }
+  }
+  private async eraseActive() {
+    const collection = this.collection;
+    if (!collection || collection.erasurePending || this.pending) return;
+    const item = this.draft?.mode === "item" ? this.draft.original : undefined;
+    if (
+      !(await this.hooks.confirm(
+        "Permanently erase this active content?",
+        "Storage recovery permanently erases the selected content and its associated History. A whole collection includes all child items and sections. Independent copies elsewhere remain. Unsaved edits to this target are discarded only after confirmation. Recovery protection must succeed before capacity is released.",
+        "Erase permanently",
+        "Cancel",
+        `${item?.title ?? collection.title} · ${this.api.spaceLabel}`,
+      ))
+    )
+      return;
+    await this.save(
+      this.request(item ? Action.ERASE_ITEM : Action.ERASE_COLLECTION, {
+        targetId: item?.id ?? "",
+        confirmedActiveErasure: true,
+      }),
+    );
   }
   private async loadHistory(more = false) {
     await this.run(async () => {

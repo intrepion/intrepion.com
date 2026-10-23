@@ -90,7 +90,7 @@ try {
   const pilotFixture = join(state, "pilot-fixture.sql");
   await writeFile(
     pilotFixture,
-    "INSERT INTO pilot_accounts(subject,display_name) VALUES('development-second','Second pilot user');",
+    'INSERT INTO pilot_accounts(subject,display_name) VALUES(\'development-second\',\'Second pilot user\'); UPDATE pilot_accounts SET plan_revision=1,plan_json=\'{"items":1000000,"shopping":10000,"templates":10000,"runs":10000,"bytes":1073741824,"households":100}\';',
   );
   await run(
     "node",
@@ -106,6 +106,28 @@ try {
       state,
       "--file",
       pilotFixture,
+    ],
+    { env: localEnv },
+  );
+  const structureFixture = join(state, "structure-fixture.sql");
+  await writeFile(
+    structureFixture,
+    "UPDATE operator_settings SET max_items_per_collection=10000,max_sections_per_collection=1000 WHERE id=1;",
+  );
+  await run(
+    "node",
+    [
+      "node_modules/wrangler/bin/wrangler.js",
+      "d1",
+      "execute",
+      "DB",
+      "--local",
+      "--config",
+      "server/local/wrangler.toml",
+      "--persist-to",
+      state,
+      "--file",
+      structureFixture,
     ],
     { env: localEnv },
   );
@@ -145,7 +167,11 @@ try {
       "server/tests/rpc.test.ts",
     ],
     {
-      env: localEnv,
+      env: {
+        ...localEnv,
+        HOUSEHOLD_MAINTENANCE_TOKEN: "ab".repeat(32),
+        PILOT_OPERATOR_TOKEN: "cd".repeat(32),
+      },
     },
   );
 } finally {

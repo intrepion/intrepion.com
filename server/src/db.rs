@@ -100,10 +100,28 @@ impl Database {
         if response.status() == 429 || response.status().is_server_error() {
             return Err(unavailable());
         }
-        if !response.status().is_success() {
+        let successful = response.status().is_success();
+        let body: serde_json::Value = response.json().await.map_err(|_| failed())?;
+        if let Some(errors) = body.get("errors").and_then(|value| value.as_array()) {
+            for error in errors {
+                for (constraint, message) in crate::capacity::LIMIT_ERRORS {
+                    if error.get("constraint").and_then(|value| value.as_str()) == Some(constraint)
+                        || error
+                            .get("message")
+                            .and_then(|value| value.as_str())
+                            .is_some_and(|message| {
+                                message.contains(&format!("CHECK constraint failed: {constraint}"))
+                            })
+                    {
+                        return Err(connectrpc::ConnectError::resource_exhausted(message));
+                    }
+                }
+            }
+        }
+        if !successful {
             return Err(failed());
         }
-        response.json().await.map_err(|_| failed())
+        Ok(body)
     }
 }
 

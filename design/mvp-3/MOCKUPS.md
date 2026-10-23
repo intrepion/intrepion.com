@@ -60,3 +60,7 @@ node design/mvp-3/render-mockups.mjs
 ```
 
 The design-only renderer reads the approved wireframe panels and `mockups.css`, then emits five standalone HTML documents with embedded styles and inline vector marks. It performs no network calls and is separate from production builds.
+
+## Approved storage-recovery amendment
+
+The owner approved explicit permanent erasure of selected active content when full storage prevents adding Trash History. The full-storage wireframe and mockup now show the existing scope-confirmation pattern for this entry point. In the standalone prototype, simulate full storage, open a task or collection, and choose **Erase permanently · storage recovery**. Cancel keeps the content; confirmation removes the selected target and associated child content/History, leaves independent copies alone, and simulates recovery protection before freeing capacity. Normal Trash behavior is unchanged.

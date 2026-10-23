@@ -1,3 +1,4 @@
+mod copy;
 mod erasure;
 mod writes;
 use crate::{auth::SharedAuth, db::Statement, proto::life::v1::*};
@@ -10,6 +11,7 @@ use writes::{Writes, history_writes, json_chunks};
 #[derive(Clone, Default)]
 pub(crate) struct Scope {
     pub owner: String,
+    pub actor: String,
 }
 pub struct Lists(pub SharedAuth, pub(crate) Scope);
 #[derive(Deserialize)]
@@ -70,6 +72,7 @@ struct HistoryRow {
     occurred_at: i64,
     before_json: String,
     after_json: String,
+    actor: String,
 }
 #[derive(Deserialize)]
 struct SectionRow {
@@ -208,12 +211,64 @@ impl Lists {
         ctx: &RequestContext,
     ) -> Result<Self, ConnectError> {
         let session = auth.authorize_rpc(ctx).await?;
+        let selected = ctx
+            .headers()
+            .get("x-space-id")
+            .map(|value| value.to_str().map(str::to_owned))
+            .transpose()
+            .map_err(|_| ConnectError::invalid_argument("Invalid space selection."))?
+            .unwrap_or_default();
+        let owner = if selected.is_empty() || selected == "personal" {
+            session.user_sub.clone()
+        } else {
+            crate::households::Households(auth.clone())
+                .require_head(&selected, &session.user_sub)
+                .await?
+                .scope_sub
+        };
         Ok(Self(
             auth,
             Scope {
-                owner: session.user_sub,
+                owner,
+                actor: session.user_sub,
             },
         ))
+    }
+
+    fn access_guard(&self) -> Statement {
+        Statement::new(
+            "INSERT INTO invariant_guards(valid) SELECT EXISTS(SELECT 1 FROM pilot_accounts a WHERE a.subject=? AND a.approved=1 AND (?=a.subject OR EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id WHERE m.subject=a.subject AND m.active=1 AND h.status='active' AND h.scope_sub=? AND NOT EXISTS(SELECT 1 FROM household_content_erasures e WHERE e.household_id=h.id AND e.completed=0))))",
+            vec![self.1.actor.clone(), self.owner(), self.owner()],
+        )
+    }
+    pub(super) async fn write_batch(
+        &self,
+        mut statements: Vec<Statement>,
+        operation: &str,
+        collection: &str,
+    ) -> Result<(), ConnectError> {
+        if !self.0.db.query::<serde_json::Value>("SELECT 1 FROM household_content_erasures e JOIN households h ON h.id=e.household_id WHERE h.scope_sub=? AND e.completed=0",&[self.owner()]).await?.is_empty() {
+            return Err(ConnectError::failed_precondition("Shared-content erasure is pending. Finish that erasure before changing household content."));
+        }
+        statements.insert(0, self.access_guard());
+        statements.insert(
+            1,
+            crate::capacity::snapshot(&self.owner(), &self.1.actor, collection),
+        );
+        statements.push(Statement::new(
+            "UPDATE collections SET creator_sub=? WHERE owner_sub=? AND creator_sub=''",
+            vec![self.1.actor.clone(), self.owner()],
+        ));
+        statements.push(Statement::new(
+            "UPDATE list_items SET creator_sub=? WHERE owner_sub=? AND creator_sub=''",
+            vec![self.1.actor.clone(), self.owner()],
+        ));
+        statements.push(Statement::new("UPDATE collection_history SET actor_sub=? WHERE owner_sub=? AND operation_id=? AND actor_sub=''",vec![self.1.actor.clone(),self.owner(),operation.into()]));
+        statements.push(self.access_guard());
+        statements.extend(crate::capacity::content_checks());
+        statements.push(Statement::new("DELETE FROM invariant_guards", vec![]));
+        self.0.db.batch(&statements).await?;
+        Ok(())
     }
     pub(crate) async fn get(&self, id: &str) -> Result<Collection, ConnectError> {
         if !valid_id(id) {
@@ -223,7 +278,7 @@ impl Lists {
             Statement::new("SELECT c.*,EXISTS(SELECT 1 FROM erasure_intents e WHERE e.collection_id=c.id) AS erasure_pending FROM collections c WHERE owner_sub=? AND id=?",vec![self.owner(),id.into()]),
             Statement::new("SELECT id,title,position FROM list_sections WHERE owner_sub=? AND collection_id=? ORDER BY position,id",vec![self.owner(),id.into()]),
             Statement::new("SELECT * FROM list_items WHERE owner_sub=? AND collection_id=? ORDER BY position,id",vec![self.owner(),id.into()]),
-            Statement::new("SELECT operation_id,fingerprint,expected_revision,target_id,scope FROM erasure_intents WHERE owner_sub=? AND collection_id=?",vec![self.owner(),id.into()]),
+            Statement::new("SELECT operation_id,fingerprint,expected_revision,target_id,scope,confirmed_active_erasure FROM erasure_intents WHERE owner_sub=? AND collection_id=?",vec![self.owner(),id.into()]),
         ]).await?;
         let row = rows[0].first().ok_or_else(|| {
             ConnectError::not_found("Collection no longer exists. Reload the view.")
@@ -249,6 +304,7 @@ impl Lists {
                 expected_revision: intent.expected_revision,
                 target_id: intent.target_id,
                 whole_collection: intent.scope == "collection",
+                confirmed_active_erasure: intent.confirmed_active_erasure != 0,
                 ..Default::default()
             }
             .into();
@@ -330,7 +386,8 @@ impl Lists {
                 ],
             ),
         ];
-        self.0.db.batch(&statements).await?;
+        self.write_batch(statements, &r.operation_id, &r.collection_id)
+            .await?;
         let receipt = self.receipt(&r.operation_id).await?.ok_or_else(conflict)?;
         if receipt.collection_id != r.collection_id || receipt.fingerprint != fingerprint {
             return Err(conflict());
@@ -404,7 +461,8 @@ impl Lists {
         ];
         receipt.extend(guard_params);
         statements.push(Statement::new(&format!("INSERT INTO collection_operations(owner_sub,operation_id,collection_id,fingerprint) SELECT ?,?,?,? WHERE {guard} ON CONFLICT(owner_sub,operation_id) DO NOTHING"),receipt));
-        self.0.db.batch(&statements).await?;
+        self.write_batch(statements, &r.operation_id, &r.collection_id)
+            .await?;
         let saved = self.receipt(&r.operation_id).await?.ok_or_else(conflict)?;
         if saved.collection_id != c.id || saved.fingerprint != fingerprint {
             return Err(conflict());
@@ -971,7 +1029,8 @@ impl Lists {
             copy.params.extend(guard_params.clone());
             statements.push(copy);
         }
-        self.0.db.batch(&statements).await?;
+        self.write_batch(statements, &r.operation_id, &r.collection_id)
+            .await?;
         let saved = self.receipt(&r.operation_id).await?.ok_or_else(conflict)?;
         if saved.collection_id != run.id || saved.fingerprint != fingerprint {
             return Err(conflict());
@@ -1127,7 +1186,7 @@ impl ListService for Lists {
     ) -> ServiceResult<HistoryPage> {
         let service = Lists::authorized(self.0.clone(), &ctx).await?;
         service.get(r.collection_id).await?;
-        let mut rows=service.0.db.query::<HistoryRow>("SELECT sequence,target_id,target_title,action,occurred_at,before_json,after_json FROM collection_history WHERE owner_sub=? AND collection_id=? AND (CAST(? AS INTEGER)=0 OR sequence<?) ORDER BY sequence DESC LIMIT 51",&[service.owner(),r.collection_id.into(),r.before_sequence.to_string(),r.before_sequence.to_string()]).await?;
+        let mut rows=service.0.db.query::<HistoryRow>("SELECT sequence,target_id,target_title,action,occurred_at,before_json,after_json,coalesce((SELECT display_name FROM pilot_accounts a WHERE a.subject=collection_history.actor_sub),'Former head') AS actor FROM collection_history WHERE owner_sub=? AND collection_id=? AND (CAST(? AS INTEGER)=0 OR sequence<?) ORDER BY sequence DESC LIMIT 51",&[service.owner(),r.collection_id.into(),r.before_sequence.to_string(),r.before_sequence.to_string()]).await?;
         let more = rows.len() > 50;
         rows.truncate(50);
         let next_before_sequence = if more {
@@ -1140,7 +1199,7 @@ impl ListService for Lists {
                 .into_iter()
                 .map(|row| HistoryEntry {
                     sequence: row.sequence,
-                    actor: "Owner".into(),
+                    actor: row.actor,
                     occurred_at: row.occurred_at,
                     target_id: row.target_id,
                     target_title: row.target_title,
@@ -1161,6 +1220,16 @@ impl Lists {
         if !valid_id(&r.operation_id) || !valid_id(&r.collection_id) {
             return Err(ConnectError::invalid_argument(
                 "Valid action and collection IDs are required.",
+            ));
+        }
+        if r.confirmed_active_erasure
+            && !matches!(
+                r.action.as_known(),
+                Some(ChangeAction::EraseItem | ChangeAction::EraseCollection)
+            )
+        {
+            return Err(ConnectError::invalid_argument(
+                "Active-erasure confirmation belongs only to an explicit permanent-erasure action.",
             ));
         }
         let fingerprint = format!(

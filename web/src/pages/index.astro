@@ -29,11 +29,13 @@ if (
           <span aria-hidden="true" class="brand-mark">✓</span>intrepion
         </div><span class="muted small">Everyday lists</span>
       </header>
+      <div id="space-controls" class="space-controls" hidden></div>
       <nav id="main-nav" aria-label="Lists" hidden>
         <button id="nav-tasks">Tasks</button><button id="nav-shopping"
           >Shopping</button
         ><button id="nav-checklists">Checklists</button>
       </nav>
+      <section id="household-view" class="content" hidden></section>
       <section id="everyday-view" class="content" hidden></section>
       <section id="status-view" class="center" aria-live="polite">
         <span class="spinner" aria-hidden="true"></span><h1
@@ -47,6 +49,8 @@ if (
           id="development-login"
           class="primary"
           hidden>Sign in as development owner</button
+        ><button id="development-morgan" hidden
+          >Sign in as development Morgan</button
         ><button id="retry-load" hidden>Try again</button>
       </section>
       <section id="list-view" class="content" hidden>
@@ -58,7 +62,9 @@ if (
           >
         </div>
         <div id="list-error" class="error" role="alert" hidden>
-          <p></p><button id="retry-action">Retry action</button><button
+          <p></p><button id="storage-recovery" hidden
+            >Review storage recovery</button
+          ><button id="retry-action">Retry action</button><button
             id="reload-list">Reload list</button
           >
         </div>
@@ -115,7 +121,7 @@ if (
             id="notes-error"
             class="field-error"
           >
-          </p><p class="muted small">
+          </p><p id="task-privacy" class="muted small">
             Plain text. Only you can access these tasks.
           </p>
           <div class="form-actions">
@@ -128,9 +134,8 @@ if (
         </form>
       </section>
       <footer id="account" hidden>
-        <span class="muted small">Owner account</span><div
-          class="everyday-actions"
-        >
+        <span id="account-identity" class="muted small">Approved account</span
+        ><div class="everyday-actions">
           <button id="nav-archive">Archive</button><button id="nav-trash"
             >Trash</button
           >

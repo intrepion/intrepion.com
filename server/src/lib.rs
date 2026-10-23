@@ -1,9 +1,12 @@
 pub mod auth;
+mod capacity;
 pub mod config;
 pub mod db;
 pub mod erasure_ledger;
+mod households;
 mod lists;
 mod login_limit;
+mod operator;
 mod tasks;
 pub mod proto {
     connectrpc::include_generated!();
@@ -34,6 +37,7 @@ pub fn app(auth: SharedAuth) -> Router {
         .allow_headers([
             header::CONTENT_TYPE,
             axum::http::HeaderName::from_static("x-csrf-token"),
+            axum::http::HeaderName::from_static("x-space-id"),
             axum::http::HeaderName::from_static("connect-protocol-version"),
             axum::http::HeaderName::from_static("connect-timeout-ms"),
             axum::http::HeaderName::from_static("x-user-agent"),
@@ -48,6 +52,9 @@ pub fn app(auth: SharedAuth) -> Router {
     #[cfg(feature = "dev-auth")]
     let router = router.route("/auth/development", post(auth::development_login));
     let mut rpc = connectrpc::Router::new()
+        .add_service(Arc::new(households::Households(auth.clone())))
+        .add_service(Arc::new(households::Maintenance(auth.clone())))
+        .add_service(Arc::new(operator::Operator(auth.clone())))
         .add_service(Arc::new(tasks::Tasks(auth.clone())))
         .add_service(Arc::new(lists::Lists(auth.clone(), Default::default())));
     for method in [
@@ -59,6 +66,37 @@ pub fn app(auth: SharedAuth) -> Router {
     ] {
         rpc = rpc.with_route_limits(
             &format!("life.v1.ListService/{method}"),
+            connectrpc::Limits::default()
+                .with_max_request_body_size(64 * 1024)
+                .with_max_message_size(64 * 1024),
+        );
+    }
+    for method in [
+        "GetOverview",
+        "GetHousehold",
+        "ChangeHousehold",
+        "PreviewAllocation",
+        "GetInvitation",
+        "PreviewCopy",
+        "CopyCollection",
+        "ListHouseholdActivity",
+    ] {
+        rpc = rpc.with_route_limits(
+            &format!("life.v1.HouseholdService/{method}"),
+            connectrpc::Limits::default()
+                .with_max_request_body_size(64 * 1024)
+                .with_max_message_size(64 * 1024),
+        );
+    }
+    for method in [
+        "GetAccountPolicy",
+        "PreviewAccountPolicy",
+        "ApplyAccountPolicy",
+        "GetStructuralPolicy",
+        "SetStructuralPolicy",
+    ] {
+        rpc = rpc.with_route_limits(
+            &format!("life.v1.PilotOperatorService/{method}"),
             connectrpc::Limits::default()
                 .with_max_request_body_size(64 * 1024)
                 .with_max_message_size(64 * 1024),
@@ -96,6 +134,8 @@ mod tests {
                 owner_sub: "owner".into(),
                 local: false,
                 trust_render_proxy,
+                household_maintenance_token: None,
+                pilot_operator_token: None,
                 erasure_ledger: None,
             };
             let db =
@@ -165,6 +205,8 @@ mod tests {
             owner_sub: "owner".into(),
             local: false,
             trust_render_proxy: false,
+            household_maintenance_token: None,
+            pilot_operator_token: None,
             erasure_ledger: None,
         };
         let db = crate::db::Database::new(config.db_url.clone(), config.db_token.clone()).unwrap();
@@ -197,6 +239,16 @@ async fn observe(request: Request, next: Next) -> Response {
         "/life.v1.ListService/ApplyChange" => "change",
         "/life.v1.ListService/ListHistory" => "history",
         "/life.v1.ListService/ListTrashedItems" => "trash",
+        "/life.v1.HouseholdService/GetOverview" => "account_overview",
+        "/life.v1.HouseholdService/GetHousehold" => "household",
+        "/life.v1.HouseholdService/ChangeHousehold" => "household_change",
+        "/life.v1.HouseholdService/PreviewAllocation" => "allocation_preview",
+        "/life.v1.HouseholdService/GetInvitation" => "invitation",
+        "/life.v1.HouseholdService/PreviewCopy" => "copy_preview",
+        "/life.v1.HouseholdService/CopyCollection" => "copy",
+        "/life.v1.HouseholdService/ListHouseholdActivity" => "household_history",
+        "/life.v1.HouseholdMaintenanceService/EraseDueHouseholds" => "household_maintenance",
+        path if path.starts_with("/life.v1.PilotOperatorService/") => "operator_policy",
         "/health/live" => "health",
         path if path.starts_with("/auth/") => "auth",
         _ => "other",

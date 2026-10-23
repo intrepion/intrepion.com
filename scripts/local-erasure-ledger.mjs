@@ -86,13 +86,32 @@ const server = createServer(async (req, res) => {
     if (req.method !== "POST" || !["/records", "/b2-upload"].includes(req.url))
       return respond(404);
     if (
-      Object.keys(body).sort().join(",") !==
-        "collection_id,database_id,operation_id,scope,target_id,version" ||
-      body.version !== 1 ||
+      !(
+        (body.version === 1 &&
+          ["collection", "item"].includes(body.scope) &&
+          Object.keys(body).sort().join(",") ===
+            "collection_id,database_id,operation_id,scope,target_id,version") ||
+        (body.version === 2 &&
+          ["household_closed", "household"].includes(body.scope) &&
+          Number.isSafeInteger(body.erase_due_at) &&
+          body.erase_due_at > 0 &&
+          Object.keys(body).sort().join(",") ===
+            "collection_id,database_id,erase_due_at,operation_id,scope,target_id,version") ||
+        (body.version === 3 &&
+          body.scope === "household_content" &&
+          Array.isArray(body.collection_ids) &&
+          body.collection_ids.length > 0 &&
+          body.collection_ids.length <= 100 &&
+          new Set(body.collection_ids).size === body.collection_ids.length &&
+          body.collection_ids.every(
+            (id) => typeof id === "string" && uuid.test(id),
+          ) &&
+          Object.keys(body).sort().join(",") ===
+            "collection_id,collection_ids,database_id,operation_id,scope,target_id,version")
+      ) ||
       ![body.collection_id, body.database_id, body.operation_id].every(
         (value) => typeof value === "string" && uuid.test(value),
       ) ||
-      !["collection", "item"].includes(body.scope) ||
       (body.scope === "item"
         ? !uuid.test(body.target_id)
         : body.target_id !== "")

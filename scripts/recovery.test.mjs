@@ -306,12 +306,302 @@ test("recovering an MVP 1 archive upgrades retained tasks and the migration ledg
       );
       assert.equal(
         restored.prepare("SELECT count(*) n FROM d1_migrations").get().n,
-        6,
+        14,
       );
       assert.equal(restored.prepare("SELECT count(*) n FROM tasks").get().n, 0);
     } finally {
       restored.close();
     }
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("encrypted recovery cannot reopen a household closed after the snapshot or reuse a pre-snapshot closure identity", async () => {
+  const directory = await mkdtemp(
+    join(tmpdir(), "intrepion-household-recovery-"),
+  );
+  try {
+    const identity = join(directory, "identity.agekey");
+    const keygen = spawnSync(
+      process.env.AGE_KEYGEN_BIN ?? "age-keygen",
+      ["-o", identity],
+      { encoding: "utf8" },
+    );
+    assert.equal(keygen.status, 0);
+    const recipient = spawnSync(
+      process.env.AGE_KEYGEN_BIN ?? "age-keygen",
+      ["-y", identity],
+      { encoding: "utf8" },
+    ).stdout.trim();
+    const householdMigrations = (
+      await Promise.all(
+        [
+          "0007_pilot_accounts",
+          "0008_household_foundation",
+          "0009_transactional_limits",
+          "0010_active_erasure_confirmation",
+          "0011_household_lifecycle",
+        ].map((name) => readFile(`server/migrations/${name}.sql`, "utf8")),
+      )
+    ).join("\n");
+    const completeSchema = (
+      await Promise.all(
+        [
+          "0012_budget_aware_writers",
+          "0013_household_content_erasure",
+          "0014_operator_policy",
+        ].map((name) => readFile(`server/migrations/${name}.sql`, "utf8")),
+      )
+    ).join("\n");
+    const sql = Buffer.from(
+      migrations +
+        householdMigrations +
+        `
+      INSERT INTO pilot_accounts(subject,display_name,public_id) VALUES('head-one','Alex','alex-public');
+      INSERT INTO households(id,scope_sub,name,created_by,last_operation) VALUES('${id(701)}','household:${id(701)}','Retained closed name','head-one','${id(702)}');
+      INSERT INTO household_heads(household_id,subject,ceilings_json) VALUES('${id(701)}','head-one','{}');
+      INSERT INTO household_allocations(household_id,subject,amounts_json) VALUES('${id(701)}','head-one','{"items":10,"bytes":4096}');
+      INSERT INTO collections(owner_sub,id,kind,title,last_operation,creator_sub) VALUES('household:${id(701)}','${id(703)}',2,'Retained until erasure','${id(704)}','head-one');
+      INSERT INTO list_items(owner_sub,collection_id,id,title,position,creator_sub) VALUES('household:${id(701)}','${id(703)}','${id(706)}','Erased shared child',0,'head-one');
+      INSERT INTO collection_history(owner_sub,collection_id,operation_id,target_id,target_title,action,before_json,after_json,actor_sub) VALUES('household:${id(701)}','${id(703)}','${id(704)}','${id(703)}','Erased shared History','Created','null','{}','head-one');
+      INSERT INTO collections(owner_sub,id,kind,title,last_operation,creator_sub) VALUES('head-one','${id(707)}',4,'Independent personal copy','${id(708)}','head-one');
+      INSERT INTO collections(owner_sub,id,kind,title,last_operation,creator_sub) VALUES('household:${id(701)}','${id(716)}',2,'Later shared content','${id(717)}','head-one');
+      INSERT INTO household_invitations(id,household_id,recipient_sub,token_hash,expires_at,created_by) VALUES('${id(705)}','${id(701)}','head-one','hash-only',9999999999,'head-one');
+    ` +
+        completeSchema +
+        "\nCREATE TABLE d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); INSERT INTO d1_migrations(name) VALUES('0014_operator_policy.sql');",
+    );
+    await assert.rejects(
+      recoverArchive(
+        encrypt(
+          Buffer.concat([
+            sql,
+            Buffer.from("\nDROP TRIGGER no_household_reopening;"),
+          ]),
+          recipient,
+        ),
+        identity,
+        { databaseId, complete: true, records: [] },
+      ),
+      /household protection/,
+    );
+    const bulk = {
+      version: 3,
+      database_id: databaseId,
+      operation_id: id(718),
+      collection_id: id(701),
+      scope: "household_content",
+      target_id: "",
+      collection_ids: [id(703)],
+    };
+    const bulkOutput = await recoverArchive(encrypt(sql, recipient), identity, {
+      databaseId,
+      complete: true,
+      records: [bulk],
+    });
+    const afterBulk = new DatabaseSync(":memory:");
+    try {
+      afterBulk.exec(bulkOutput.toString());
+      assert.equal(
+        afterBulk
+          .prepare("SELECT status FROM households WHERE id=?")
+          .get(id(701)).status,
+        "active",
+      );
+      assert.equal(
+        afterBulk.prepare("SELECT count(*) n FROM household_allocations").get()
+          .n,
+        1,
+      );
+      assert.deepEqual(
+        afterBulk
+          .prepare("SELECT title FROM collections ORDER BY id")
+          .all()
+          .map((r) => r.title),
+        ["Independent personal copy", "Later shared content"],
+      );
+      assert.equal(
+        afterBulk.prepare("SELECT count(*) n FROM collection_history").get().n,
+        0,
+      );
+    } finally {
+      afterBulk.close();
+    }
+    await assert.rejects(
+      recoverArchive(encrypt(sql, recipient), identity, {
+        databaseId,
+        complete: true,
+        records: [{ ...bulk, collection_ids: [id(707)] }],
+      }),
+      /outside.*household/,
+    );
+    const record = {
+      version: 2,
+      database_id: databaseId,
+      operation_id: id(710),
+      collection_id: id(701),
+      scope: "household_closed",
+      target_id: "",
+      erase_due_at: 1761955200,
+    };
+    const output = await recoverArchive(encrypt(sql, recipient), identity, {
+      databaseId,
+      complete: true,
+      records: [
+        record,
+        { ...record, operation_id: id(711), collection_id: id(799) },
+      ],
+    });
+    verifySql(output);
+    const restored = new DatabaseSync(":memory:");
+    try {
+      restored.exec(output.toString());
+      assert.throws(
+        () =>
+          restored
+            .prepare(
+              "UPDATE collections SET title='Old writer bypass' WHERE id=?",
+            )
+            .run(id(707)),
+        /budget-aware writer/,
+      );
+
+      assert.equal(
+        restored
+          .prepare("SELECT status FROM households WHERE id=?")
+          .get(id(701)).status,
+        "closed",
+      );
+      assert.equal(
+        restored
+          .prepare("SELECT erase_due_at FROM households WHERE id=?")
+          .get(id(701)).erase_due_at,
+        1761955200,
+      );
+      assert.equal(
+        restored
+          .prepare("SELECT active FROM household_heads WHERE household_id=?")
+          .get(id(701)).active,
+        0,
+      );
+      assert.equal(
+        restored
+          .prepare("SELECT status FROM household_invitations WHERE id=?")
+          .get(id(705)).status,
+        "revoked",
+      );
+      assert.equal(
+        restored
+          .prepare("SELECT title FROM collections WHERE id=?")
+          .get(id(703)).title,
+        "Retained until erasure",
+      );
+      assert.equal(
+        restored
+          .prepare(
+            "SELECT json_extract(amounts_json,'$.bytes') n FROM household_allocations WHERE household_id=?",
+          )
+          .get(id(701)).n,
+        4096,
+      );
+      assert.throws(() =>
+        restored
+          .prepare("UPDATE households SET status='active' WHERE id=?")
+          .run(id(701)),
+      );
+      assert.throws(() =>
+        restored
+          .prepare(
+            "INSERT INTO households(id,scope_sub,name,created_by,last_operation) VALUES(?,?,?,?,?)",
+          )
+          .run(
+            id(799),
+            `household:${id(799)}`,
+            "Must remain closed",
+            "head-one",
+            id(712),
+          ),
+      );
+    } finally {
+      restored.close();
+    }
+    const erased = await recoverArchive(encrypt(sql, recipient), identity, {
+      databaseId,
+      complete: true,
+      // Provider listing order must not let the older closure marker undo erasure.
+      records: [
+        { ...record, scope: "household", operation_id: id(713) },
+        record,
+        {
+          ...record,
+          scope: "household",
+          collection_id: id(799),
+          operation_id: id(714),
+        },
+      ],
+    });
+    const afterErasure = new DatabaseSync(":memory:");
+    try {
+      afterErasure.exec(erased.toString());
+      assert.equal(
+        afterErasure
+          .prepare("SELECT status FROM households WHERE id=?")
+          .get(id(701)).status,
+        "erased",
+      );
+      assert.deepEqual(
+        afterErasure
+          .prepare("SELECT title FROM collections")
+          .all()
+          .map((r) => r.title),
+        ["Independent personal copy"],
+      );
+      for (const table of [
+        "list_items",
+        "collection_history",
+        "household_heads",
+        "household_invitations",
+        "household_allocations",
+        "household_lifecycle",
+      ])
+        assert.equal(
+          afterErasure.prepare(`SELECT count(*) n FROM ${table}`).get().n,
+          0,
+        );
+      assert.equal(
+        afterErasure
+          .prepare(
+            "SELECT subject FROM household_releases WHERE household_id=?",
+          )
+          .get(id(701)).subject,
+        "head-one",
+      );
+      assert.throws(() =>
+        afterErasure
+          .prepare(
+            "INSERT INTO households(id,scope_sub,name,created_by,last_operation) VALUES(?,?,?,?,?)",
+          )
+          .run(
+            id(799),
+            `household:${id(799)}`,
+            "Never reopen",
+            "head-one",
+            id(715),
+          ),
+      );
+      assert.throws(() =>
+        afterErasure
+          .prepare(
+            "INSERT INTO list_items(owner_sub,collection_id,id,title,position) VALUES(?,?,?,?,0)",
+          )
+          .run("head-one", id(707), id(706), "Never resurrect"),
+      );
+    } finally {
+      afterErasure.close();
+    }
+    assert.equal(erased.includes("Retained closed name"), false);
+    assert.equal(erased.includes("Erased shared History"), false);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

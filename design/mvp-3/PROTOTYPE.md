@@ -71,3 +71,7 @@ Desktop (1440px), phone (390px) and narrow phone (320px) shopping layouts had no
 - [Phone closure confirmation](prototype-closure-mobile.png)
 
 After approval, record any requested behavioral changes in [the MVP 3 plan](../../docs/mvp-3-plan.md), then begin separate production implementation. Keep this artifact as a reference for the approved interaction decisions.
+
+## Approved storage-recovery amendment
+
+The owner approved explicit permanent erasure of selected active content when full storage prevents adding Trash History. The full-storage wireframe and mockup now show the existing scope-confirmation pattern for this entry point. In the standalone prototype, simulate full storage, open a task or collection, and choose **Erase permanently · storage recovery**. Cancel keeps the content; confirmation removes the selected target and associated child content/History, leaves independent copies alone, and simulates recovery protection before freeing capacity. Normal Trash behavior is unchanged.

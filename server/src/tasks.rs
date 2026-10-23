@@ -19,6 +19,7 @@ struct Row {
     completed: i32,
     revision: u32,
     sequence: u64,
+    erasure_pending: i32,
 }
 impl From<Row> for Task {
     fn from(row: Row) -> Self {
@@ -29,6 +30,7 @@ impl From<Row> for Task {
             completed: row.completed != 0,
             revision: row.revision,
             created_order: row.sequence,
+            erasure_pending: row.erasure_pending != 0,
             ..Default::default()
         }
     }
@@ -46,6 +48,7 @@ fn task(c: Collection) -> Result<Task, ConnectError> {
         completed: c.completed,
         revision: c.revision,
         created_order: c.created_order,
+        erasure_pending: c.erasure_pending,
         ..Default::default()
     })
 }
@@ -86,7 +89,7 @@ impl TaskService for Tasks {
         _r: ServiceRequest<'_, Empty>,
     ) -> ServiceResult<TaskList> {
         let lists = Lists::authorized(self.0.clone(), &ctx).await?;
-        let rows=self.0.db.query::<Row>("SELECT id,title,notes,completed,revision,sequence FROM collections WHERE owner_sub=? AND kind=1 AND trashed=0 ORDER BY completed,sequence DESC",&[lists.owner()]).await?;
+        let rows=self.0.db.query::<Row>("SELECT c.id,c.title,c.notes,c.completed,c.revision,c.sequence,EXISTS(SELECT 1 FROM erasure_intents e WHERE e.collection_id=c.id) AS erasure_pending FROM collections c WHERE c.owner_sub=? AND c.kind=1 AND trashed=0 ORDER BY completed,sequence DESC",&[lists.owner()]).await?;
         Response::ok(TaskList {
             tasks: rows.into_iter().map(Into::into).collect(),
             ..Default::default()

@@ -1,0 +1,19 @@
+# Household closure and retention
+
+MVP 3 closure is final. Last-head departure immediately ends content access and revokes pending invitations. Its confirmation includes the exact next calendar-month boundary at 00:00 UTC, displayed in UTC and local time by clients. The household name, content and History remain metered and allocations stay reserved until protected erasure succeeds.
+
+Closure and terminal erasure publish separate content-free version-2 records to the existing independently retained erasure ledger. Their stable publication identities are namespaced by database, data scope, action and target. They contain a household UUID and UTC deadline, never its name, invitation token, member names, task text or History. Existing version-1 item and collection erasures remain readable. Version-3 shared-content erasures hold bounded identifier-only chunks of the immutable collection snapshot; replay removes only those targets, leaving later content, household membership and contributions intact. Pending snapshots pause shared writes until a current head resumes protected completion. Losing a provider acknowledgment does not grant access or release capacity; retry completes the same protection.
+
+Recovery upgrades supported legacy snapshots through the current schema, applies final closures and terminal erasures before producing usable SQL, clears restored sessions, and preserves independent copies in other spaces. A closure tombstone also prevents creating the same household ID when the snapshot predates its creation. Terminal erasure retires child identifiers, removes shared content, content History, invitations, ceilings and content-derived receipts, and leaves only generic household status and private contributor release acknowledgments. Recovery processes terminal markers after closure markers regardless of provider listing order.
+
+## Scheduled operation
+
+`HouseholdMaintenanceService.EraseDueHouseholds` is an operator endpoint. A Google login, including a household head's session, does not authorize it. It requires the separate `HOUSEHOLD_MAINTENANCE_TOKEN` (32 random bytes encoded as 64 hex characters) on the server and the operations workflow. Never place this credential in the web build or repository. Without configuration the endpoint refuses all calls.
+
+The hourly GitHub workflow calls `scripts/household-maintenance.mjs`; failures use the existing GitHub failure-notification channel. Each invocation handles at most 25 pending closure publications and 25 due households. Further invocations continue the work. No household is erased before its confirmed UTC deadline; scheduling delays keep capacity reserved. Provider or deletion failure marks erasure delayed, returns failure, and permits a later retry. Use existing request-duration and quota/maintenance response metrics to decide whether batch size or scheduling needs review as the pilot grows.
+
+The workflow is disabled until the repository variable `HOUSEHOLD_OPERATIONS_ENABLED` is explicitly set to `true`. Leave it unset during development. Deployment approval, a protected restore drill, credential setup and notification verification are launch gates; this implementation does not change live providers or enable automation. The existing backup caps and provider spending controls remain in force.
+
+## Local verification
+
+Integration tests use generated clients, a real local D1 database and the local ledger provider emulator. `HOUSEHOLD_TEST_NOW` overrides only the household clock in a development-auth build bound to the local environment; production builds ignore it. Authentication/session expiry always uses the real clock. The tests advance to the confirmed UTC boundary, lose a provider response, verify retained allocations and retry protected deletion. Encrypted recovery tests exercise a snapshot from before closure/erasure, reversed marker order and independent-copy retention.

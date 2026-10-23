@@ -1,3 +1,4 @@
+import { seedLocalPilot } from "./local-pilot.mjs";
 import { fileURLToPath } from "node:url";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -42,6 +43,7 @@ try {
     ],
     { env: localEnv },
   );
+  await seedLocalPilot(state);
   children.push(
     start(
       "node",

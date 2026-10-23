@@ -1,8 +1,9 @@
 import { create } from "@bufbuild/protobuf";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { TaskSchema, type Task } from "../gen/life/v1/tasks_pb";
+import { Households } from "./households";
 import { Everyday } from "./everyday";
-import { Api, HttpError, needsLogin } from "../lib/api";
+import { Api, HttpError, needsLogin, ContextChanged } from "../lib/api";
 import { ordered, validate, type Fields } from "../lib/model";
 
 function get<T extends HTMLElement = HTMLElement>(id: string): T {
@@ -22,6 +23,7 @@ function focus(id: string) {
 const api = new Api(get("app").dataset.apiOrigin!);
 let tasks: Task[] = [];
 let authenticated = false;
+let lastIdentity = "";
 let busy = false;
 let config: { google_client_id: string; development: boolean };
 type Editor = { id: string; original?: Task; fields: Fields };
@@ -30,6 +32,7 @@ type Action =
   | { kind: "create" | "update"; task: Task }
   | { kind: "delete"; id: string; revision: number };
 let pending: Action | undefined;
+let recoveryTaskId = "";
 let googleScript: Promise<void> | undefined;
 
 type GoogleId = {
@@ -74,10 +77,12 @@ function setBusy(value: boolean) {
       }
     });
 }
-function view(name: "status" | "list" | "editor" | "everyday") {
-  for (const candidate of ["status", "list", "editor", "everyday"])
+function view(name: "status" | "list" | "editor" | "everyday" | "household") {
+  if (name !== "status") spaces.active = name === "household";
+  for (const candidate of ["status", "list", "editor", "everyday", "household"])
     show(`${candidate}-view`, candidate === name);
   show("account", authenticated);
+  show("space-controls", authenticated);
   show("main-nav", authenticated);
 }
 function status(title: string, description: string, loading = false) {
@@ -87,10 +92,14 @@ function status(title: string, description: string, loading = false) {
   get("status-view").querySelector<HTMLElement>(".spinner")!.hidden = !loading;
   show("google-button", false);
   show("development-login", false);
+  show("development-morgan", false);
   show("retry-load", !loading);
 }
 function errorMessage(error: unknown): string {
-  if (error instanceof ConnectError && error.code === Code.FailedPrecondition)
+  if (
+    error instanceof ConnectError &&
+    [Code.FailedPrecondition, Code.ResourceExhausted].includes(error.code)
+  )
     return error.rawMessage;
   if (error instanceof ConnectError && error.code === Code.NotFound)
     return "This task no longer exists. Reload the list; your draft is still here.";
@@ -160,9 +169,24 @@ function row(task: Task): HTMLElement {
   history.textContent = "History";
   history.setAttribute("aria-label", `Task history: ${task.title}`);
   history.addEventListener("click", () => void everyday.taskHistory(task.id));
+  if (task.erasurePending) {
+    toggle.disabled = true;
+    edit.disabled = true;
+    remove.disabled = true;
+    actions.append(buttonForRecovery(task));
+  }
   actions.append(edit, history, remove);
   article.append(toggle, copy, actions);
   return article;
+}
+function buttonForRecovery(task: Task) {
+  const button = document.createElement("button");
+  button.textContent = `Resume erasure: ${task.title}`;
+  button.addEventListener(
+    "click",
+    () => void everyday.storageRecovery(task.id),
+  );
+  return button;
 }
 function renderList() {
   view("list");
@@ -306,9 +330,28 @@ async function mutate(action: Action) {
     announce(action.kind === "delete" ? "Task moved to Trash." : "Task saved.");
     get("list-view").querySelector<HTMLElement>("h1")?.focus();
   } catch (error) {
+    if (error instanceof ContextChanged) return;
+    if (
+      error instanceof ConnectError &&
+      [
+        Code.ResourceExhausted,
+        Code.FailedPrecondition,
+        Code.NotFound,
+        Code.PermissionDenied,
+      ].includes(error.code)
+    )
+      pending = undefined;
     if (needsLogin(error)) {
       expired();
     } else {
+      if (
+        action.kind === "delete" &&
+        error instanceof ConnectError &&
+        error.code === Code.ResourceExhausted
+      ) {
+        recoveryTaskId = action.id;
+        show("storage-recovery", true);
+      }
       const target = editor ? "save-error" : "list-error";
       show(target, true);
       get(target).querySelector("p")!.textContent = errorMessage(error);
@@ -324,11 +367,29 @@ async function loadTasks() {
   status("Opening your list", "The server may take a minute to wake up.", true);
   try {
     await api.session();
+    if (lastIdentity && lastIdentity !== api.identity) {
+      clearContent();
+      spaces.reset();
+      api.space = "personal";
+    }
+    lastIdentity = api.identity;
     authenticated = true;
+    await spaces.refresh();
+    text("account-identity", `${api.displayName} · Approved Google account`);
+    text(
+      "task-privacy",
+      api.space === "personal"
+        ? "Plain text. Your personal space is private."
+        : "Shared household content. Every current head can view and change it.",
+    );
     tasks = ordered(
       (await api.tasks.listTasks({}, { timeoutMs: 90000 })).tasks,
     );
-    if (everyday.active) {
+    if (spaces.hasInvitation()) {
+      await spaces.openInvitation();
+    } else if (spaces.active) {
+      spaces.resume();
+    } else if (everyday.active) {
       everyday.resume();
     } else if (editor) {
       renderEditor();
@@ -337,6 +398,7 @@ async function loadTasks() {
       renderList();
     }
   } catch (error) {
+    if (error instanceof ContextChanged) return;
     if (needsLogin(error)) {
       authenticated = false;
       await signInView();
@@ -382,6 +444,9 @@ async function signInView() {
     );
     if (config.development) {
       show("development-login", true);
+      show("development-morgan", true);
+      get("development-morgan").onclick = () =>
+        void authenticate("/auth/development", nonce, "development-second");
       get("development-login").onclick = () =>
         void authenticate("/auth/development", nonce);
       return;
@@ -418,6 +483,7 @@ async function authenticate(path: string, nonce: string, credential = "") {
     authenticated = true;
     await loadTasks();
   } catch (error) {
+    if (error instanceof ContextChanged) return;
     const accessDenied = error instanceof HttpError && error.status === 403;
     status(
       accessDenied
@@ -490,10 +556,12 @@ get("task-form").addEventListener("submit", (event) => {
 get("sign-out").addEventListener("click", async () => {
   if (busy) return;
   if (
-    (dirty() || everyday.dirty()) &&
+    (dirty() || everyday.dirty() || spaces.dirty() || spaces.hasPending()) &&
     !(await confirm(
       "Discard your changes?",
-      "Signing out discards this unsaved draft.",
+      spaces.hasPending() || everyday.hasPending() || pending
+        ? "A pending action may already have been saved. Signing out discards this tab's retry state and unsaved drafts; review saved state after signing in again."
+        : "Signing out discards this unsaved draft.",
       "Discard changes",
       "Keep editing",
     ))
@@ -508,15 +576,22 @@ get("sign-out").addEventListener("click", async () => {
     pending = undefined;
     tasks = [];
     everyday.reset();
+    spaces.reset();
+    api.space = "personal";
+    lastIdentity = "";
     window.google?.accounts.id.disableAutoSelect();
     await signInView();
   } catch (error) {
+    if (error instanceof ContextChanged) return;
     if (needsLogin(error)) {
       authenticated = false;
       editor = undefined;
       pending = undefined;
       tasks = [];
       everyday.reset();
+      spaces.reset();
+      api.space = "personal";
+      lastIdentity = "";
       await signInView();
     } else {
       announce("Sign-out could not be confirmed. Try again.");
@@ -532,7 +607,14 @@ get("sign-out").addEventListener("click", async () => {
   }
 });
 window.addEventListener("beforeunload", (event) => {
-  if (dirty() || everyday.dirty() || busy) event.preventDefault();
+  if (
+    dirty() ||
+    everyday.dirty() ||
+    spaces.dirty() ||
+    spaces.hasPending() ||
+    busy
+  )
+    event.preventDefault();
 });
 const everyday = new Everyday(get("everyday-view"), api, {
   show: () => view("everyday"),
@@ -540,17 +622,37 @@ const everyday = new Everyday(get("everyday-view"), api, {
     everyday.reset();
     void loadTasks();
   },
+  copy: (source) => void spaces.startCopy(source),
   busy: setBusy,
   expired,
   confirm,
   announce,
 });
-async function navigateEveryday(
-  kind: "shopping" | "checklists" | "archive" | "trash",
-) {
-  if (busy) return;
+get("storage-recovery").addEventListener("click", () => {
+  if (!busy && recoveryTaskId) void everyday.storageRecovery(recoveryTaskId);
+});
+function clearContent() {
+  recoveryTaskId = "";
+  show("storage-recovery", false);
+  tasks = [];
+  editor = undefined;
+  pending = undefined;
+  everyday.reset();
+  get("open-tasks").replaceChildren();
+  get("completed-tasks").replaceChildren();
+  get<HTMLInputElement>("title").value = "";
+  get<HTMLTextAreaElement>("notes").value = "";
+}
+async function prepareNavigation() {
+  if (busy) return false;
+  if (pending || everyday.hasPending() || spaces.hasPending()) {
+    announce(
+      "Finish retrying the pending action before changing spaces or leaving this workflow.",
+    );
+    return false;
+  }
   if (
-    dirty() &&
+    (dirty() || spaces.dirty()) &&
     !(await confirm(
       "Discard your changes?",
       "Your unsaved changes will be lost.",
@@ -558,10 +660,73 @@ async function navigateEveryday(
       "Keep editing",
     ))
   )
-    return;
-  if (!(await everyday.leave())) return;
+    return false;
+  if (!(await everyday.leave())) return false;
   editor = undefined;
   pending = undefined;
+  everyday.reset();
+  spaces.discardDraft();
+  return true;
+}
+const spaces = new Households(
+  get("household-view"),
+  get("space-controls"),
+  api,
+  {
+    show: () => view("household"),
+    prepare: prepareNavigation,
+    clearContent,
+    invitationArrived: async () => {
+      if (!authenticated || !(await prepareNavigation())) return;
+      setBusy(true);
+      try {
+        await spaces.openInvitation();
+      } finally {
+        setBusy(false);
+      }
+    },
+    openCopy: async (space, id) => {
+      clearContent();
+      spaces.discardDraft();
+      api.space = space;
+      await loadTasks();
+      if (api.space === space) await everyday.openCollection(id);
+    },
+    enterSpace: async (id) => {
+      clearContent();
+      spaces.discardDraft();
+      api.space = id;
+      await loadTasks();
+    },
+    switchSpace: async (id) => {
+      if (!(await prepareNavigation())) return false;
+      clearContent();
+      api.space = id;
+      await loadTasks();
+      return true;
+    },
+    busy: setBusy,
+    expired,
+    confirm,
+  },
+);
+api.accessEnded = () => {
+  clearContent();
+  spaces.reset();
+  status(
+    "Household access ended",
+    "Household content and drafts have been cleared. Your personal sign-in remains available.",
+  );
+  text("retry-load", "Open personal space");
+  show("retry-load", true);
+  announce(
+    "Household access ended. Household content and drafts have been cleared.",
+  );
+};
+async function navigateEveryday(
+  kind: "shopping" | "checklists" | "archive" | "trash",
+) {
+  if (!(await prepareNavigation())) return;
   await everyday.open(kind);
 }
 get("nav-archive").addEventListener(
@@ -581,8 +746,7 @@ get("nav-shopping").addEventListener(
   () => void navigateEveryday("shopping"),
 );
 get("nav-tasks").addEventListener("click", async () => {
-  if (busy || !(await everyday.leave())) return;
-  everyday.reset();
-  await leaveEditor();
+  if (!(await prepareNavigation())) return;
+  await loadTasks();
 });
 void loadTasks();

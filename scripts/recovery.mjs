@@ -35,16 +35,35 @@ function validateLedger(ledger) {
   for (const record of ledger.records) {
     if (
       !record ||
-      Object.keys(record).sort().join(",") !==
-        "collection_id,database_id,operation_id,scope,target_id,version" ||
-      record.version !== 1 ||
+      !(
+        (record.version === 1 &&
+          ["collection", "item"].includes(record.scope) &&
+          Object.keys(record).sort().join(",") ===
+            "collection_id,database_id,operation_id,scope,target_id,version") ||
+        (record.version === 2 &&
+          ["household_closed", "household"].includes(record.scope) &&
+          Number.isSafeInteger(record.erase_due_at) &&
+          record.erase_due_at > 0 &&
+          record.erase_due_at <= 253402300799 &&
+          Object.keys(record).sort().join(",") ===
+            "collection_id,database_id,erase_due_at,operation_id,scope,target_id,version") ||
+        (record.version === 3 &&
+          record.scope === "household_content" &&
+          Array.isArray(record.collection_ids) &&
+          record.collection_ids.length > 0 &&
+          record.collection_ids.length <= 100 &&
+          new Set(record.collection_ids).size ===
+            record.collection_ids.length &&
+          record.collection_ids.every(uuid) &&
+          Object.keys(record).sort().join(",") ===
+            "collection_id,collection_ids,database_id,operation_id,scope,target_id,version")
+      ) ||
       record.database_id !== ledger.databaseId ||
       !uuid(record.operation_id) ||
       !uuid(record.collection_id) ||
-      !["collection", "item"].includes(record.scope) ||
-      (record.scope === "collection"
-        ? record.target_id !== ""
-        : !uuid(record.target_id))
+      (record.scope === "item"
+        ? !uuid(record.target_id)
+        : record.target_id !== "")
     )
       throw new Error(
         "Recovery rejected a malformed or wrong-database erasure record.",
@@ -55,6 +74,9 @@ function validateLedger(ledger) {
       record.collection_id,
       record.scope,
       record.target_id,
+      record.version,
+      record.erase_due_at ?? null,
+      record.collection_ids ?? null,
     ]);
     const previous = operations.get(record.operation_id);
     if (previous && previous.canonical !== canonical)
@@ -65,15 +87,28 @@ function validateLedger(ledger) {
 }
 async function upgrade(db) {
   const exists = (type, name) =>
-    !!db
-      .prepare("SELECT 1 FROM sqlite_master WHERE type=? AND name=?")
-      .get(type, name);
+    type === "column"
+      ? db
+          .prepare("PRAGMA table_info(erasure_intents)")
+          .all()
+          .some((c) => c.name === name)
+      : !!db
+          .prepare("SELECT 1 FROM sqlite_master WHERE type=? AND name=?")
+          .get(type, name);
   for (const [type, anchor, file] of [
     ["table", "retired_task_ids", "0002_retired_task_ids"],
     ["table", "collections", "0003_everyday_collections"],
     ["table", "list_items", "0004_list_items_and_sections"],
     ["trigger", "tasks_replaced_insert", "0005_migrate_personal_tasks"],
     ["table", "erasure_intents", "0006_erasure_protocol"],
+    ["table", "pilot_accounts", "0007_pilot_accounts"],
+    ["table", "households", "0008_household_foundation"],
+    ["table", "operator_settings", "0009_transactional_limits"],
+    ["column", "confirmed_active_erasure", "0010_active_erasure_confirmation"],
+    ["table", "household_lifecycle", "0011_household_lifecycle"],
+    ["trigger", "budget_collections_insert", "0012_budget_aware_writers"],
+    ["table", "household_content_erasures", "0013_household_content_erasure"],
+    ["table", "pilot_operator_operations", "0014_operator_policy"],
   ])
     if (!exists(type, anchor))
       db.exec(
@@ -89,6 +124,14 @@ async function upgrade(db) {
     "0004_list_items_and_sections.sql",
     "0005_migrate_personal_tasks.sql",
     "0006_erasure_protocol.sql",
+    "0007_pilot_accounts.sql",
+    "0008_household_foundation.sql",
+    "0009_transactional_limits.sql",
+    "0010_active_erasure_confirmation.sql",
+    "0011_household_lifecycle.sql",
+    "0012_budget_aware_writers.sql",
+    "0013_household_content_erasure.sql",
+    "0014_operator_policy.sql",
   ];
   db.exec(
     "CREATE TABLE IF NOT EXISTS d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
@@ -109,10 +152,115 @@ function replay(db, records) {
   const retire = db.prepare(
     "INSERT OR IGNORE INTO retired_list_ids(kind,id) VALUES(?,?)",
   );
-  for (const record of records) {
+  for (const record of [...records].sort(
+    (a, b) => Number(a.scope === "household") - Number(b.scope === "household"),
+  )) {
+    if (record.scope === "household_content") {
+      for (const id of record.collection_ids) {
+        const parent = db
+          .prepare("SELECT owner_sub FROM collections WHERE id=?")
+          .get(id);
+        if (parent && parent.owner_sub !== `household:${record.collection_id}`)
+          throw new Error(
+            "Recovery rejected an erasure target outside its household.",
+          );
+      }
+      replay(
+        db,
+        record.collection_ids.map((id) => ({
+          ...record,
+          scope: "collection",
+          collection_id: id,
+          target_id: "",
+        })),
+      );
+      continue;
+    }
+    if (["household_closed", "household"].includes(record.scope)) {
+      const previous = db
+        .prepare("SELECT erase_due_at FROM closed_household_ids WHERE id=?")
+        .get(record.collection_id);
+      if (previous && previous.erase_due_at !== record.erase_due_at)
+        throw new Error(
+          "Recovery rejected conflicting household closure deadlines.",
+        );
+      db.prepare(
+        "INSERT OR IGNORE INTO closed_household_ids(id,erase_due_at) VALUES(?,?)",
+      ).run(record.collection_id, record.erase_due_at);
+      const household = db
+        .prepare("SELECT status FROM households WHERE id=?")
+        .get(record.collection_id);
+      if (household && household.status !== "erased") {
+        db.prepare(
+          "UPDATE households SET status='closed',erase_due_at=?,revision=revision+1 WHERE id=?",
+        ).run(record.erase_due_at, record.collection_id);
+        db.prepare(
+          "UPDATE household_heads SET active=0 WHERE household_id=?",
+        ).run(record.collection_id);
+        db.prepare(
+          "UPDATE household_invitations SET status='revoked' WHERE household_id=? AND status='pending'",
+        ).run(record.collection_id);
+        db.prepare(
+          "INSERT INTO household_lifecycle(household_id,actor_sub,operation_id,erase_due_at,closure_published) VALUES(?,'',?,?,1) ON CONFLICT(household_id) DO UPDATE SET erase_due_at=excluded.erase_due_at,closure_published=1",
+        ).run(record.collection_id, record.operation_id, record.erase_due_at);
+      }
+      if (record.scope === "household") {
+        db.prepare("UPDATE closed_household_ids SET erased=1 WHERE id=?").run(
+          record.collection_id,
+        );
+        if (household) {
+          const space = db
+            .prepare("SELECT scope_sub FROM households WHERE id=?")
+            .get(record.collection_id).scope_sub;
+          db.prepare(
+            "INSERT INTO household_releases(household_id,subject,released_at) SELECT household_id,subject,? FROM household_allocations WHERE household_id=? ON CONFLICT(household_id,subject) DO NOTHING",
+          ).run(record.erase_due_at, record.collection_id);
+          for (const [table, kind] of [
+            ["collections", "collection"],
+            ["list_items", "item"],
+            ["list_sections", "section"],
+          ])
+            db.prepare(
+              `INSERT INTO retired_list_ids(kind,id) SELECT ?,id FROM ${table} WHERE owner_sub=? ON CONFLICT(kind,id) DO NOTHING`,
+            ).run(kind, space);
+          db.prepare(
+            "INSERT INTO retired_task_ids(owner_sub,id) SELECT owner_sub,id FROM collections WHERE owner_sub=? AND kind=1 ON CONFLICT(owner_sub,id) DO NOTHING",
+          ).run(space);
+          for (const table of [
+            "erasure_intents",
+            "collection_operations",
+            "collection_history",
+            "list_items",
+            "list_sections",
+            "collections",
+          ])
+            db.prepare(`DELETE FROM ${table} WHERE owner_sub=?`).run(space);
+          for (const table of [
+            "household_invitations",
+            "household_content_erasures",
+            "household_activity",
+            "household_heads",
+            "household_operations",
+            "household_lifecycle",
+            "household_allocations",
+          ])
+            db.prepare(`DELETE FROM ${table} WHERE household_id=?`).run(
+              record.collection_id,
+            );
+          db.prepare(
+            "UPDATE households SET name='Erased household',status='erased',erasure_delayed=0,revision=revision+1,last_operation='erased' WHERE id=?",
+          ).run(record.collection_id);
+        }
+      }
+      continue;
+    }
     const parent = db
       .prepare("SELECT owner_sub,kind,revision FROM collections WHERE id=?")
       .get(record.collection_id);
+    if (parent)
+      db.prepare(
+        "INSERT INTO write_budgets(id,owner_sub,actor_sub,collection_id,usage_json,own_json,structure_json) VALUES(1,?,'',?,'{}','{}','{}')",
+      ).run(parent.owner_sub, record.collection_id);
     if (record.scope === "collection") {
       for (const row of db
         .prepare("SELECT id FROM list_items WHERE collection_id=?")
@@ -172,6 +320,7 @@ function replay(db, records) {
     db.prepare("DELETE FROM erasure_intents WHERE collection_id=?").run(
       record.collection_id,
     );
+    db.exec("DELETE FROM write_budgets;");
   }
   db.exec("DELETE FROM sessions; DELETE FROM login_challenges;");
 }

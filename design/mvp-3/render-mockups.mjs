@@ -18,7 +18,7 @@ const primary = new Set([
   "New shopping list",
   "Add item",
 ]);
-const danger = new Set(["Confirm leave and close"]);
+const danger = new Set(["Confirm leave and close", "Erase permanently"]);
 const dangerOutline = new Set([
   "Confirm removal",
   "Confirm leave",

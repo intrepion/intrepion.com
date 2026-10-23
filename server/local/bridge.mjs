@@ -28,9 +28,15 @@ export default {
         ? await env.DB.batch(prepared)
         : [await prepared[0].all()];
       return Response.json({ success: true, result });
-    } catch {
+    } catch (error) {
+      const constraint = String(error?.message).match(
+        /CHECK constraint failed: ((?:space|member|collection)_(?:items|shopping|templates|runs|bytes|sections)_allowance)/,
+      )?.[1];
       return Response.json(
-        { success: false, errors: [{ code: 7500 }] },
+        {
+          success: false,
+          errors: [{ code: 7500, ...(constraint ? { constraint } : {}) }],
+        },
         { status: 400 },
       );
     }

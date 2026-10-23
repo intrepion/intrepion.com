@@ -11,6 +11,8 @@ pub struct Config {
     pub owner_sub: String,
     pub local: bool,
     pub trust_render_proxy: bool,
+    pub household_maintenance_token: Option<String>,
+    pub pilot_operator_token: Option<String>,
     pub erasure_ledger: Option<crate::erasure_ledger::LedgerSettings>,
 }
 
@@ -80,7 +82,28 @@ impl Config {
                 })
             }
         };
+        let household_maintenance_token = env::var("HOUSEHOLD_MAINTENANCE_TOKEN").ok();
+        if household_maintenance_token
+            .as_ref()
+            .is_some_and(|token| token.len() != 64 || !token.bytes().all(|b| b.is_ascii_hexdigit()))
+        {
+            return Err(
+                "HOUSEHOLD_MAINTENANCE_TOKEN must be 32 random bytes encoded as hex".into(),
+            );
+        }
+        let pilot_operator_token = env::var("PILOT_OPERATOR_TOKEN").ok();
+        if pilot_operator_token
+            .as_ref()
+            .is_some_and(|token| token.len() != 64 || !token.bytes().all(|b| b.is_ascii_hexdigit()))
+        {
+            return Err("PILOT_OPERATOR_TOKEN must be 32 random bytes encoded as hex".into());
+        }
+        if pilot_operator_token.is_some() && pilot_operator_token == household_maintenance_token {
+            return Err("Operator and maintenance credentials must be different".into());
+        }
         Ok(Self {
+            pilot_operator_token,
+            household_maintenance_token,
             bind,
             web_origin,
             db_url,
