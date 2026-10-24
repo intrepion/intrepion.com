@@ -1,6 +1,6 @@
 # MVP 3 deployment fence and isolated hosted rehearsal
 
-Status: **passed in isolation; no production rollout**. The final verification timestamps and machine-readable results are in [the evidence JSON](research/mvp-3-hosted-rehearsal.json). Existing production data, API revision, credentials, plans, user admission, DNS, provider plans, spending controls and scheduled workflows were not changed. This preparation has not been pushed or deployed.
+Status: **passed in isolation; no production rollout**. The final verification timestamps and machine-readable results are in [the evidence JSON](research/mvp-3-hosted-rehearsal.json). Existing production data, API revision, credentials, plans, user admission, DNS, provider plans and spending controls were not changed. Release preparation is being pushed to main for exact-revision CI. The new household workflow remains disabled; no Deploy workflow has been dispatched.
 
 ## Deployment fence
 
