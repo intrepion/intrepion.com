@@ -1,0 +1,56 @@
+{
+  "checked_at": "2026-10-24T09:25:11.389Z",
+  "release_sha": "fa0e707a850ca60d386f0fb6fb73d9b6a6d31eb9",
+  "ci": {
+    "id": 40081064199,
+    "url": "https://github.com/intrepion/intrepion.com/actions/runs/40081064199"
+  },
+  "ready_for_launch_approval": true,
+  "provider_mutations": false,
+  "checks": {
+    "exact_revision_ci": true,
+    "backup_operations_enabled_household_operations_disabled": true,
+    "maintenance_secret_not_yet_installed": true,
+    "no_active_deploy_backup_or_retention_job": true,
+    "render_free_single_instance_auto_deploy_off": true,
+    "pages_rollback_reference_recorded": true,
+    "live_schema_six_exact": true,
+    "live_integrity_and_no_pending_erasure_intents": true,
+    "live_owner_binding_and_legacy_writer_fence": true,
+    "staged_full_environment_matches_current_source": true,
+    "configured_identity_database_and_ledger_credentials_match": true,
+    "current_web_api_google_config_and_www_healthy": true,
+    "fresh_snapshot_protected_recovery_and_owner_policy_fit": true,
+    "reviewed_client_tree_staged_without_publication": true
+  },
+  "application_source_unchanged_since_rehearsed_freeze_implementation": true,
+  "live_schema": 6,
+  "planned_migrations": [
+    "0007",
+    "0008",
+    "0009",
+    "0010",
+    "0011",
+    "0012",
+    "0013",
+    "0014"
+  ],
+  "staged_client": {
+    "files": 4,
+    "api_origin": "https://api.intrepion.com",
+    "security_headers_checked": true,
+    "private_values_absent": true,
+    "published": false
+  },
+  "snapshot": {
+    "created_at": "2026-10-24T08:46:25.956Z",
+    "sql_bytes": 22617,
+    "recovery_sql_bytes": 39099,
+    "owner_plan_fit": true,
+    "largest_collection_items": 9,
+    "largest_collection_sections": 0
+  },
+  "live_api_sha": "a02d8f280aa524f95fe4fb311298840fa2400198",
+  "notification_delivery_test_pending": true,
+  "launch_authorized": false
+}
