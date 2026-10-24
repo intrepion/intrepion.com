@@ -1,0 +1,23 @@
+# MVP 3 sizing: provider facts
+
+Checked 2026-10-24 04:08 UTC (2026-10-23 Pacific). Public official documentation and repository code only; no account access, production export, deployment or provider changes. These facts support sizing proposals, not approved launch allowances.
+
+## D1 Free
+
+- Maximum **500 MB per database**, **5 GB across the account**, and 10 databases. Tables have no separate row-count maximum; storage still limits them. Relevant technical limits: 2,000,000 bytes per string/BLOB/row, 100,000 bytes per SQL statement, 100 bound parameters, 30 seconds per query, and 50 queries per Free Worker invocation. Batch statements retain individual statement limits. These are infrastructure constraints, not customer allowances. [Cloudflare limits](https://developers.cloudflare.com/d1/platform/limits/)
+- The account receives **5 million rows read/day** and **100,000 rows written/day**, resetting at **00:00 UTC**. Exhausting either daily allowance prevents queries until reset; storage exhaustion requires cleanup before further inserts/schema additions. Reads count scanned rows, so a small History page can cost more reads than rows returned. Inserts, updates and deletes consume writes; indexes can add writes and consume storage. Use measured query metadata, not API request counts, to estimate daily demand. D1 has no data-transfer charge. [Cloudflare pricing and definitions](https://developers.cloudflare.com/d1/platform/pricing/)
+- **Running SQL exports block other database requests.** An export is therefore an operational action even when its purpose is read-only measurement. Existing backup object sizes should be inspected before considering a fresh export. [Cloudflare export limitations](https://developers.cloudflare.com/d1/best-practices/import-export-data/)
+
+The official [analytics documentation](https://developers.cloudflare.com/d1/observability/metrics-analytics/) documents `d1AnalyticsAdaptiveGroups`, `sum.rowsRead`/`sum.rowsWritten`, and `accounts(filter: {accountTag: $accountTag})` with dataset filter `{date_geq: $start, date_leq: $end, databaseId: $databaseId}` (`$start`/`$end`: `Date`; identifiers: `string`). Select `dimensions {date databaseId}` to obtain daily totals. Its examples use calendar dates, not an exact trailing-24-hour timestamp filter; confirm timestamp fields with GraphQL introspection before claiming that window. `readQueries`/`writeQueries` measure query counts, not quota rows.
+
+## Existing backup budget and B2
+
+[`scripts/backups.mjs`](../../scripts/backups.mjs) rejects plaintext SQL over **20 MiB (20,971,520 bytes)** and ciphertext over **21 MiB (22,020,096 bytes)**. The application export ceiling constrains pilot growth well before D1's nominal database capacity; provider storage is not a usable customer budget. Logical retained-content bytes, SQLite database bytes and SQL-export bytes are different measurements: schema, SQL escaping, History, receipts, sessions and other metadata affect them differently.
+
+Backblaze currently includes the first **10 GB of account storage**, free Class A/B/C API calls, and egress up to **3× monthly average stored bytes**, calculated from byte-hours. The script's upload, download, authorization, listing and deletion calls fall in these free API classes. Downloads still count toward egress. [B2 pricing](https://www.backblaze.com/cloud-storage/pricing), [API classifications](https://www.backblaze.com/cloud-storage/transaction-pricing)
+
+Inference: seven daily archives at the ciphertext ceiling total **147 MiB**, plus tiny verification markers. This assumes one version per day. The script retains **all versions** for the current UTC day and six prior days, uploads/readbacks before pruning, and keeps old versions if backup creation fails. Retries, stale objects, independent erasure-ledger objects and other account storage require separate accounting; seven days does not guarantee seven objects or zero egress cost.
+
+## Pilot implications
+
+Customer content/count quotas alone do not bound metadata, retained administrative History, closed households awaiting protected erasure, or admitted users. [`docs/mvp-3-plan.md`](../mvp-3-plan.md) requires finite allowances and explicit approval after actual usage/export calibration. [`scripts/household-maintenance.mjs`](../../scripts/household-maintenance.mjs) reports failed maintenance while retained allocations remain reserved; the [retention policy](../mvp-3-retention.md) batches at most 25 pending closures and 25 due households per invocation. Admission, aggregate export headroom and maintenance backlog therefore need operator limits alongside per-user quotas.

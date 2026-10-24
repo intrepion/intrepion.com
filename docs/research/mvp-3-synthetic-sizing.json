@@ -1,0 +1,97 @@
+{
+  "synthetic_only": true,
+  "generated_by": "scripts/calibrate-mvp3.py",
+  "models": [
+    {
+      "users": 3,
+      "plan": {
+        "items": 250,
+        "shopping": 10,
+        "templates": 10,
+        "runs": 25,
+        "bytes": 131072,
+        "households": 2
+      },
+      "scenarios": [
+        {
+          "scenario": "small_section_renames",
+          "logical_bytes": 393213,
+          "history_rows": 11820,
+          "compact_sql_bytes": 7157150,
+          "column_explicit_sql_bytes": 9979028,
+          "local_sqlite_bytes": 12075008,
+          "explicit_to_logical_ratio": 25.378
+        },
+        {
+          "scenario": "everyday_text",
+          "logical_bytes": 393195,
+          "history_rows": 9351,
+          "compact_sql_bytes": 5471677,
+          "column_explicit_sql_bytes": 7628993,
+          "local_sqlite_bytes": 9302016,
+          "explicit_to_logical_ratio": 19.403
+        },
+        {
+          "scenario": "unicode_and_quotes",
+          "logical_bytes": 393195,
+          "history_rows": 741,
+          "compact_sql_bytes": 943878,
+          "column_explicit_sql_bytes": 1152965,
+          "local_sqlite_bytes": 1695744,
+          "explicit_to_logical_ratio": 2.932
+        }
+      ]
+    },
+    {
+      "users": 3,
+      "plan": {
+        "items": 250,
+        "shopping": 10,
+        "templates": 10,
+        "runs": 25,
+        "bytes": 262144,
+        "households": 2
+      },
+      "scenarios": [
+        {
+          "scenario": "small_section_renames",
+          "logical_bytes": 786387,
+          "history_rows": 26382,
+          "compact_sql_bytes": 15093440,
+          "column_explicit_sql_bytes": 21075272,
+          "local_sqlite_bytes": 24629248,
+          "explicit_to_logical_ratio": 26.8
+        },
+        {
+          "scenario": "everyday_text",
+          "logical_bytes": 786369,
+          "history_rows": 23913,
+          "compact_sql_bytes": 13407320,
+          "column_explicit_sql_bytes": 18724589,
+          "local_sqlite_bytes": 22302720,
+          "explicit_to_logical_ratio": 23.811
+        },
+        {
+          "scenario": "unicode_and_quotes",
+          "logical_bytes": 786369,
+          "history_rows": 999,
+          "compact_sql_bytes": 1546791,
+          "column_explicit_sql_bytes": 1823480,
+          "local_sqlite_bytes": 2531328,
+          "explicit_to_logical_ratio": 2.319
+        }
+      ]
+    }
+  ],
+  "metadata_churn": {
+    "synthetic_only": true,
+    "users": 3,
+    "erased_collections_per_user": 10000,
+    "logical_bytes": 3,
+    "history_rows": 0,
+    "compact_sql_bytes": 10343819,
+    "column_explicit_sql_bytes": 12924638,
+    "local_sqlite_bytes": 13500416,
+    "explicit_to_logical_ratio": 4308212.667
+  }
+}

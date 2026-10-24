@@ -57,7 +57,7 @@ D1's documented [batch transaction rollback](https://developers.cloudflare.com/d
 
 ## Launch gates retained
 
-Calibrate finite plan/structural caps against existing content and representative whole-database SQL-export overhead. Preserve provider spending controls and the 20 MiB export ceiling. Do not assign illustrative prototype limits to production or enable payments. Confirm launch separately after code and recovery verification.
+The [usage assessment and sizing proposal](mvp-3-sizing.md) now records measured retained content, backup size and synthetic export/recovery overhead. Its finite plan/structural caps and operator thresholds await owner approval. Preserve provider spending controls and the 20 MiB export ceiling. Do not assign illustrative prototype limits to production or enable payments. Confirm launch separately after code and recovery verification.
 
 ## Further verified production slices
 
