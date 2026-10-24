@@ -3,6 +3,7 @@ import { pathToFileURL } from "node:url";
 import { B2, createBackup, checkBackup, encrypt } from "./backups.mjs";
 import { estimateRecoverySqlBytes } from "./recovery.mjs";
 import policy from "../docs/mvp-3-monitoring-policy.json" with { type: "json" };
+const BYTES_PER_MIB = 1_048_576;
 
 function reportHealth(health) {
   const size = Math.max(health.sql_bytes ?? 0, health.recovery_sql_bytes ?? 0);
@@ -32,26 +33,22 @@ function reportHealth(health) {
   if (sizeLevel === "urgent")
     alerts.push({
       level: "error",
-      message:
-        "SQL size reached 15 MiB. Urgent recovery-capacity review required; pause pilot expansion.",
+      message: `SQL size reached ${policy.urgent_bytes / BYTES_PER_MIB} MiB. Urgent recovery-capacity review required; pause pilot expansion.`,
     });
   else if (sizeLevel === "pause")
     alerts.push({
       level: "error",
-      message:
-        "SQL size reached 10 MiB. Pause new admissions and allowance increases until capacity is reviewed.",
+      message: `SQL size reached ${policy.pause_bytes / BYTES_PER_MIB} MiB. Pause new admissions and allowance increases until capacity is reviewed.`,
     });
   else if (sizeLevel === "review")
     alerts.push({
       level: "warning",
-      message:
-        "SQL size reached 5 MiB. Review growth, History and recovery headroom.",
+      message: `SQL size reached ${policy.review_bytes / BYTES_PER_MIB} MiB. Review growth, History and recovery headroom.`,
     });
   if (health.backup_age_minutes >= policy.backup_age_alert_minutes)
     alerts.push({
       level: "error",
-      message:
-        "Verified backup reached 22 hours old. Investigate delayed or failing backups before the 24-hour recovery target is missed.",
+      message: `Verified backup reached ${policy.backup_age_alert_minutes / 60} hours old. Investigate delayed or failing backups before the recovery target is missed.`,
     });
   return {
     health,
@@ -82,7 +79,7 @@ function summary(report) {
   const size = (bytes) =>
     bytes === null
       ? "unknown"
-      : `${bytes.toLocaleString("en-US")} (${(bytes / 1048576).toFixed(2)} MiB)`;
+      : `${bytes.toLocaleString("en-US")} (${(bytes / BYTES_PER_MIB).toFixed(2)} MiB)`;
   const headroom = (bytes) =>
     bytes === null ? "unknown" : size(Math.max(0, health.budget_bytes - bytes));
   return [
@@ -90,7 +87,7 @@ function summary(report) {
     "",
     `Verified backup age: ${health.backup_age_minutes} minutes. Size status: **${report.size_level}**.`,
     "",
-    "| Measurement | Bytes (MiB) | Remaining under 20 MiB |",
+    `| Measurement | Bytes (MiB) | Remaining under ${health.budget_bytes / BYTES_PER_MIB} MiB |`,
     "| --- | ---: | ---: |",
     `| Plaintext export | ${size(health.sql_bytes)} | ${headroom(health.sql_bytes)} |`,
     `| Recovery SQL estimate before ledger replay | ${size(health.recovery_sql_bytes)} | ${headroom(health.recovery_sql_bytes)} |`,
