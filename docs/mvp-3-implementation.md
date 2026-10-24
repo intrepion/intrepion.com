@@ -1,6 +1,6 @@
 # MVP 3 implementation record
 
-Status: implementation, two-axis review and browser validation complete locally. The owner also verified the production Docker image build successfully. Scope, wireframes, mockups and the standalone prototype are approved. Numerical launch limits and deployment are separate gates. Review baseline: `d5f2fda` (requested by the owner). The owner requested a commit of current local work as the review baseline; that commit includes the first account-isolation slice as well as the approved planning/design artifacts. Review the final behavior against the complete scope, including that baseline slice.
+Status: implementation, two-axis review and browser validation complete locally. The owner also verified the production Docker image build successfully. Scope, wireframes, mockups and the standalone prototype are approved. The starter numerical limits are now approved; production assignment and deployment remain separate gates. Review baseline: `d5f2fda` (requested by the owner). The owner requested a commit of current local work as the review baseline; that commit includes the first account-isolation slice as well as the approved planning/design artifacts. Review the final behavior against the complete scope, including that baseline slice.
 
 ## Test boundaries
 
@@ -57,7 +57,7 @@ D1's documented [batch transaction rollback](https://developers.cloudflare.com/d
 
 ## Launch gates retained
 
-The [usage assessment and sizing proposal](mvp-3-sizing.md) now records measured retained content, backup size and synthetic export/recovery overhead. Its finite plan/structural caps and operator thresholds await owner approval. Preserve provider spending controls and the 20 MiB export ceiling. Do not assign illustrative prototype limits to production or enable payments. Confirm launch separately after code and recovery verification.
+The [usage assessment](mvp-3-sizing.md) records measured retained content, backup size and synthetic export/recovery overhead. The owner approved its starter plan, structural caps and conditional admission ceiling. Production assignment, monitoring arrangements and the [hosted rollout](mvp-3-release.md) remain pending. Preserve provider spending controls and the 20 MiB export ceiling. Do not assign illustrative prototype limits to production or enable payments. Confirm launch separately after code and recovery verification.
 
 ## Further verified production slices
 

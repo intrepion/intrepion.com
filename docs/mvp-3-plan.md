@@ -1,6 +1,6 @@
 # MVP 3: Household foundation
 
-Status: scope confirmed in Q56. The MVP 3 wireframes and visual mockups are approved; the separate standalone prototype is approved. Production implementation is in progress; numerical launch allowances and deployment remain separate approval gates. Interview rounds preserve the decision history; later accepted amendments supersede earlier proposals.
+Status: scope confirmed in Q56. The MVP 3 wireframes and visual mockups are approved; the separate standalone prototype is approved. Production implementation and local verification are complete; starter numerical allowances are approved in the sizing record. Production assignment and deployment remain separate approval gates. Interview rounds preserve the decision history; later accepted amendments supersede earlier proposals.
 
 ## Confirmed scope
 
@@ -183,3 +183,7 @@ No current retained-content/storage baseline is documented in the repository. Th
 ## Implementation amendment: full-storage recovery
 
 During implementation, the owner explicitly approved a recovery flow for full storage: permit selected active content to be permanently erased after an explicit scope confirmation, with the same backup protection as ordinary permanent erasure. This prevents the requirement to create Trash History from blocking all capacity reduction. Update the existing wireframes, mockups and standalone prototype before implementing the production flow. Normal Trash and erasure remain distinct; no automatic History trimming or silent data deletion is permitted.
+
+## Starter numerical limits approved
+
+Following the production usage assessment and synthetic export/recovery calibration, the owner approved the [starter limits](mvp-3-sizing.md) on 2026-10-24 UTC: 250 retained tasks/items, 10 shopping lists, 10 templates, 25 runs, 131,072 logical bytes and two simultaneous headed households per user; 100 retained items and 20 sections per collection; initially the owner and at most three approved accounts after daily D1 usage review. Earlier interview/design entries describe the numbers as undecided at those gates; this approval settles those values. Assignment, migration, monitoring configuration and deployment are not authorized by this numerical approval alone.

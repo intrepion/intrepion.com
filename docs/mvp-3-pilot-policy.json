@@ -1,0 +1,23 @@
+{
+  "status": "approved-values-not-applied",
+  "approved_on_utc": "2026-10-24",
+  "plan": {
+    "items": 250,
+    "shopping": 10,
+    "templates": 10,
+    "runs": 25,
+    "bytes": 131072,
+    "households": 2
+  },
+  "structural": {
+    "maxItemsPerCollection": 100,
+    "maxSectionsPerCollection": 20
+  },
+  "admission": {
+    "initialOwnerOnly": true,
+    "maximumApprovedAccounts": 3,
+    "additionalAccountsRequireDailyD1UsageReview": true
+  },
+  "monitoring": "Proposed operating thresholds in docs/mvp-3-sizing.md; not installed.",
+  "application": "This is a policy record, not an operator Apply request or a runtime default. A rollout requires its own authorization, current identity/revision/usage previews and explicit policy assignment."
+}

@@ -1,6 +1,6 @@
 # MVP 3 pilot operation
 
-The pilot uses manually assigned finite resource plans, Google identities and a separate operator CLI. There is no public signup, operator web dashboard, checkout, billing expiry or automatic redistribution. Numerical production plans and structural caps require the owner's launch review after measuring existing retained usage and whole-database export overhead. The local examples are development fixtures and must not be applied to production. The [measured sizing proposal](mvp-3-sizing.md) records the production baseline, synthetic export/recovery experiments and numerical values awaiting approval.
+The pilot uses manually assigned finite resource plans, Google identities and a separate operator CLI. There is no public signup, operator web dashboard, checkout, billing expiry or automatic redistribution. The owner approved the measured starter plan and structural caps; applying them to production remains part of a separately authorized rollout. The local examples are development fixtures and must not be applied to production. The [approved sizing record](mvp-3-sizing.md) and [policy values](mvp-3-pilot-policy.json) record the production baseline, synthetic export/recovery experiments and approved numbers. The [release checklist](mvp-3-release.md) tracks assignment and hosted verification.
 
 ## Credentials and environment
 

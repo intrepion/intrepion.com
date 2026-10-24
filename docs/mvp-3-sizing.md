@@ -1,6 +1,6 @@
-# MVP 3 usage assessment and proposed pilot limits
+# MVP 3 usage assessment and approved pilot limits
 
-Status: **proposal awaiting owner approval**. Measurement: 2026-10-24 04:09 UTC (2026-10-23 Pacific). No production data, plan, admission, deployment, credentials, spending controls or provider settings were changed. These are manually assigned capacity allowances, not subscription prices or a paid offering.
+Status: **starter limits approved by the owner on 2026-10-24 (UTC)**. Approval covers the per-user resources, structural caps and conditional three-account admission policy. Production assignment and deployment remain separate gates. Measurement: 2026-10-24 04:09 UTC (2026-10-23 Pacific). No production data, plan, admission, deployment, credentials, spending controls or provider settings were changed. These are manually assigned capacity allowances, not subscription prices or a paid offering.
 
 ## Measured production baseline
 
@@ -24,11 +24,11 @@ The live database has none of the MVP 3 household/plan tables: production still 
 
 The live aggregate query reported **108 rows read, zero rows written**, and about 2.13 ms provider SQL execution. That is one measurement query, not daily account usage. Both existing credentials attempted for D1 analytics returned “not authorized for that account.” No permissions were broadened. Daily D1 reads/writes and shared account headroom therefore remain unmeasured and require an operator dashboard check before admitting additional users.
 
-## Proposed initial plan
+## Approved initial plan
 
-Apply one manually assigned plan to each approved pilot user, after approval. Resources allocated to a household are reserved from that user's plan; they are not additional capacity. Personal content and household allocations share the same resource budget. Household contributions sum by resource. Individual head count ceilings remain separate; there is no individual byte ceiling.
+Use one manually assigned plan per approved pilot user during the separately authorized rollout. Resources allocated to a household are reserved from that user's plan; they are not additional capacity. Personal content and household allocations share the same resource budget. Household contributions sum by resource. Individual head count ceilings remain separate; there is no individual byte ceiling.
 
-| Plan resource | Proposed allowance |
+| Plan resource | Approved allowance |
 | --- | ---: |
 | Retained tasks and list items combined | **250** |
 | Shopping lists | **10** |
@@ -95,6 +95,8 @@ Review aggregate backup sizes and daily rows after the first week, before each n
 
 [Current official provider facts](research/mvp-3-sizing-provider-facts.md) distinguish D1's nominal Free storage/row allowances from the much smaller application backup budget. The current provider plans, no-trial assessment, $0 target and agreed $10 spending ceiling remain unchanged. No paid service or billing change was made. This is not an invoice audit or a guarantee of $0 account-wide costs: B2 download traffic, retained versions/ledger objects, other account resources and shared quotas require ongoing observation. The authorized daily backup prefix is currently only about 69.9 KiB across all listed uploaded versions.
 
-## Approval requested
+## Approval record
 
-Approve or amend the **250 / 10 / 10 / 25 / 128 KiB / 2** per-user plan, the **100 items / 20 sections** structural caps, the **three-account admission ceiling with daily-usage review**, and the review triggers above. This proposal does **not** authorize production assignment, migration, credential setup or deployment; those steps follow separately after the values and hosted release plan are approved.
+The owner replied “yes, approved” to the starter limits: **250 / 10 / 10 / 25 / 128 KiB / 2** per user, **100 items / 20 sections** per collection, initially the owner and expansion to at most **three approved accounts** after the daily-usage check. The machine-readable record is [mvp-3-pilot-policy.json](mvp-3-pilot-policy.json).
+
+The monitoring thresholds above remain proposed operating procedures to configure or explicitly accept during release preparation; they are not automatically installed by approving the starter limits. No production policy, admission, credential, migration, workflow activation or deployment was performed. The [release preparation checklist](mvp-3-release.md) tracks those remaining gates.
