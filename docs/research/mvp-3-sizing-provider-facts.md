@@ -16,7 +16,7 @@ The official [analytics documentation](https://developers.cloudflare.com/d1/obse
 
 Backblaze currently includes the first **10 GB of account storage**, free Class A/B/C API calls, and egress up to **3× monthly average stored bytes**, calculated from byte-hours. The script's upload, download, authorization, listing and deletion calls fall in these free API classes. Downloads still count toward egress. [B2 pricing](https://www.backblaze.com/cloud-storage/pricing), [API classifications](https://www.backblaze.com/cloud-storage/transaction-pricing)
 
-Inference: seven daily archives at the ciphertext ceiling total **147 MiB**, plus tiny verification markers. This assumes one version per day. The script retains **all versions** for the current UTC day and six prior days, uploads/readbacks before pruning, and keeps old versions if backup creation fails. Retries, stale objects, independent erasure-ledger objects and other account storage require separate accounting; seven days does not guarantee seven objects or zero egress cost.
+Original sizing inference: seven archives at the ciphertext ceiling total **147 MiB**, plus tiny verification markers, assuming one version per day. The owner subsequently selected twice-daily backups for the 22-hour age alert: nominally fourteen scheduled archives at that ceiling total **294 MiB**, plus markers and manual/retry versions. The script retains **all versions** for the current UTC day and six prior days, uploads/readbacks before pruning, and keeps old versions if backup creation fails. Retries, stale objects, independent erasure-ledger objects and other account storage require separate accounting; seven days does not guarantee a fixed object count or zero egress cost.
 
 ## Pilot implications
 

@@ -347,3 +347,37 @@ test("an unavailable recovery estimate still saves the verified backup before ra
   assert.equal(report.health.recovery_sql_bytes, null);
   assert.equal(JSON.stringify(report).includes("private_future"), false);
 });
+
+test("normal scheduled backup intervals do not trigger age failures before the next backup is due", async () => {
+  const { checkMonitoredBackup } = await import("./backup-operations.mjs");
+  const workflow = await readFile(".github/workflows/backup.yml", "utf8");
+  const expression = workflow.match(/cron:\s*"([^"]+)"/)[1];
+  const [minute, hours, day, month, weekday] = expression.split(" ");
+  assert.equal(`${day} ${month} ${weekday}`, "* * *");
+  const scheduledHours = hours
+    .split(",")
+    .map(Number)
+    .sort((a, b) => a - b);
+  for (let index = 0; index < scheduledHours.length; index++) {
+    const at = new Date(
+      Date.UTC(2026, 9, 24, scheduledHours[index], Number(minute)),
+    );
+    const next = new Date(
+      Date.UTC(
+        2026,
+        9,
+        index + 1 === scheduledHours.length ? 25 : 24,
+        scheduledHours[(index + 1) % scheduledHours.length],
+        Number(minute),
+      ),
+    );
+    const store = new Storage();
+    await createBackup(store, sql, () => Buffer.from("encrypted fixture"), at, {
+      recoverySqlBytes: 32768,
+    });
+    assert.equal(
+      (await checkMonitoredBackup(store, new Date(next.getTime() - 1))).failed,
+      false,
+    );
+  }
+});

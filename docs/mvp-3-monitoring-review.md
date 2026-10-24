@@ -19,3 +19,9 @@ No confirmed findings. The changes match the selected size/age thresholds; verif
 Exact-revision CI and normal hosted backup/watchdog/measurement-readback/protected-recovery checks remain activation gates; the review itself is not that evidence.
 
 Spec total: zero confirmed findings.
+
+## Cadence follow-up
+
+A subsequent policy check found that a 22-hour age failure conflicts with the previous once-daily backup schedule: even on-time jobs would normally produce failures before the next backup was due. The Spec reviewer confirmed the conflict. The owner selected **twice-daily backups retaining the 22-hour alert**, adding one scheduled export per day and preserving seven-day all-version retention. The workflow now schedules 04:17 and 16:17 UTC. A regression derives actual scheduled hours from the workflow and checks the monitor immediately before each next backup; it failed with the old schedule and passes with the selected cadence, including the midnight interval.
+
+Follow-up Spec total: one cadence compatibility finding, addressed. Standards total remains zero hard violations and one addressed heuristic finding. No unresolved review finding remains; exact-revision CI and hosted checks remain activation gates.

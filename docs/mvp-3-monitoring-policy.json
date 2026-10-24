@@ -5,5 +5,6 @@
   "pause_bytes": 10485760,
   "urgent_bytes": 15728640,
   "backup_age_alert_minutes": 1320,
+  "cadence": "Owner selected twice-daily backups at 04:17 and 16:17 UTC to keep the 22-hour alert ahead of the next missed interval; seven-day all-version retention remains unchanged.",
   "behavior": "Save and verify backups before reporting size failures. Size review is a warning; pause, urgent and age alerts fail the GitHub job for existing owner notifications. Admission, allowance, billing, deletion and provider changes remain manual."
 }
