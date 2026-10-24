@@ -186,6 +186,50 @@ test("recipient-bound head invitations work in the browser and removal clears an
       .getByRole("dialog")
       .getByRole("button", { name: "Join household", exact: true })
       .click();
+    await expect(
+      second.getByRole("button", { name: "New task", exact: true }),
+    ).toBeEnabled();
+    await page.getByRole("button", { name: "Tasks", exact: true }).click();
+    await page.getByRole("button", { name: "New task", exact: true }).click();
+    await page
+      .getByLabel("Title", { exact: true })
+      .fill("Shared coordination task");
+    await page.getByRole("button", { name: "Save task", exact: true }).click();
+    await expect(
+      page.getByText("Shared coordination task", { exact: true }),
+    ).toBeVisible();
+    await second.reload();
+    await second
+      .getByRole("combobox", { name: "Space", exact: true })
+      .selectOption({ label: "Invited family · Shared · Head" });
+    await expect(
+      second.getByText("Shared coordination task", { exact: true }),
+    ).toBeVisible();
+    await second
+      .getByRole("button", {
+        name: "Edit task: Shared coordination task",
+        exact: true,
+      })
+      .click();
+    await second
+      .getByLabel("Title", { exact: true })
+      .fill("Shared coordination updated by Morgan");
+    await second
+      .getByRole("button", { name: "Save changes", exact: true })
+      .click();
+    await expect(
+      second.getByText("Shared coordination updated by Morgan", {
+        exact: true,
+      }),
+    ).toBeVisible();
+    await page.reload();
+    await page
+      .getByRole("combobox", { name: "Space", exact: true })
+      .selectOption({ label: "Invited family · Shared · Head" });
+    await expect(
+      page.getByText("Shared coordination updated by Morgan", { exact: true }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Household", exact: true }).click();
     await second.getByRole("button", { name: "New task", exact: true }).click();
     await second
       .getByLabel("Title", { exact: true })

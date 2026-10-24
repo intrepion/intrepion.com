@@ -71,3 +71,9 @@ Calibrate finite plan/structural caps against existing content and representativ
 - Approval revocation deletes existing sessions. Reapproval permits a fresh login without reviving old sessions. The regression passes.
 - The operator CLI writes a private origin-bound review file before Apply, retains stable action identities for retries and includes no web dashboard. Operator-assisted global-erasure and retained-attribution procedures are documented separately from access revocation.
 - Administrative History shows actual actors and before/after own-ceiling/allocation values; the browser regression passes.
+
+## Owner-requested local acceptance verification
+
+Reran all 32 browser workflows against a disposable local D1 database: all passed. Expanded the two-browser invitation test to verify Owner creates a shared task, Morgan sees it after reload and edits it, and Owner sees that edit after reload, before confirming membership removal clears Morgan's pending shared draft while preserving personal access. The startup readiness assertion allows 15 seconds; a prior run reached its five-second deadline during successful authentication. Type checking, lint and diff whitespace checks passed for these test changes. No production application behavior changed.
+
+Existing local development data was preserved. The development stack was paused for isolated tests and restored afterward. Production remains unchanged. The Docker build was attempted directly and with noninteractive sudo: Docker socket access was denied and sudo required a password, so that check still needs the owner's terminal.

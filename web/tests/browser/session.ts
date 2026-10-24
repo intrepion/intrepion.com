@@ -28,6 +28,6 @@ export async function signInPilot(page: Page, identity: Identity = "owner") {
   }
   await expect(
     page.getByRole("button", { name: "My capacity", exact: true }),
-  ).toBeEnabled();
+  ).toBeEnabled({ timeout: 15_000 });
   sessions.set(identity, await page.context().cookies());
 }
