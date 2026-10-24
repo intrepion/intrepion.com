@@ -14,6 +14,8 @@ The hourly GitHub workflow calls `scripts/household-maintenance.mjs`; failures u
 
 The workflow is disabled until the repository variable `HOUSEHOLD_OPERATIONS_ENABLED` is explicitly set to `true`. Leave it unset during development. Deployment approval, a protected restore drill, credential setup and notification verification are launch gates; this implementation does not change live providers or enable automation. The existing backup caps and provider spending controls remain in force.
 
+The manual `test_failure: true` input runs a notification-only failure even while that variable is disabled. Its first step exits before checkout or any API request, so it cannot erase content. Normal manual runs and scheduled runs still require the enablement variable. The launch approval must include this intentional notification test; confirm receipt before enabling scheduled retention. After deployment, maintenance authorization can be checked with an explicitly nonexistent household UUID, avoiding any live household erasure during the credential check.
+
 ## Local verification
 
 Integration tests use generated clients, a real local D1 database and the local ledger provider emulator. `HOUSEHOLD_TEST_NOW` overrides only the household clock in a development-auth build bound to the local environment; production builds ignore it. Authentication/session expiry always uses the real clock. The tests advance to the confirmed UTC boundary, lose a provider response, verify retained allocations and retry protected deletion. Encrypted recovery tests exercise a snapshot from before closure/erasure, reversed marker order and independent-copy retention.

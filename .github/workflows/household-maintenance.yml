@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:
+    inputs:
+      test_failure:
+        description: Fail immediately to test the owner's notification without running erasure
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -11,11 +16,18 @@ concurrency:
 jobs:
   erase:
     # Enable only after the MVP 3 API, recovery drill and credential are deployed.
-    if: vars.HOUSEHOLD_OPERATIONS_ENABLED == 'true'
+    if: >-
+      vars.HOUSEHOLD_OPERATIONS_ENABLED == 'true' ||
+      (github.event_name == 'workflow_dispatch' && inputs.test_failure)
     runs-on: ubuntu-24.04
     environment: operations
     timeout-minutes: 12
     steps:
+      - name: Test failure notification delivery without erasure
+        if: github.event_name == 'workflow_dispatch' && inputs.test_failure
+        run: |
+          echo "Controlled notification test; no API request or erasure attempted."
+          exit 1
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
