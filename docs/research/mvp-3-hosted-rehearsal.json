@@ -1,0 +1,67 @@
+{
+  "started_at": "2026-10-24T04:46:16.091Z",
+  "finished_at": "2026-10-24T04:47:01.961Z",
+  "production_mutations": false,
+  "backup": {
+    "backup_age_minutes": 1162,
+    "archive_bytes": 22817,
+    "created_at": "2026-10-23T09:23:59.038Z",
+    "sql_bytes": 22617
+  },
+  "ledger": {
+    "complete": true,
+    "records": 6,
+    "versions": [1]
+  },
+  "checks": {
+    "offline_protected_replay": {
+      "encrypted_readback": true,
+      "complete_independent_ledger": true,
+      "migrations": 14,
+      "sessions_cleared": true,
+      "private_contents_logged": false
+    },
+    "first_upgrade_blocked": true,
+    "unconfigured_policy_blocked": true,
+    "raw_migration": {
+      "migrations": 14,
+      "retained_fields_and_history_preserved": true,
+      "legacy_history_actor_backfill": true,
+      "integrity": true
+    },
+    "migration_production_api": {
+      "approved_plan_and_structure_applied_in_isolation": true,
+      "approved_values_read_back": true,
+      "operator_and_maintenance_separation": true,
+      "real_client_persistence_and_idempotent_retry": true,
+      "retired_identity_rejected": true,
+      "legacy_writer_rejected": true,
+      "hosted_batch_execution": true,
+      "hosted_batch_rollback": true
+    },
+    "missing_writer_fence_blocked": true,
+    "missing_migration_record_blocked": true,
+    "hosted_protected_recovery": {
+      "migrations": 14,
+      "integrity": true,
+      "sessions_cleared": true,
+      "replayed_content_preserved": true,
+      "independent_erasures_applied": true
+    },
+    "recovery_production_api": {
+      "approved_plan_and_structure_applied_in_isolation": true,
+      "approved_values_read_back": true,
+      "operator_and_maintenance_separation": true,
+      "real_client_persistence_and_idempotent_retry": true,
+      "retired_identity_rejected": true,
+      "legacy_writer_rejected": true,
+      "hosted_batch_execution": true,
+      "hosted_batch_rollback": true
+    }
+  },
+  "databases_created": 2,
+  "databases_removed": 2,
+  "cleanup_failed": false,
+  "temporary_plaintext_removed": true,
+  "google_sign_in_exercised": false
+}
