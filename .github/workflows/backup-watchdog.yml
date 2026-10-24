@@ -28,9 +28,9 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .node-version
-      - name: Require a verified archive no older than 24 hours
+      - name: Check verified backup age and recovery headroom
         env:
           B2_KEY_ID: ${{ secrets.B2_WATCHDOG_KEY_ID }}
           B2_APPLICATION_KEY: ${{ secrets.B2_WATCHDOG_KEY }}
           B2_BUCKET_ID: ${{ vars.B2_BUCKET_ID }}
-        run: node scripts/backups.mjs check
+        run: node scripts/backup-operations.mjs check

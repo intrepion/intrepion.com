@@ -324,7 +324,7 @@ function replay(db, records) {
   }
   db.exec("DELETE FROM sessions; DELETE FROM login_challenges;");
 }
-function dump(db) {
+function dump(db, enforceBudget = true) {
   const schema = db
     .prepare(
       "SELECT type,name,sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY rowid",
@@ -364,9 +364,25 @@ function dump(db) {
     output.push(`${entry.sql};`);
   output.push("PRAGMA foreign_keys=ON;");
   const bytes = Buffer.from(output.join("\n"));
-  if (bytes.length > MAX_BYTES)
+  if (enforceBudget && bytes.length > MAX_BYTES)
     throw new Error("Recovery output exceeds the MVP size budget.");
   return bytes;
+}
+
+/** Measure current-schema SQL before independent ledger replay; never a restore guarantee. */
+export async function estimateRecoverySqlBytes(sql) {
+  verifySql(sql);
+  const db = new DatabaseSync(":memory:");
+  try {
+    db.exec(sql.toString());
+    await upgrade(db);
+    const serialized = dump(db, false);
+    const size = serialized.length;
+    serialized.fill(0);
+    return size;
+  } finally {
+    db.close();
+  }
 }
 
 /** Fetch all retained versions with a separate read-only, database-prefix-scoped operator key. */

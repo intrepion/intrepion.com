@@ -48,7 +48,7 @@ jobs:
           umask 077
           node scripts/cloud-config.mjs
           ./node_modules/.bin/wrangler d1 export DB --remote --config server/wrangler.production.json --output "$RUNNER_TEMP/intrepion.sql"
-          node scripts/backups.mjs create "$RUNNER_TEMP/intrepion.sql"
+          node scripts/backup-operations.mjs create "$RUNNER_TEMP/intrepion.sql"
       - name: Remove temporary private export
         if: always()
         run: rm -f "$RUNNER_TEMP/intrepion.sql"

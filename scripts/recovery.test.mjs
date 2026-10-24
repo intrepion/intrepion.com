@@ -273,6 +273,20 @@ test("recovering an MVP 1 archive upgrades retained tasks and the migration ledg
       ).join("\n") +
         `\nCREATE TABLE d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);INSERT INTO d1_migrations(name) VALUES('0001_initial.sql'),('0002_retired_task_ids.sql');INSERT INTO tasks(owner_sub,id,title,notes,completed,revision) VALUES('old-owner','${id(601)}','Retained legacy task','Original notes',1,7),('old-owner','${id(602)}','Permanently erased later','Private notes',0,1);`,
     );
+    const { estimateRecoverySqlBytes } = await import("./recovery.mjs");
+    const withoutErasures = await recoverArchive(
+      encrypt(legacy, recipient),
+      identity,
+      {
+        databaseId,
+        records: [],
+        complete: true,
+      },
+    );
+    assert.equal(
+      await estimateRecoverySqlBytes(legacy),
+      withoutErasures.length,
+    );
     const record = {
       version: 1,
       database_id: databaseId,
@@ -602,6 +616,47 @@ test("encrypted recovery cannot reopen a household closed after the snapshot or 
     }
     assert.equal(erased.includes("Retained closed name"), false);
     assert.equal(erased.includes("Erased shared History"), false);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("oversized recovery estimates stay measurable while encrypted restores keep the 20 MiB ceiling", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "intrepion-size-recovery-"));
+  try {
+    const identity = join(directory, "identity.agekey");
+    assert.equal(
+      spawnSync(process.env.AGE_KEYGEN_BIN ?? "age-keygen", ["-o", identity])
+        .status,
+      0,
+    );
+    const recipient = spawnSync(
+      process.env.AGE_KEYGEN_BIN ?? "age-keygen",
+      ["-y", identity],
+      { encoding: "utf8" },
+    ).stdout.trim();
+    const rows = Array.from(
+      { length: 2270 },
+      (_, n) =>
+        `('owner','${id(10000 + n)}',1,'Synthetic size fixture','${"x".repeat(9000)}','${id(20000 + n)}')`,
+    );
+    const input = Buffer.from(
+      migrations +
+        "\nINSERT INTO collections(owner_sub,id,kind,title,notes,last_operation) VALUES" +
+        rows.join(",") +
+        ";",
+    );
+    assert.ok(input.length < 20_971_520);
+    const { estimateRecoverySqlBytes } = await import("./recovery.mjs");
+    assert.ok((await estimateRecoverySqlBytes(input)) > 20_971_520);
+    await assert.rejects(
+      recoverArchive(encrypt(input, recipient), identity, {
+        databaseId,
+        records: [],
+        complete: true,
+      }),
+      /Recovery output exceeds the MVP size budget/,
+    );
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

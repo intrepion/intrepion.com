@@ -334,8 +334,19 @@ export class B2 {
   }
 }
 
-export async function createBackup(store, sql, seal, at = new Date()) {
+export async function createBackup(
+  store,
+  sql,
+  seal,
+  at = new Date(),
+  { recoverySqlBytes } = {},
+) {
   verifySql(sql);
+  if (
+    recoverySqlBytes !== undefined &&
+    (!Number.isSafeInteger(recoverySqlBytes) || recoverySqlBytes <= 0)
+  )
+    throw new Error("Invalid backup measurement.");
   const bytes = seal(sql);
   if (bytes.length > MAX_BYTES + 1024 * 1024)
     throw new Error("Encrypted backup exceeds the size budget.");
@@ -347,6 +358,10 @@ export async function createBackup(store, sql, seal, at = new Date()) {
     );
   const marker = {
     version: 1,
+    sql_bytes: sql.length,
+    ...(recoverySqlBytes === undefined
+      ? {}
+      : { recovery_sql_bytes: recoverySqlBytes }),
     created_at: at.toISOString(),
     file_id: archive.fileId,
     file_name: prefix + "database.sql.age",
@@ -384,6 +399,14 @@ export async function checkBackup(store, at = new Date()) {
   const bytes = await store.download(markers[0].fileId);
   if (bytes.length > 4096) throw new Error("Invalid backup marker.");
   const marker = JSON.parse(bytes.toString());
+  for (const field of ["sql_bytes", "recovery_sql_bytes"])
+    if (
+      Object.hasOwn(marker, field) &&
+      (!Number.isSafeInteger(marker[field]) ||
+        marker[field] <= 0 ||
+        (field === "sql_bytes" && marker[field] > MAX_BYTES))
+    )
+      throw new Error("Invalid backup measurement.");
   const age = at.getTime() - Date.parse(marker.created_at);
   if (!Number.isFinite(age) || age < 0 || age > 86400000)
     throw new Error(
@@ -400,6 +423,9 @@ export async function checkBackup(store, at = new Date()) {
   return {
     backup_age_minutes: Math.floor(age / 60000),
     archive_bytes: marker.bytes,
+    sql_bytes: marker.sql_bytes ?? null,
+    recovery_sql_bytes: marker.recovery_sql_bytes ?? null,
+    budget_bytes: MAX_BYTES,
   };
 }
 
