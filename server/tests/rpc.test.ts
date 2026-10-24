@@ -3192,3 +3192,163 @@ test("operator structural caps preserve oversized collections and reject further
     );
   }
 });
+
+test("maintenance freezes customer writes and retention while operator bootstrap and saved reads remain available", async () => {
+  const owner = await login();
+  const saved = await client.createTask(
+    { id: crypto.randomUUID(), title: "Saved before the maintenance window" },
+    owner,
+  );
+  const pending = { id: crypto.randomUUID(), title: "Retry after maintenance" };
+  const frozenBase = "http://127.0.0.1:8794";
+  const transport = createConnectTransport({ baseUrl: frozenBase });
+  const frozenTasks = createClient(TaskService, transport);
+  const frozenLists = createClient(ListService, transport);
+  const frozenHouseholds = createClient(HouseholdService, transport);
+  const frozenMaintenance = createClient(
+    HouseholdMaintenanceService,
+    transport,
+  );
+  const frozenOperator = createClient(PilotOperatorService, transport);
+  const admin = { headers: { authorization: `Bearer ${"cd".repeat(32)}` } };
+  const unavailable = (error: unknown) =>
+    error instanceof ConnectError && error.code === Code.Unavailable;
+  let instance = start("target/debug/intrepion-server", [], {
+    env: { ...localEnv, PORT: "8794", CUSTOMER_WRITES_FROZEN: "true" },
+  });
+  try {
+    await ready(`${frozenBase}/health/live`);
+    await assert.rejects(frozenTasks.createTask(pending, owner), unavailable);
+    const config = await (await fetch(`${frozenBase}/auth/config`)).json();
+    assert.equal(config.customer_writes_frozen, true);
+    assert.equal(
+      (await fetch(`${frozenBase}/auth/session`, { headers: owner.headers }))
+        .status,
+      200,
+    );
+    await assert.rejects(
+      frozenTasks.updateTask(
+        { ...saved, title: "Blocked maintenance edit" },
+        owner,
+      ),
+      unavailable,
+    );
+    await assert.rejects(
+      frozenTasks.deleteTask({ id: saved.id, revision: saved.revision }, owner),
+      unavailable,
+    );
+    await assert.rejects(
+      frozenLists.applyChange(
+        {
+          operationId: crypto.randomUUID(),
+          collectionId: crypto.randomUUID(),
+          action: ChangeAction.CREATE_COLLECTION,
+          details: {
+            kind: CollectionKind.SHOPPING,
+            title: "Blocked maintenance list",
+          },
+        },
+        owner,
+      ),
+      unavailable,
+    );
+    await assert.rejects(
+      frozenHouseholds.changeHousehold(
+        {
+          operationId: crypto.randomUUID(),
+          householdId: crypto.randomUUID(),
+          action: HouseholdAction.CREATE,
+          name: "Blocked maintenance household",
+          amounts: { bytes: 4096n },
+        },
+        owner,
+      ),
+      unavailable,
+    );
+    await assert.rejects(
+      frozenHouseholds.copyCollection({}, owner),
+      unavailable,
+    );
+    await assert.rejects(
+      frozenMaintenance.eraseDueHouseholds(
+        {},
+        { headers: { authorization: `Bearer ${"ab".repeat(32)}` } },
+      ),
+      unavailable,
+    );
+    for (const path of ["challenge", "development", "google", "logout"]) {
+      const response = await fetch(`${frozenBase}/auth/${path}`, {
+        method: "POST",
+        headers: { ...owner.headers, "content-type": "application/json" },
+        body: "{}",
+      });
+      assert.equal(response.status, 503);
+      assert.equal(response.headers.get("retry-after"), "60");
+    }
+    assert.equal(
+      (
+        await fetch(`${frozenBase}/life.v1.HouseholdService/FutureMutation`, {
+          method: "POST",
+          headers: owner.headers,
+          body: "{}",
+        })
+      ).status,
+      503,
+    );
+    const confirmed = (await frozenTasks.listTasks({}, owner)).tasks;
+    assert.equal(
+      confirmed.find((task) => task.id === saved.id)!.title,
+      saved.title,
+    );
+    assert.equal(
+      confirmed.some((task) => task.id === pending.id),
+      false,
+    );
+    assert.equal(
+      (await frozenLists.getCollection({ id: saved.id }, owner)).title,
+      saved.title,
+    );
+    await frozenHouseholds.getOverview({}, owner);
+    await assert.rejects(
+      frozenOperator.getStructuralPolicy({}, owner),
+      (error: unknown) =>
+        error instanceof ConnectError && error.code === Code.Unauthenticated,
+    );
+    const policy = await frozenOperator.getStructuralPolicy({}, admin);
+    const changed = await frozenOperator.setStructuralPolicy(
+      {
+        operationId: crypto.randomUUID(),
+        expectedRevision: policy.revision,
+        maxItemsPerCollection: policy.maxItemsPerCollection,
+        maxSectionsPerCollection: policy.maxSectionsPerCollection,
+        confirmed: true,
+      },
+      admin,
+    );
+    assert.equal(changed.revision, policy.revision + 1n);
+    assert.equal(
+      (await operator.getStructuralPolicy({}, admin)).revision,
+      changed.revision,
+    );
+    await stop(instance);
+    instance = start("target/debug/intrepion-server", [], {
+      env: { ...localEnv, PORT: "8794", CUSTOMER_WRITES_FROZEN: "false" },
+    });
+    await ready(`${frozenBase}/health/live`);
+    await frozenTasks.createTask(pending, owner);
+    await frozenTasks.createTask(pending, owner);
+    assert.equal(
+      (await frozenTasks.listTasks({}, owner)).tasks.filter(
+        (task) => task.id === pending.id,
+      ).length,
+      1,
+    );
+    assert.equal(
+      (await (await fetch(`${frozenBase}/auth/config`)).json())
+        .customer_writes_frozen,
+      false,
+    );
+  } finally {
+    await stop(instance);
+  }
+});

@@ -15,10 +15,10 @@ pub mod proto {
 use auth::SharedAuth;
 use axum::{
     Router,
-    extract::{DefaultBodyLimit, Request},
-    http::{HeaderValue, Method, header},
+    extract::{DefaultBodyLimit, Request, State},
+    http::{HeaderValue, Method, StatusCode, header},
     middleware::{self, Next},
-    response::Response,
+    response::{IntoResponse, Response},
     routing::{get, post},
 };
 use std::{sync::Arc, time::Instant};
@@ -114,8 +114,56 @@ pub fn app(auth: SharedAuth) -> Router {
         .with_state(auth.clone())
         .merge(rpc.into_axum_router())
         .layer(DefaultBodyLimit::max(64 * 1024))
+        .layer(middleware::from_fn_with_state(
+            auth.config.customer_writes_frozen,
+            customer_write_freeze,
+        ))
         .layer(cors)
         .layer(middleware::from_fn(observe))
+}
+
+// Default-deny during cutover: new routes must be reviewed before becoming
+// available here. Operator bootstrap retains its separate bearer authentication.
+async fn customer_write_freeze(
+    State(frozen): State<bool>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let path = request.uri().path();
+    let allowed = request.method() == Method::OPTIONS
+        || path.starts_with("/life.v1.PilotOperatorService/")
+        || matches!(
+            (request.method(), path),
+            (
+                &Method::GET,
+                "/health/live" | "/auth/config" | "/auth/session"
+            ) | (
+                &Method::POST,
+                "/life.v1.TaskService/ListTasks"
+                    | "/life.v1.ListService/ListCollections"
+                    | "/life.v1.ListService/GetCollection"
+                    | "/life.v1.ListService/ListHistory"
+                    | "/life.v1.ListService/ListTrashedItems"
+                    | "/life.v1.HouseholdService/GetOverview"
+                    | "/life.v1.HouseholdService/GetHousehold"
+                    | "/life.v1.HouseholdService/PreviewAllocation"
+                    | "/life.v1.HouseholdService/GetInvitation"
+                    | "/life.v1.HouseholdService/PreviewCopy"
+                    | "/life.v1.HouseholdService/ListHouseholdActivity"
+            )
+        );
+    if frozen && !allowed {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            [(header::RETRY_AFTER, "60")],
+            axum::Json(serde_json::json!({
+                "code": "unavailable",
+                "message": "Maintenance is in progress. Please retry after maintenance."
+            })),
+        )
+            .into_response();
+    }
+    next.run(request).await
 }
 
 #[cfg(all(test, not(feature = "dev-auth")))]
@@ -133,6 +181,7 @@ mod tests {
                 google_client_id: "client".into(),
                 owner_sub: "owner".into(),
                 local: false,
+                customer_writes_frozen: false,
                 trust_render_proxy,
                 household_maintenance_token: None,
                 pilot_operator_token: None,
@@ -204,6 +253,7 @@ mod tests {
             google_client_id: "client".into(),
             owner_sub: "owner".into(),
             local: false,
+            customer_writes_frozen: false,
             trust_render_proxy: false,
             household_maintenance_token: None,
             pilot_operator_token: None,

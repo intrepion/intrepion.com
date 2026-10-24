@@ -10,6 +10,7 @@ pub struct Config {
     pub google_client_id: String,
     pub owner_sub: String,
     pub local: bool,
+    pub customer_writes_frozen: bool,
     pub trust_render_proxy: bool,
     pub household_maintenance_token: Option<String>,
     pub pilot_operator_token: Option<String>,
@@ -18,6 +19,12 @@ pub struct Config {
 
 impl Config {
     pub fn from_env() -> Result<Self, String> {
+        let customer_writes_frozen = match env::var("CUSTOMER_WRITES_FROZEN") {
+            Err(env::VarError::NotPresent) => false,
+            Ok(value) if value == "false" => false,
+            Ok(value) if value == "true" => true,
+            _ => return Err("CUSTOMER_WRITES_FROZEN must be true or false".into()),
+        };
         let local = env::var("APP_ENV").as_deref() == Ok("development");
         if local && !cfg!(feature = "dev-auth") {
             return Err("development requires a build with --features dev-auth".into());
@@ -102,6 +109,7 @@ impl Config {
             return Err("Operator and maintenance credentials must be different".into());
         }
         Ok(Self {
+            customer_writes_frozen,
             pilot_operator_token,
             household_maintenance_token,
             bind,

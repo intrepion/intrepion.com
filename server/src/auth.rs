@@ -328,7 +328,7 @@ impl Auth {
 
 pub async fn configuration(State(auth): State<SharedAuth>) -> Json<serde_json::Value> {
     Json(
-        serde_json::json!({"google_client_id":auth.config.google_client_id,"development":auth.config.local,"erasure_storage_configured":auth.erasure_ledger.is_some(),"schema_version":3}),
+        serde_json::json!({"google_client_id":auth.config.google_client_id,"development":auth.config.local,"erasure_storage_configured":auth.erasure_ledger.is_some(),"schema_version":3,"customer_writes_frozen":auth.config.customer_writes_frozen}),
     )
 }
 pub async fn challenge(

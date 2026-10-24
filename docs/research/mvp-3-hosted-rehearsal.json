@@ -1,9 +1,9 @@
 {
-  "started_at": "2026-10-24T04:46:16.091Z",
-  "finished_at": "2026-10-24T04:47:01.961Z",
+  "started_at": "2026-10-24T05:31:47.087Z",
+  "finished_at": "2026-10-24T05:32:27.043Z",
   "production_mutations": false,
   "backup": {
-    "backup_age_minutes": 1162,
+    "backup_age_minutes": 1207,
     "archive_bytes": 22817,
     "created_at": "2026-10-23T09:23:59.038Z",
     "sql_bytes": 22617
@@ -11,7 +11,9 @@
   "ledger": {
     "complete": true,
     "records": 6,
-    "versions": [1]
+    "versions": [
+      1
+    ]
   },
   "checks": {
     "offline_protected_replay": {
@@ -22,6 +24,12 @@
       "private_contents_logged": false
     },
     "first_upgrade_blocked": true,
+    "frozen_image_before_migration": {
+      "schema": 6,
+      "health_and_flag_verified": true,
+      "customer_auth_and_retention_writes_rejected": true,
+      "retained_content_unchanged": true
+    },
     "unconfigured_policy_blocked": true,
     "raw_migration": {
       "migrations": 14,
@@ -32,6 +40,10 @@
     "migration_production_api": {
       "approved_plan_and_structure_applied_in_isolation": true,
       "approved_values_read_back": true,
+      "customer_auth_and_retention_freeze": true,
+      "operator_bootstrap_while_frozen": true,
+      "saved_reads_while_frozen": true,
+      "reopen_retry_exactly_once": true,
       "operator_and_maintenance_separation": true,
       "real_client_persistence_and_idempotent_retry": true,
       "retired_identity_rejected": true,
@@ -51,6 +63,10 @@
     "recovery_production_api": {
       "approved_plan_and_structure_applied_in_isolation": true,
       "approved_values_read_back": true,
+      "customer_auth_and_retention_freeze": true,
+      "operator_bootstrap_while_frozen": true,
+      "saved_reads_while_frozen": true,
+      "reopen_retry_exactly_once": true,
       "operator_and_maintenance_separation": true,
       "real_client_persistence_and_idempotent_retry": true,
       "retired_identity_rejected": true,
