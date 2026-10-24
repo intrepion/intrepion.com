@@ -152,3 +152,20 @@ Backup validation accepts legacy schemas for staged recovery but requires the re
 ## MVP 2 Everyday lists launch
 
 MVP 2 is live at `https://intrepion.com` as exact passing revision `a02d8f280aa524f95fe4fb311298840fa2400198`. The stopped-service migration, separately restricted erasure-ledger keys, hosted workflow/browser checks, and isolated hosted encrypted recovery passed. No paid plan, spending cap, unrelated service or DNS configuration was changed. See the [MVP 2 release record](mvp-2-release.md) for CI/deployment/backup evidence, the corrected D1 recovery import format, and required ledger-key rotation before 2027-01-20.
+
+## Backup credential permissions — 2026-10-24
+
+The daily backup writer and watchdog keys were replaced because the original keys included unnecessary bucket configuration or read/share permissions. Both replacements are restricted to the existing backup bucket and the exact `daily/` file prefix:
+
+| Role | Exact capabilities |
+| --- | --- |
+| Daily backup writer | `listFiles`, `readFiles`, `writeFiles`, `deleteFiles` |
+| Backup age watchdog | `listFiles`, `readFiles` |
+
+Only the four backup secrets in the GitHub `operations` environment and corresponding local setup values were replaced. Scheduled starts were briefly paused to prevent mismatched key pairs, then the original enabled state was restored. The existing erasure writer and reader retain their separate database-specific prefixes and exact capabilities. Helpers used the owner's administrator credential in memory without saving it; no master-key regeneration was needed.
+
+The replacement writer passed a synthetic upload/read/delete check, and the watchdog read the probe but could not obtain an upload token. Before revoking either original key, real backup/watchdog jobs passed and a fresh archive passed decryption and protected recovery. Both originals were then deleted and independently rejected fresh authorization with HTTP 401.
+
+After revocation, a new [encrypted backup](https://github.com/intrepion/intrepion.com/actions/runs/40075746881) and [watchdog check](https://github.com/intrepion/intrepion.com/actions/runs/40075839888) passed with their required jobs and steps executed. That archive passed hash/size checks, local decryption and isolated recovery through migration 0014 with the fresh complete independent ledger. Integrity, cleared auth state and replayed erasures passed; no plaintext file was created. This was a credential rotation, not an MVP 3 application deployment or production database migration. The [sanitized evidence](research/backup-key-rotation-2026-10-24.json) contains no keys, private identities or provider account/bucket identifiers.
+
+For later rotations, create replacements with these exact capabilities and scope, test them, install the matching secret pairs, verify real jobs and protected recovery, then revoke only the recorded originals. Dashboard Read/Write presets alone do not establish least privilege; inspect the actual authorization capabilities. Retired credentials cannot provide rollback after revocation. The independent erasure-key rotation deadline before 2027-01-20 remains unchanged.

@@ -1,0 +1,51 @@
+{
+  "completed_at": "2026-10-24T07:53:28.229Z",
+  "scope": {
+    "existing_bucket_only": true,
+    "file_prefix": "daily/"
+  },
+  "permissions": {
+    "backup_writer": ["deleteFiles", "listFiles", "readFiles", "writeFiles"],
+    "watchdog": ["listFiles", "readFiles"]
+  },
+  "verification": {
+    "exact_scope_and_capabilities": true,
+    "both_original_keys_revoked": true,
+    "both_original_keys_rejected_fresh_authorization": true,
+    "scheduled_operations_enabled": true,
+    "erasure_keys_still_exactly_scoped": true,
+    "administrator_credential_saved_by_helpers": false,
+    "application_deployment_performed": false,
+    "production_database_changed": false
+  },
+  "post_revocation_workflows": {
+    "backup": {
+      "id": 40075746881,
+      "url": "https://github.com/intrepion/intrepion.com/actions/runs/40075746881",
+      "sha": "e9c5795e3dde16080e9fd9bf49bf95c466bf2693",
+      "created_at": "2026-10-24T07:50:56Z",
+      "conclusion": "success",
+      "required_job_and_step_executed": true
+    },
+    "watchdog": {
+      "id": 40075839888,
+      "url": "https://github.com/intrepion/intrepion.com/actions/runs/40075839888",
+      "sha": "e9c5795e3dde16080e9fd9bf49bf95c466bf2693",
+      "created_at": "2026-10-24T07:52:22Z",
+      "conclusion": "success",
+      "required_job_and_step_executed": true
+    }
+  },
+  "recovery": {
+    "backup_created_at": "2026-10-24T07:51:29.613Z",
+    "archive_bytes": 22817,
+    "archive_hash_and_size_verified": true,
+    "protected_decryption_and_restore": true,
+    "fresh_complete_independent_ledger": true,
+    "ledger_records": 6,
+    "migrations": 14,
+    "integrity": true,
+    "sessions_and_challenges_cleared": true,
+    "plaintext_files_created": false
+  }
+}
