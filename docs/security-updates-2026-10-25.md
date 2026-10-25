@@ -1,0 +1,10 @@
+# Dependency security update — 25 October 2026
+
+Five open Dependabot alerts identify two dependencies across the production project and retained feasibility experiments.
+
+- **Tokio:** require at least `1.54.1` in the production server and both experiment manifests, and update all three Rust lockfiles from `1.54.0` to `1.54.1`. The upstream [Tokio advisory](https://github.com/tokio-rs/tokio/security/advisories/GHSA-5wjr-9356-4wc8) identifies a race in `Interval` on the multi-threaded runtime and lists `1.54.1` as patched. GitHub repository alerts: 1, 2 and 3.
+- **Undici:** override only Miniflare's `undici` dependency to `7.30.1` in the root and Workers experiment npm manifests, and regenerate both lockfiles. The upstream [Undici advisory](https://github.com/nodejs/undici/security/advisories/GHSA-xjj6-f33q-929c) describes a process crash caused by malicious response encodings and lists `7.30.1` as a patched 7.x release. GitHub repository alerts: 6 and 9.
+
+The latest inspected Wrangler release, `4.152.0`, still pins a Miniflare release that requires vulnerable Undici `7.29.1`. A Miniflare-scoped override avoids a broader tooling upgrade. Remove the override once the locked upstream dependency itself requires a patched version, then repeat audits and local D1 checks. Production browser code does not bundle this development-only Miniflare dependency.
+
+Local validation includes zero vulnerabilities from both npm audits, installed dependency-tree verification, six production Rust tests, two native experiment Rust tests, compilation of the Workers experiment's Tokio-based native comparison target, and all ten local household browser tests against the patched real Rust API and local D1 tooling. The previously documented Workers deadline incompatibility remains outside this dependency patch. Hosted release verification must use passing CI and deployment runs for the exact committed revision; repository alert resolution must be verified after GitHub scans the pushed lockfiles.
