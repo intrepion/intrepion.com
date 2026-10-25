@@ -79,3 +79,7 @@ The owner approved explicit permanent erasure of selected active content when fu
 ## Create-household slider amendment
 
 The owner requested sliders and half-maximum defaults as a minor correction to the approved creation workflow. Each resource now has a slider and synchronized exact-number field. Available maximum means personal capacity minus retained personal usage, with existing household allocations already reserved. Defaults round half down to whole units, including bytes; zero availability stays zero. Existing review/confirmation, privacy, name-storage requirements and server validation still apply. The wireframe and visual mockup precede the independent standalone prototype implementation; production code is implemented separately.
+
+## Household navigation amendment
+
+The owner requested a visible Households entry after the security updates. This navigation correction exposes the existing creation and management workflows: Households is always available after sign-in, opens a household directory, shows Create household and an empty state, and offers Manage household only for active households the signed-in person heads. My capacity remains a separate entry for the private plan and retained allocations. Existing draft, membership and authorization checks still apply. The updated wireframe and mockup precede the separate standalone prototype and production implementation.

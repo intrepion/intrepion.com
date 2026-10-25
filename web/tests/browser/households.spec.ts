@@ -26,7 +26,15 @@ test("a head creates a household and switches between private and shared task li
   const overviewResponse = page.waitForResponse((response) =>
     response.url().endsWith("/life.v1.HouseholdService/GetOverview"),
   );
-  await page.getByRole("button", { name: "My capacity", exact: true }).click();
+  await page.getByRole("button", { name: "Households", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Households", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("No households yet. Create your first shared space.", {
+      exact: true,
+    }),
+  ).toBeVisible();
   const overview = await (await overviewResponse).json();
   await page
     .getByRole("button", { name: "Create household", exact: true })
@@ -168,6 +176,40 @@ test("a head creates a household and switches between private and shared task li
     path: "/tmp/intrepion-mvp3-production-capacity-mobile.png",
     fullPage: true,
   });
+  await page.getByRole("button", { name: "Households", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Households", exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page
+    .getByRole("button", {
+      name: "Manage household Everyday family",
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Heads", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("combobox", { name: "Space", exact: true }),
+  ).not.toHaveValue("personal");
+  await page.getByRole("button", { name: "Tasks", exact: true }).click();
+  await page.getByRole("button", { name: "New task", exact: true }).click();
+  await page
+    .getByLabel("Title", { exact: true })
+    .fill("Keep this navigation draft");
+  await page.getByRole("button", { name: "Households", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText(
+    "Your unsaved changes will be lost.",
+  );
+  await page.getByRole("button", { name: "Keep editing", exact: true }).click();
+  await expect(page.getByLabel("Title", { exact: true })).toHaveValue(
+    "Keep this navigation draft",
+  );
 });
 
 test("recipient-bound head invitations work in the browser and removal clears an existing household draft without logging the person out", async ({

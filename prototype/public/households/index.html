@@ -1675,12 +1675,14 @@
           ["templates", "Checklists"],
           ["usage", "Usage"],
           ...(h ? [["heads", "Household"]] : []),
+          ["households", "Households"],
           ["capacity", "My capacity"],
         ];
         let html = `<div class="top"><div class="brand"><span class="mark">✓</span>intrepion</div><div class="account">${e(person(s, ui.user))} · ${btn("Sign out", "signout")}</div></div><div class="spacebar"><label><small>Current space</small><select id="space-select" aria-label="Current space">${spaces.map((x) => `<option value="${e(x.id)}" ${x.id === ui.space ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></label><span class="badge">${h ? "Shared · Head" : "Private"}</span></div><nav class="tabs" aria-label="Application navigation">${nav.map(([key, label]) => `<button data-action="nav" data-id="${key}" ${ui.nav === key || (key === "templates" && ui.nav === "runs") ? 'aria-current="page"' : ""}>${label}</button>`).join("")}</nav><div class="content">${ui.banner ? `<div role="status" aria-live="polite">${note(ui.banner, ui.error)}</div>` : ""}`;
         if (ui.invitation) {
           html += invitationView(s);
-        } else if (ui.nav === "capacity") html += capacityView(s);
+        } else if (ui.nav === "households") html += householdsView(s);
+        else if (ui.nav === "capacity") html += capacityView(s);
         else if (ui.nav === "allocation") html += allocationView(s);
         else if (ui.nav === "usage") html += usageView(s);
         else if (ui.nav === "heads") html += headsView(s);
@@ -1877,6 +1879,15 @@
           html +=
             '<p class="muted">No invitations yet. Only operator-approved identities are eligible.</p>';
         return html;
+      }
+      function householdsView(s) {
+        let html = heading("Households", btn("Create household", "create-household")) + note("Create a shared space or manage one you head. Your personal content stays private.");
+        const households = Object.values(s.households).filter(h => h.heads.includes(ui.user) || h.allocations[ui.user]);
+        if (!households.length) html += "<p>No households yet. Create your first shared space.</p>";
+        for (const h of households) {
+          html += `<div class="resource"><h2>${e(h.name)}</h2><p>${e(h.status)}${h.heads.includes(ui.user) ? " · Head" : " · Former head"}</p>${h.status === "active" && h.heads.includes(ui.user) ? btn("Manage household", "manage-household", h.id) : ""}${h.allocations[ui.user] ? btn("Manage my allocation", "allocation", h.id) : ""}</div>`;
+        }
+        return html + btn("My capacity", "nav", "capacity");
       }
       function capacityView(s) {
         const u = ui.user,
@@ -2239,6 +2250,16 @@
           ui.invitation = null;
           ui.banner = "";
           ui.error = false;
+          render();
+          return;
+        }
+        if (name === "manage-household") {
+          const household = state.households[id];
+          if (!household || household.status !== "active" || !household.heads.includes(ui.user)) return;
+          ui.space = id;
+          ui.nav = "heads";
+          ui.collection = null;
+          ui.invitation = null;
           render();
           return;
         }

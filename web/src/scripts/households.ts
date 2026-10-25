@@ -65,6 +65,7 @@ export class Households {
   private pending?: HouseholdChange;
   private pendingCopy?: CopyRequest;
   private message = "";
+  private capacityMode: "capacity" | "households" = "capacity";
   constructor(
     private root: HTMLElement,
     private toolbar: HTMLElement,
@@ -95,6 +96,7 @@ export class Households {
     this.pending = undefined;
     this.pendingCopy = undefined;
     this.message = "";
+    this.capacityMode = "capacity";
     this.root.replaceChildren();
     this.toolbar.replaceChildren();
   }
@@ -159,16 +161,21 @@ export class Households {
       void this.hooks.switchSpace(target);
     });
     const capacity = button("My capacity", () => void this.openCapacity());
-    this.toolbar.replaceChildren(label, select, capacity);
+    const households = button(
+      "Households",
+      () => void this.openCapacity("households"),
+    );
+    this.toolbar.replaceChildren(label, select, households, capacity);
     if (this.api.space !== "personal")
       this.toolbar.append(button("Household", () => void this.openHousehold()));
     this.hooks.syncBusyControls();
   }
-  async openCapacity() {
+  async openCapacity(mode: "capacity" | "households" = "capacity") {
     if (!(await this.hooks.prepare())) return;
     this.hooks.busy(true);
     try {
       await this.refresh();
+      this.capacityMode = mode;
       this.renderCapacity();
     } catch (error) {
       this.problem(error);
@@ -194,6 +201,28 @@ export class Households {
   private renderCapacity() {
     if (!this.overview) return;
     this.hooks.show();
+    if (this.capacityMode === "households") {
+      this.root.replaceChildren(element("h1", "Households"));
+      if (this.message) this.root.append(element("p", this.message));
+      this.root.append(
+        element(
+          "p",
+          "Create a shared space or manage one you head. Your personal content stays private.",
+        ),
+        button("Create household", () => this.createForm()),
+        button("View my capacity", () => void this.openCapacity()),
+        button(
+          "Refresh households",
+          () => void this.openCapacity("households"),
+        ),
+      );
+      if (this.overview.households.length === 0)
+        this.root.append(
+          element("p", "No households yet. Create your first shared space."),
+        );
+      this.renderHouseholdCards();
+      return;
+    }
     this.root.replaceChildren(element("h1", "My capacity"));
     if (this.message) this.root.append(element("p", this.message));
     this.root.append(
@@ -245,6 +274,10 @@ export class Households {
       button("Create household", () => this.createForm()),
       button("Refresh capacity", () => void this.openCapacity()),
     );
+    this.renderHouseholdCards();
+  }
+  private renderHouseholdCards() {
+    if (!this.overview) return;
     for (const h of this.overview.households) {
       const card = element("article");
       card.className = "household-card";
@@ -252,6 +285,13 @@ export class Households {
         element("h2", h.name),
         element("p", `${h.status}${h.isHead ? " · Head" : ""}`),
       );
+      if (h.isHead && h.status === "active")
+        card.append(
+          button(
+            `Manage household ${h.name}`,
+            () => void this.manageHousehold(h.id),
+          ),
+        );
       if (h.ownContribution)
         card.append(
           element(
@@ -299,6 +339,15 @@ export class Households {
           );
       }
       this.root.append(card);
+    }
+  }
+  private async manageHousehold(id: string) {
+    try {
+      if (await this.hooks.switchSpace(id)) {
+        if (this.api.space === id) await this.openHousehold();
+      }
+    } catch (error) {
+      this.problem(error);
     }
   }
   private allocationForm(household: HouseholdSummary) {
