@@ -1,8 +1,8 @@
 # MVP 3 first-upgrade procedure
 
-Status: **prepared and rehearsed; execution requires the separate launch decision**. This document is an operator runbook, not an automated deployment. Do not dispatch the ordinary Deploy workflow for the first upgrade: its compatibility guard intentionally refuses the MVP 2 schema.
+Status: **approved production cutover complete, including owner verification, protected recovery and normal hourly-retention verification**. See [live evidence](research/mvp-3-launch-live.json). This document is an operator runbook, not an automated deployment. Do not dispatch the ordinary Deploy workflow for the first upgrade: its compatibility guard intentionally refuses the MVP 2 schema.
 
-## Prepared artifacts and evidence
+## Preparation record before execution
 
 - `web/maintenance/` preserves the maintenance page used for MVP 2 and its no-store/security headers. It has not been published for this upgrade.
 - `node scripts/prepare-mvp3-credentials.mjs` creates or validates two distinct random 32-byte hex secrets in the ignored `.env.setup.mvp3-credentials.json`, mode 0600. It never installs or rotates provider secrets. Do not print, commit or place this file in a client build. An invalid existing file fails rather than being overwritten.
@@ -34,6 +34,7 @@ The flag does not drain a previous process, freeze other services or cancel data
    ```
 
    Supply `CLOUDFLARE_API_TOKEN` from the private migration credential without echoing it; the configuration must name the recorded production database. Confirm precisely 0007–0014 are pending before answering the migration prompt. The frozen MVP 3 process stays running. Require all 14 records, foreign-key integrity, unchanged retained-content/history fields, correct legacy actor backfill and writer fences. Clear old sessions/challenges at this approved boundary, preserving content. Reverify blocked mutations.
+
 8. Through the private operator API, read the existing owner's exact Google subject and revision; preview the plan in `mvp-3-pilot-policy.json`, require allowed/no exceeded spaces, apply with the returned preview token and read every value back. Set and read back 100 items / 20 sections with the expected structural revision. Record receipts privately. Do not enable another account. Run `scripts/deploy-preflight.mjs` read-only with the migration credential and require a pass.
 9. Publish the matching built static client while the API stays frozen. Recheck saved reads using an existing approved session if available; clearing sessions requires fresh auth after reopening. Keep ordinary auth/retention writes blocked until policy, schema and client checks pass.
 10. Preserve all current Render variables again, changing **only freeze=false**, using bulk save-only and readback. Explicitly redeploy the **same pinned SHA**. Verify exact revision and config freeze=false. The old frozen instance is safe during the rolling handoff. Verify fresh owner Google sign-in and retained real data, a confirmed synthetic task/reload/edit/retry and cleanup, headers/root/www, and the approved household workflows. No public signup or dependent/PIN access.

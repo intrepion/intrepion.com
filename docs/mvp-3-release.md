@@ -1,6 +1,8 @@
-# MVP 3 release preparation
+# MVP 3 release
 
-Status: **local implementation and starter limits approved; deployment fence, write freeze and isolated hosted migration/recovery rehearsals passed; size/age monitoring active and verified; private MVP 3 credentials/environment staged locally; application rollout not yet authorized**. Production application remains MVP 2. No MVP 3 production migration, server credential installation, admission, policy assignment, application deployment or household automation activation occurred. The separately authorized [backup-key permission rotation](operations.md#backup-credential-permissions--2026-10-24) and [twice-daily backup/monitoring update](mvp-3-monitoring.md) completed and passed their hosted checks. Temporary hosted D1 databases were created for rehearsal and removed; see [the rehearsal evidence](mvp-3-rehearsal.md).
+Status: **MVP 3 production launch complete**. The approved release is `fa0e707a850ca60d386f0fb6fb73d9b6a6d31eb9`. The owner approved the launch action set and confirmed the intentional household-maintenance notification email. Maintenance, a verified frozen deployment, a 449-second old-writer drain, a fresh encrypted backup with protected restore, migrations 0007–0014, revision-checked owner/structural policy assignment and matching client publication passed. The same API revision reopened with writes enabled. A new current-schema encrypted backup, protected restore and normal backup age/size watchdog also passed. The owner confirmed fresh Google sign-in, retained lists and task/reload/edit persistence. Incorrect maintenance credentials were rejected; the correct credential passed a scoped no-erasure check. The separate maintenance secret is installed in the GitHub operations environment, hourly retention is enabled, and its [first normal run](https://github.com/intrepion/intrepion.com/actions/runs/40143603564) executed the maintenance step successfully. The compatibility guard passed again at completion.
+
+[Production launch evidence](research/mvp-3-launch-live.json) records the completed checks. The preparation sections below describe the state before launch authorization; they are retained as the preparation record. The owner remains the only admitted account, provider plans and DNS are unchanged, and additional admission still requires daily account-wide D1 usage review.
 
 ## Ready locally
 
@@ -8,7 +10,7 @@ Status: **local implementation and starter limits approved; deployment fence, wr
 - Local API, browser, encrypted recovery, static checks and production builds passed. Owner-supplied Docker output confirms image construction. See [implementation evidence](mvp-3-implementation.md).
 - [Measured sizing](mvp-3-sizing.md), [reproducible calibration](../scripts/calibrate-mvp3.py) and [approved policy values](mvp-3-pilot-policy.json) are available. The existing owner's retained data fits.
 
-## Before the launch decision
+## Preparation record before the launch decision
 
 Prepare concrete commands/artifacts and results for these gates before requesting final launch approval:
 
@@ -21,7 +23,7 @@ Prepare concrete commands/artifacts and results for these gates before requestin
 
 The final launch approval should identify the exact release revision, planned service interruption, frozen-backup/recovery evidence, credential/policy previews, monitoring arrangement and rollback procedure. Numerical approval alone does not approve that action set.
 
-## Final approval packet
+## Prepared approval packet
 
 The prepared candidate is now `fa0e707a850ca60d386f0fb6fb73d9b6a6d31eb9`, with passing [full CI](https://github.com/intrepion/intrepion.com/actions/runs/40081064199). Relative to the previous candidate it adds a reviewed notification-only household-retention test and the [explicit launch action set](mvp-3-launch-approval.md); application source is unchanged. The matching client is built privately with the production API origin, verified security headers and no private credentials in its output. [Fresh read-only preflight evidence](research/mvp-3-launch-preflight.json) confirms the old production revision/schema, current source environment, rollback references, protected snapshot/owner-policy fit and disabled household automation. The private packet binds the exact candidate and staged artifacts. No notification test, application deployment, production migration or retention activation has run as part of this approval preparation.
 

@@ -1,0 +1,94 @@
+{
+  "recorded_at": "2026-10-24T23:39:45.568Z",
+  "release_sha": "fa0e707a850ca60d386f0fb6fb73d9b6a6d31eb9",
+  "status": "complete",
+  "ci": {
+    "id": 40081064199,
+    "url": "https://github.com/intrepion/intrepion.com/actions/runs/40081064199"
+  },
+  "notification_test": {
+    "id": 40111559225,
+    "url": "https://github.com/intrepion/intrepion.com/actions/runs/40111559225",
+    "notification_only_verified": true,
+    "owner_receipt_confirmed": true
+  },
+  "maintenance_started_at": "2026-10-24T17:32:50.998Z",
+  "frozen_live_observed_at": "2026-10-24T17:35:56.399Z",
+  "drain": {
+    "verified_at": "2026-10-24T17:43:26.308Z",
+    "observed_seconds": 449,
+    "old_deploy_deactivated": true,
+    "stable_content_history_auth": true
+  },
+  "frozen_backup": {
+    "id": 40117417891,
+    "url": "https://github.com/intrepion/intrepion.com/actions/runs/40117417891",
+    "created_at": "2026-10-24T18:46:54.342Z",
+    "archive_hash_and_length_verified": true,
+    "protected_restore_integrity": true,
+    "complete_independent_ledger": true,
+    "retained_content_history_matches_source": true,
+    "plaintext_files_created": false
+  },
+  "migration": {
+    "completed_at": "2026-10-24T22:44:04.395Z",
+    "from": 6,
+    "to": 14,
+    "checks": {
+      "exact_fourteen": true,
+      "content_history_preserved": true,
+      "foreign_keys": true,
+      "legacy_attribution": true,
+      "writer_fences": true,
+      "owner_only": true,
+      "auth_cleared": true
+    }
+  },
+  "policy": {
+    "verified_at": "2026-10-24T22:52:42.965Z",
+    "approved_owner_only": true,
+    "revision_checked_preview_and_apply": true,
+    "plan": {
+      "items": 250,
+      "shopping": 10,
+      "templates": 10,
+      "runs": 25,
+      "bytes": 131072,
+      "households": 2
+    },
+    "structural": {
+      "maxItemsPerCollection": 100,
+      "maxSectionsPerCollection": 20
+    },
+    "deployment_guard_passed": true
+  },
+  "client_published_at": "2026-10-24T22:54:42.517Z",
+  "reopened_at": "2026-10-24T22:55:35.899Z",
+  "owner_google_and_persistence_verified": true,
+  "current_schema_backup": {
+    "id": 40140614408,
+    "url": "https://github.com/intrepion/intrepion.com/actions/runs/40140614408",
+    "created_at": "2026-10-24T22:56:21.549Z",
+    "protected_restore_integrity": true,
+    "complete_independent_ledger": true,
+    "auth_cleared_on_restore": true,
+    "plaintext_files_created": false
+  },
+  "household_retention": {
+    "enabled": true,
+    "authorization_verified": true,
+    "normal_run": {
+      "id": 40143603564,
+      "url": "https://github.com/intrepion/intrepion.com/actions/runs/40143603564",
+      "required_maintenance_step_passed": true
+    }
+  },
+  "watchdog": {
+    "id": 40140671224,
+    "url": "https://github.com/intrepion/intrepion.com/actions/runs/40140671224",
+    "passed": true
+  },
+  "additional_accounts_admitted": false,
+  "provider_plan_or_dns_changes": false,
+  "manual_admission_gate": "Review daily account-wide D1 usage before another account."
+}

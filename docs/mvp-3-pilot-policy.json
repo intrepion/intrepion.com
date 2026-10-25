@@ -1,5 +1,5 @@
 {
-  "status": "approved-values-not-applied-to-production",
+  "status": "approved-values-applied-to-production",
   "approved_on_utc": "2026-10-24",
   "plan": {
     "items": 250,
@@ -18,6 +18,6 @@
     "maximumApprovedAccounts": 3,
     "additionalAccountsRequireDailyD1UsageReview": true
   },
-  "monitoring": "Proposed operating thresholds in docs/mvp-3-sizing.md; not installed.",
-  "application": "This is a policy record, not an operator Apply request or a runtime default. A rollout requires its own authorization, current identity/revision/usage previews and explicit policy assignment."
+  "monitoring": "Approved size/age monitoring active; see docs/mvp-3-monitoring.md and docs/research/mvp-3-monitoring-live.json.",
+  "application": "Applied through current-revision operator preview/Apply and read back during the approved MVP 3 cutover. This record is not a runtime default or an operator Apply request. Additional admission remains separately gated."
 }
