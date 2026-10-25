@@ -624,3 +624,19 @@ footer .everyday-actions {
   border-radius: 9px;
   background: white;
 }
+
+#household-view .allocation-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(100px, 140px);
+  align-items: center;
+  gap: 12px;
+}
+#household-view .allocation-controls input[type="range"] {
+  padding: 0;
+  border: 0;
+  accent-color: var(--green);
+}
+#household-view .allocation-available {
+  margin: 4px 0 18px;
+  font-size: 14px;
+}

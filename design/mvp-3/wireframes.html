@@ -394,11 +394,72 @@
               You will become a head. Other participants will also be heads,
               with full shared-content access.
             </div>
-            <div class="label">Initial capacity from your plan</div>
-            <div class="field">
-              Choose amounts for items, shopping lists, templates, runs and
-              storage
-            </div>
+            <p>
+              Start with half the available capacity, rounded down. Drag a
+              slider or enter an exact amount. Existing personal usage and
+              reserved household allocations reduce the maximum.
+            </p>
+            <label for="create-slider-items">Items: 100 of 200 available</label>
+            <input
+              id="create-slider-items"
+              type="range"
+              min="0"
+              max="200"
+              value="100"
+              disabled
+              aria-label="Items allocation slider"
+            />
+            <div class="field">Exact amount: 100</div>
+            <label for="create-slider-shopping"
+              >Shopping lists: 4 of 8 available</label
+            >
+            <input
+              id="create-slider-shopping"
+              type="range"
+              min="0"
+              max="8"
+              value="4"
+              disabled
+              aria-label="Shopping lists allocation slider"
+            />
+            <div class="field">Exact amount: 4</div>
+            <label for="create-slider-templates"
+              >Templates: 2 of 4 available</label
+            >
+            <input
+              id="create-slider-templates"
+              type="range"
+              min="0"
+              max="4"
+              value="2"
+              disabled
+              aria-label="Templates allocation slider"
+            />
+            <div class="field">Exact amount: 2</div>
+            <label for="create-slider-runs">Runs: 5 of 10 available</label>
+            <input
+              id="create-slider-runs"
+              type="range"
+              min="0"
+              max="10"
+              value="5"
+              disabled
+              aria-label="Runs allocation slider"
+            />
+            <div class="field">Exact amount: 5</div>
+            <label for="create-slider-bytes"
+              >Storage bytes: 65536 of 131072 available</label
+            >
+            <input
+              id="create-slider-bytes"
+              type="range"
+              min="0"
+              max="131072"
+              value="65536"
+              disabled
+              aria-label="Storage bytes allocation slider"
+            />
+            <div class="field">Exact amount: 65536</div>
             <div class="row">
               <div>
                 <strong>Households headed</strong>

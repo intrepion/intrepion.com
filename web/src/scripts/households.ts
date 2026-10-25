@@ -421,20 +421,51 @@ export class Households {
     for (const [key, label] of resources) {
       const input = element("input");
       input.id = `allocate-${key}`;
+      const capacity = this.overview?.personalCapacity?.[key] ?? 0n;
+      const usage = this.overview?.personalUsage?.[key] ?? 0n;
+      const maximum = capacity > usage ? capacity - usage : 0n;
+      input.type = "number";
+      input.min = "0";
+      input.max = String(maximum);
+      input.step = "1";
       input.inputMode = "numeric";
-      input.pattern = "[0-9]+";
       input.required = true;
-      input.value = "0";
-      input.defaultValue = "0";
+      input.defaultValue = String(maximum / 2n);
+      input.value = input.defaultValue;
       const fieldLabel = element("label", `${label} to allocate`);
       fieldLabel.htmlFor = input.id;
+      const slider = element("input");
+      slider.type = "range";
+      slider.id = `allocate-${key}-slider`;
+      slider.min = "0";
+      slider.max = input.max;
+      slider.step = "1";
+      slider.defaultValue = input.defaultValue;
+      slider.value = slider.defaultValue;
+      slider.setAttribute("aria-label", `${label} allocation slider`);
+      const available = element("p", `${maximum.toLocaleString()} available`);
+      available.id = `allocate-${key}-available`;
+      available.className = "allocation-available";
+      input.setAttribute("aria-describedby", available.id);
+      slider.setAttribute("aria-describedby", available.id);
+      slider.disabled = maximum === 0n;
+      slider.addEventListener("input", () => {
+        input.value = slider.value;
+      });
+      input.addEventListener("input", () => {
+        if (input.validity.valid && input.value !== "")
+          slider.value = input.value;
+      });
       inputs.set(key, input);
-      form.append(fieldLabel, input);
+      const controls = element("div");
+      controls.className = "allocation-controls";
+      controls.append(slider, input);
+      form.append(fieldLabel, controls, available);
     }
     form.append(
       element(
         "p",
-        "Allocate explicit amounts from your private remainder. The name consumes UTF-8 storage. Your existing personal content stays private.",
+        "Defaults are half the available capacity, rounded down. Drag each slider or enter an exact amount. Existing personal usage and household allocations reduce what is available. The name consumes UTF-8 storage. Your existing personal content stays private.",
       ),
     );
     const submit = element("button", "Review household");

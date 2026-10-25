@@ -75,3 +75,7 @@ After approval, record any requested behavioral changes in [the MVP 3 plan](../.
 ## Approved storage-recovery amendment
 
 The owner approved explicit permanent erasure of selected active content when full storage prevents adding Trash History. The full-storage wireframe and mockup now show the existing scope-confirmation pattern for this entry point. In the standalone prototype, simulate full storage, open a task or collection, and choose **Erase permanently · storage recovery**. Cancel keeps the content; confirmation removes the selected target and associated child content/History, leaves independent copies alone, and simulates recovery protection before freeing capacity. Normal Trash behavior is unchanged.
+
+## Create-household slider amendment
+
+The owner requested sliders and half-maximum defaults as a minor correction to the approved creation workflow. Each resource now has a slider and synchronized exact-number field. Available maximum means personal capacity minus retained personal usage, with existing household allocations already reserved. Defaults round half down to whole units, including bytes; zero availability stays zero. Existing review/confirmation, privacy, name-storage requirements and server validation still apply. The wireframe and visual mockup precede the independent standalone prototype implementation; production code is implemented separately.

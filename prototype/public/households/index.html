@@ -1574,6 +1574,26 @@
         render();
         return true;
       }
+      function creationSliders() {
+        const capacity = D.totals(state, D.personal(ui.user));
+        const used = D.usage(state, D.personal(ui.user));
+        return note("Defaults are half the available capacity, rounded down. Drag a slider or enter an exact amount.") + D.keys.map((k) => {
+          const max = Math.max(0, capacity[k] - used[k]);
+          const value = Math.floor(max / 2);
+          const label = k === "bytes" ? "Storage bytes" : D.names[k];
+          return `<div class="resource"><label for="create-${k}">${e(label)} to allocate</label><input id="create-${k}" name="${k}" type="number" min="0" max="${max}" step="1" value="${value}" required><input data-allocation-slider="${k}" type="range" min="0" max="${max}" step="1" value="${value}" aria-label="${e(label)} allocation slider"><p>${max.toLocaleString()} available</p></div>`;
+        }).join("");
+      }
+      dialog.addEventListener("input", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement)) return;
+        if (target.dataset.allocationSlider) {
+          dialog.querySelector(`[name="${target.dataset.allocationSlider}"]`).value = target.value;
+        } else if (target.name) {
+          const slider = dialog.querySelector(`[data-allocation-slider="${target.name}"]`);
+          if (slider && target.validity.valid) slider.value = target.value;
+        }
+      });
       function resourceInputs(values, storage = true) {
         return `<div class="resource-grid">${D.keys
           .filter((k) => storage || k !== "bytes")
@@ -2357,18 +2377,12 @@
               note(
                 "You become the first head. These initial amounts are reserved from your plan; existing personal content must still fit.",
               ) +
-              resourceInputs({
-                items: 80,
-                shopping: 4,
-                template: 2,
-                run: 4,
-                bytes: 262144,
-              }),
+              creationSliders(),
             (data) => {
               const a = {
                 type: "createHousehold",
                 title: data.get("title"),
-                amounts: readAmounts(data),
+                amounts: { ...readAmounts(data), bytes: Number(data.get("bytes")) },
                 user: ui.user,
               };
               try {

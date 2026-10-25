@@ -1,5 +1,18 @@
 import { signInPilot } from "./session";
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+
+// Reserve only fixture resources; the first test checks the product defaults.
+async function clearFixtureAllocations(page: Page) {
+  for (const label of [
+    "Items",
+    "Shopping lists",
+    "Templates",
+    "Runs",
+    "Storage bytes",
+  ]) {
+    await page.getByLabel(`${label} to allocate`, { exact: true }).fill("0");
+  }
+}
 
 test("a head creates a household and switches between private and shared task lists", async ({
   page,
@@ -10,13 +23,51 @@ test("a head creates a household and switches between private and shared task li
     .getByLabel("Title", { exact: true })
     .fill("Private household planning");
   await page.getByRole("button", { name: "Save task", exact: true }).click();
+  const overviewResponse = page.waitForResponse((response) =>
+    response.url().endsWith("/life.v1.HouseholdService/GetOverview"),
+  );
   await page.getByRole("button", { name: "My capacity", exact: true }).click();
+  const overview = await (await overviewResponse).json();
   await page
     .getByRole("button", { name: "Create household", exact: true })
     .click();
   await page
     .getByLabel("Household name", { exact: true })
     .fill("Everyday family");
+  await expect(page.getByRole("slider")).toHaveCount(5);
+  for (const [key, label] of [
+    ["items", "Items"],
+    ["shopping", "Shopping lists"],
+    ["templates", "Templates"],
+    ["runs", "Runs"],
+    ["bytes", "Storage bytes"],
+  ]) {
+    const maximum = Math.max(
+      0,
+      Number(overview.personalCapacity?.[key] ?? 0) -
+        Number(overview.personalUsage?.[key] ?? 0),
+    );
+    const slider = page.getByRole("slider", {
+      name: `${label} allocation slider`,
+      exact: true,
+    });
+    const number = page.getByLabel(`${label} to allocate`, { exact: true });
+    await expect(slider).toHaveAttribute("max", String(maximum));
+    await expect(slider).toHaveValue(String(Math.floor(maximum / 2)));
+    await expect(number).toHaveValue(String(Math.floor(maximum / 2)));
+  }
+  const itemSlider = page.getByRole("slider", {
+    name: "Items allocation slider",
+    exact: true,
+  });
+  await itemSlider.focus();
+  await itemSlider.press("ArrowRight");
+  await expect(
+    page.getByLabel("Items to allocate", { exact: true }),
+  ).toHaveValue(await itemSlider.inputValue());
+  await page.getByLabel("Items to allocate", { exact: true }).fill("11");
+  await expect(itemSlider).toHaveValue("11");
+  await clearFixtureAllocations(page);
   await page.getByLabel("Items to allocate", { exact: true }).fill("10");
   await page
     .getByLabel("Storage bytes to allocate", { exact: true })
@@ -140,6 +191,7 @@ test("recipient-bound head invitations work in the browser and removal clears an
     await page
       .getByRole("button", { name: "Create household", exact: true })
       .click();
+    await clearFixtureAllocations(page);
     await page
       .getByLabel("Household name", { exact: true })
       .fill("Invited family");
@@ -282,6 +334,7 @@ test("a head previews and changes only their own reserved allocation", async ({
   await page
     .getByRole("button", { name: "Create household", exact: true })
     .click();
+  await clearFixtureAllocations(page);
   await page
     .getByLabel("Household name", { exact: true })
     .fill("Allocation family");
@@ -342,6 +395,7 @@ test("full storage recovery confirms the active task and resumes protected erasu
   await page
     .getByRole("button", { name: "Create household", exact: true })
     .click();
+  await clearFixtureAllocations(page);
   await page
     .getByLabel("Household name", { exact: true })
     .fill("Storage family");
@@ -467,6 +521,7 @@ test("the last head confirms a final UTC month-end closure and sees retained cap
   await page
     .getByRole("button", { name: "Create household", exact: true })
     .click();
+  await clearFixtureAllocations(page);
   await page
     .getByLabel("Household name", { exact: true })
     .fill("Closing family");
@@ -539,6 +594,7 @@ test("a head changes their own count ceiling without changing household capacity
   await page
     .getByRole("button", { name: "Create household", exact: true })
     .click();
+  await clearFixtureAllocations(page);
   await page
     .getByLabel("Household name", { exact: true })
     .fill("Ceiling family");
@@ -611,6 +667,7 @@ test("a personal shopping list is explicitly copied into a household with fresh 
   await page
     .getByRole("button", { name: "Create household", exact: true })
     .click();
+  await clearFixtureAllocations(page);
   await page.getByLabel("Household name", { exact: true }).fill("Copy family");
   await page.getByLabel("Items to allocate", { exact: true }).fill("10");
   await page
@@ -680,6 +737,7 @@ test("a head resumes the confirmed shared-content erasure snapshot after protect
   await page
     .getByRole("button", { name: "Create household", exact: true })
     .click();
+  await clearFixtureAllocations(page);
   await page
     .getByLabel("Household name", { exact: true })
     .fill("Erasure family");
@@ -766,6 +824,7 @@ test("a household draft requires confirmation before sign-out", async ({
   await page
     .getByRole("button", { name: "Create household", exact: true })
     .click();
+  await clearFixtureAllocations(page);
   await page
     .getByLabel("Household name", { exact: true })
     .fill("Unsaved private household draft");
@@ -793,6 +852,7 @@ test("a household draft requires confirmation before sign-out", async ({
   await page
     .getByRole("button", { name: "Create household", exact: true })
     .click();
+  await clearFixtureAllocations(page);
   await expect(page.getByLabel("Household name", { exact: true })).toHaveValue(
     "",
   );
