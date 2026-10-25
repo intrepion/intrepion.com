@@ -1,0 +1,2234 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Visual mockups · intrepion MVP 3.1</title>
+    <style>
+      :root {
+        --canvas: #f4f5f1;
+        --surface: #fff;
+        --ink: #1b302c;
+        --muted: #596b65;
+        --line: #dce4de;
+        --outline: #7c8f85;
+        --primary: #185e52;
+        --soft: #eaf3ee;
+        --danger: #a52f2b;
+        --danger-soft: #fff2ef;
+        --warning: #785017;
+        --warning-soft: #fff5df;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+        color: var(--ink);
+        background: var(--canvas);
+        font-synthesis: none;
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.55;
+      }
+      a {
+        color: var(--primary);
+        text-underline-offset: 4px;
+      }
+      a:focus-visible,
+      input:focus-visible {
+        outline: 3px solid var(--primary);
+        outline-offset: 3px;
+      }
+      header,
+      main,
+      footer {
+        max-width: 1400px;
+        margin: auto;
+        padding: 32px;
+      }
+      h1 {
+        font-size: 42px;
+        line-height: 1.12;
+        letter-spacing: -0.045em;
+        max-width: 25ch;
+        margin: 12px 0 22px;
+      }
+      h2 {
+        font-size: 16px;
+        letter-spacing: -0.02em;
+        margin: 0 0 12px;
+      }
+      h3 {
+        font-size: 29px;
+        line-height: 1.2;
+        letter-spacing: -0.035em;
+        margin: 0 0 16px;
+      }
+      h4 {
+        font-size: 16px;
+        margin: 0 0 8px;
+      }
+      p {
+        margin: 10px 0;
+      }
+      .eyebrow {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .index {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px 22px;
+        margin-top: 24px;
+      }
+      .index a {
+        font-size: 13px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 40px 28px;
+        padding-top: 0;
+      }
+      .board {
+        min-width: 0;
+        scroll-margin-top: 24px;
+      }
+      .screen {
+        min-width: 0;
+        min-height: 570px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--surface);
+        box-shadow: 0 8px 32px #213b2f08;
+        overflow-wrap: anywhere;
+        overflow: hidden;
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--line);
+      }
+      .bar > span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 18px;
+        letter-spacing: -0.035em;
+      }
+      .brand svg {
+        width: 30px;
+        height: 30px;
+        flex: 0 0 30px;
+      }
+      .space {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 24px;
+        background: #fafbf9;
+        border-bottom: 1px solid var(--line);
+      }
+      .space small {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+      .space strong {
+        font-size: 14px;
+      }
+      .badge {
+        display: inline-block;
+        padding: 4px 9px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        background: var(--soft);
+        color: var(--primary);
+      }
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .tabs button {
+        min-height: 44px;
+        padding: 8px 10px;
+        border: 0;
+        background: transparent;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .tabs .selected {
+        color: var(--primary);
+        background: var(--soft);
+      }
+      .content {
+        padding: 28px 24px;
+      }
+      .content > p:first-of-type {
+        color: var(--muted);
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 20px 0;
+      }
+      button {
+        min-height: 44px;
+        max-width: 100%;
+        border: 1px solid var(--outline);
+        border-radius: 9px;
+        background: var(--surface);
+        color: var(--ink);
+        padding: 10px 16px;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+      }
+      button:disabled {
+        opacity: 1;
+        cursor: default;
+      }
+      button.primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+      }
+      button.destructive {
+        background: var(--danger);
+        border-color: var(--danger);
+        color: white;
+      }
+      button.danger-outline {
+        color: var(--danger);
+        border-color: var(--danger);
+      }
+      button.waiting {
+        background: #f0f2ef;
+        color: var(--muted);
+        border-style: dashed;
+      }
+      label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin: 18px 0 7px;
+      }
+      input {
+        display: block;
+        min-height: 46px;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        padding: 11px 13px;
+        border: 1px solid var(--outline);
+        border-radius: 9px;
+        background: #fff;
+        color: var(--ink);
+        font: inherit;
+      }
+      input.identity {
+        background: #f4f6f3;
+        color: var(--muted);
+      }
+      .notice {
+        padding: 16px 18px;
+        margin: 20px 0;
+        border: 1px solid #bed2c7;
+        border-left: 3px solid var(--primary);
+        border-radius: 10px;
+        background: var(--soft);
+      }
+      header > .notice {
+        background: white;
+      }
+      .caution .notice {
+        background: var(--warning-soft);
+        border-color: #c9ab72;
+        border-left-color: var(--warning);
+        color: var(--warning);
+      }
+      .danger-state .notice {
+        background: var(--danger-soft);
+        border-color: #d6aaa4;
+        border-left-color: var(--danger);
+        color: var(--danger);
+      }
+      .card {
+        padding: 18px;
+        margin: 16px 0;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      .card > p {
+        color: var(--muted);
+      }
+      .card h4 {
+        overflow-wrap: anywhere;
+      }
+      .facts {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+        gap: 12px 18px;
+        margin: 20px 0;
+        font-size: 14px;
+      }
+      .facts dt {
+        font-weight: 600;
+      }
+      .facts dd {
+        margin: 0;
+        min-width: 0;
+        color: var(--muted);
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .stats .card {
+        margin: 0;
+        background: #fafbf9;
+      }
+      .stats .card h4 {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .stats .card > strong {
+        display: block;
+        font-size: 23px;
+        color: var(--ink);
+        line-height: 1.3;
+        letter-spacing: -0.03em;
+      }
+      .note {
+        font-size: 13px;
+        color: var(--muted);
+        padding: 0 4px;
+      }
+      hr {
+        border: 0;
+        border-top: 1px solid var(--line);
+        margin: 28px 0;
+      }
+      .progress {
+        display: block;
+        width: 100%;
+        height: 7px;
+        margin: 12px 0;
+        border-radius: 7px;
+        background: #e4e9e3;
+        overflow: hidden;
+      }
+      .progress span {
+        display: block;
+        width: 81%;
+        height: 100%;
+        background: var(--warning);
+      }
+      .single main {
+        display: block;
+        max-width: 1120px;
+      }
+      .single header {
+        padding-bottom: 20px;
+      }
+      .single header h1 {
+        font-size: 24px;
+        max-width: none;
+        margin-bottom: 10px;
+      }
+      .single .screen {
+        min-height: 680px;
+      }
+      .single .content {
+        max-width: 860px;
+      }
+      .single.invitation main {
+        max-width: 640px;
+      }
+      .single.invitation .screen {
+        min-height: 0;
+      }
+      @media (max-width: 760px) {
+        header,
+        main,
+        footer {
+          padding: 20px 16px;
+        }
+        h1 {
+          font-size: 31px;
+        }
+        h3 {
+          font-size: 25px;
+        }
+        .grid,
+        .index {
+          grid-template-columns: 1fr;
+        }
+        .grid {
+          gap: 30px;
+        }
+        .bar,
+        .space {
+          padding: 16px;
+        }
+        .tabs {
+          padding: 8px;
+          gap: 2px;
+        }
+        .tabs button {
+          font-size: 12px;
+          padding: 8px;
+        }
+        .content {
+          padding: 24px 16px;
+        }
+        .stats {
+          grid-template-columns: 1fr;
+        }
+        .facts {
+          grid-template-columns: 1fr;
+          gap: 4px;
+        }
+        .facts dd {
+          margin-bottom: 10px;
+        }
+        .single .screen {
+          min-height: 0;
+        }
+      }
+    </style>
+  </head>
+  <body class="">
+    <header>
+      <p class="eyebrow">Design gate 2 · Visual mockups</p>
+      <h1>Your everyday lists. Your people, invited.</h1>
+      <p>
+        Emailed invitations, simpler households and a private owner overview.
+      </p>
+      <div class="notice">
+        <strong>Static visual review.</strong> People, addresses and usage are
+        synthetic. Buttons are presentation only; fields are read-only examples.
+        No login, sending, saved data or external resources. Resource thresholds
+        remain subject to sizing.
+      </div>
+      <p>
+        Focused views: <a href="mockup-households.html">Households</a> ·
+        <a href="mockup-invitation.html">Join a household</a> ·
+        <a href="mockup-admin.html">Owner overview</a> ·
+        <a href="mockup-email.html">Invitation email</a>
+      </p>
+      <nav class="index" aria-label="Mockup index">
+        <a href="#signin">01 — Sign in / invitation-only registration</a
+        ><a href="#households">02 — Households directory</a
+        ><a href="#create">03 — Create household: name only</a
+        ><a href="#invite">04 — Invite by email</a
+        ><a href="#invite-status">05 — Household invitation status</a
+        ><a href="#email">06 — Invitation email</a
+        ><a href="#landing"
+          >07 — Invitation landing before Google verification</a
+        ><a href="#wrong-account">08 — Wrong Google account</a
+        ><a href="#join-new">09 — New account: name and explicit acceptance</a
+        ><a href="#join-existing"
+          >10 — Existing account: accept another household</a
+        ><a href="#joined">11 — Account ready / household joined</a
+        ><a href="#unavailable">12 — Expired, revoked or invalid invitation</a
+        ><a href="#paused-join">13 — Growth paused / acceptance held</a
+        ><a href="#send-again">14 — Send again confirmation</a
+        ><a href="#inviter-removed">15 — Inviter departure / removal</a
+        ><a href="#head-management"
+          >16 — Equal heads without personal ceilings</a
+        ><a href="#blocked-save">17 — Ordinary user: change not saved</a
+        ><a href="#session-recovery">18 — Sign-in or connection interruption</a
+        ><a href="#admin-overview">19 — Owner admin: overview</a
+        ><a href="#admin-account">20 — Owner admin: account usage</a
+        ><a href="#admin-thresholds">21 — Owner admin: safety settings</a
+        ><a href="#admin-confirm">22 — Owner admin: review policy change</a
+        ><a href="#admin-pause">23 — Owner admin: Pause growth</a
+        ><a href="#admin-suspend">24 — Owner admin: suspend / restore</a
+        ><a href="#admin-email">25 — Owner admin: SES delivery operations</a
+        ><a href="#admin-feedback"
+          >26 — Owner admin: delivery detail / suppression</a
+        ><a href="#admin-audit">27 — Owner admin: audit and retention</a
+        ><a href="#admin-recovery"
+          >28 — Owner admin: protected restore review</a
+        >
+      </nav>
+    </header>
+    <main class="grid">
+      <section class="board" id="signin">
+        <h2>01 — Sign in / invitation-only registration</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            >
+          </div>
+          <div class="content">
+            <h3>A little clarity for your day</h3>
+            <p>Your personal lists and shared households.</p>
+            <div class="actions">
+              <button type="button" disabled class="primary">
+                Continue with Google
+              </button>
+            </div>
+            <div class="notice">
+              New here? Open the invitation email from a household head to
+              create your account.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Contact support</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Existing users sign in normally. A new Google identity is not enrolled
+          from this page. No pilot, approval-ID or public-signup controls.
+        </p>
+      </section>
+      <section class="board" id="households">
+        <h2>02 — Households directory</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong>Personal <span aria-hidden="true">⌄</span></strong>
+            </div>
+            <span class="badge">Private</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Households
+            </button>
+          </div>
+          <div class="content">
+            <h3>Households</h3>
+            <p>Your personal content stays private. Sharing is explicit.</p>
+            <div class="actions">
+              <button type="button" disabled class="primary">
+                Create household
+              </button>
+            </div>
+            <article class="card">
+              <h4>Maple household</h4>
+              <p>Active · Head</p>
+              <p>You and Alex have equal head authority.</p>
+              <div class="actions">
+                <button type="button" disabled>Manage household</button>
+              </div>
+            </article>
+            <article class="card">
+              <h4>Former household</h4>
+              <p>You no longer have access.</p>
+              <p>Your existing personal lists remain available.</p>
+            </article>
+          </div>
+        </div>
+        <p class="note">
+          Persistent Households entry. No My capacity, plans, allocation totals,
+          contribution sliders or count-ceiling controls. Former membership
+          never offers content access.
+        </p>
+      </section>
+      <section class="board" id="create">
+        <h2>03 — Create household: name only</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong>Personal <span aria-hidden="true">⌄</span></strong>
+            </div>
+            <span class="badge">Private</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Households
+            </button>
+          </div>
+          <div class="content">
+            <h3>Create household</h3>
+            <label for="field-1">Household name</label
+            ><input id="field-1" value="Maple household" readonly />
+            <div class="notice">
+              You will be the first head. Your personal lists are not copied or
+              shared.
+            </div>
+            <div class="actions">
+              <button type="button" disabled class="primary">
+                Review household</button
+              ><button type="button" disabled>Cancel</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Creating asks only for a name. Review shows the name and head
+          authority; no capacity allocation step. Duplicate/lost responses must
+          not create multiple households.
+        </p>
+      </section>
+      <section class="board" id="invite">
+        <h2>04 — Invite by email</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong
+                >Maple household <span aria-hidden="true">⌄</span></strong
+              >
+            </div>
+            <span class="badge">Shared · Head</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Households
+            </button>
+          </div>
+          <div class="content">
+            <h3>Invite a head</h3>
+            <label for="field-2">Google account email</label
+            ><input
+              class="identity"
+              id="field-2"
+              value="morgan@example.invalid"
+              readonly
+            />
+            <div class="notice">
+              Use the address this person uses with Google. After accepting,
+              they will have equal head authority and access to all household
+              History.
+            </div>
+            <div class="actions">
+              <button type="button" disabled class="primary">
+                Review invitation</button
+              ><button type="button" disabled>Cancel</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Head reviews recipient and household before Send invitation. Any
+          active head may invite within safety controls; no account IDs,
+          terminal approval or account directory.
+        </p>
+      </section>
+      <section class="board" id="invite-status">
+        <h2>05 — Household invitation status</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong
+                >Maple household <span aria-hidden="true">⌄</span></strong
+              >
+            </div>
+            <span class="badge">Shared · Head</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Households
+            </button>
+          </div>
+          <div class="content">
+            <h3>Invitations</h3>
+            <article class="card">
+              <h4>morgan@example.invalid</h4>
+              <dl class="facts">
+                <dt>Status</dt>
+                <dd>Delivered to receiving mail server</dd>
+                <dt>Expires</dt>
+                <dd>1 November 2026 · 14:00 UTC</dd>
+              </dl>
+              <div class="actions">
+                <button type="button" disabled>Send again</button
+                ><button type="button" disabled class="danger-outline">
+                  Revoke
+                </button>
+              </div>
+            </article>
+            <article class="card">
+              <h4>casey@example.invalid</h4>
+              <dl class="facts">
+                <dt>Status</dt>
+                <dd>Sending not yet confirmed</dd>
+              </dl>
+              <div class="actions">
+                <button type="button" disabled class="waiting">
+                  Send again — wait</button
+                ><button type="button" disabled class="danger-outline">
+                  Revoke
+                </button>
+              </div>
+            </article>
+            <article class="card">
+              <h4>taylor@example.invalid</h4>
+              <p>Invitation revoked.</p>
+              <div class="actions">
+                <button type="button" disabled>Send a new invitation</button>
+              </div>
+            </article>
+          </div>
+        </div>
+        <p class="note">
+          No private link or token is displayed. Delivered does not mean read or
+          inbox placement. Suppression/provider detail is admin-only. Sending
+          can be uncertain after a timeout.
+        </p>
+      </section>
+      <section class="board" id="email">
+        <h2>06 — Invitation email</h2>
+        <div class="screen">
+          <div class="bar">Recipient’s mailbox · illustrative email</div>
+          <div class="content">
+            <h3>You’re invited to Maple household</h3>
+            <dl class="facts">
+              <dt>From</dt>
+              <dd>intrepion · verified sender configured at setup</dd>
+              <dt>To</dt>
+              <dd>morgan@example.invalid</dd>
+              <dt>Invited by</dt>
+              <dd>Alex</dd>
+            </dl>
+            <p>Join Alex as another head of Maple household.</p>
+            <div class="notice">
+              Heads have equal authority and can see retained household content
+              and History. Your personal lists stay private.
+            </div>
+            <div class="actions">
+              <button type="button" disabled class="primary">
+                Review invitation
+              </button>
+            </div>
+            <p>
+              Use morgan@example.invalid with Google. This invitation expires in
+              seven days.
+            </p>
+            <p>
+              Didn’t expect this? You can ignore it. Reply to the monitored
+              support address configured at setup.
+            </p>
+          </div>
+        </div>
+        <p class="note">
+          Static recipient email preview. No real email, address, token or
+          tracking link. Invitation secrets are delivered only to the intended
+          mailbox; opening the email/link does not accept.
+        </p>
+      </section>
+      <section class="board" id="landing">
+        <h2>07 — Invitation landing before Google verification</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            >
+          </div>
+          <div class="content">
+            <h3>You have a household invitation</h3>
+            <p>
+              Sign in with the Google account for the address that received the
+              email.
+            </p>
+            <div class="actions">
+              <button type="button" disabled class="primary">
+                Continue with Google
+              </button>
+            </div>
+            <div class="notice">
+              Review the invitation before joining. Opening this page does not
+              create an account.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Contact support</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Hide household/member details until invitation and matching Google
+          identity checks succeed. Remove captured secrets from visible
+          URL/history and never log them.
+        </p>
+      </section>
+      <section class="board" id="wrong-account">
+        <h2>08 — Wrong Google account</h2>
+        <div class="screen caution">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            >
+          </div>
+          <div class="content">
+            <h3>Choose another Google account</h3>
+            <p>You signed in as casey@example.invalid.</p>
+            <div class="notice">
+              This invitation is for a different Google account. Use the address
+              that received the email.
+            </div>
+            <div class="actions">
+              <button type="button" disabled class="primary">
+                Switch Google account</button
+              ><button type="button" disabled>Cancel</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Do not reveal the other recipient’s identity or consume the
+          invitation. Switching accounts cannot recover another person’s drafts
+          or grant household access.
+        </p>
+      </section>
+      <section class="board" id="join-new">
+        <h2>09 — New account: name and explicit acceptance</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            >
+          </div>
+          <div class="content">
+            <h3>Join Maple household</h3>
+            <p>
+              Invited by Alex · Your Google address matches this invitation.
+            </p>
+            <label for="field-3">Google account email</label
+            ><input
+              class="identity"
+              id="field-3"
+              value="morgan@example.invalid"
+              readonly
+            /><label for="field-4">Your display name</label
+            ><input id="field-4" value="Morgan" readonly />
+            <div class="notice">
+              You will become an equal head and can see all retained household
+              content and History, including changes from before you joined.
+              Your personal space stays private.
+            </div>
+            <div class="actions">
+              <button type="button" disabled class="primary">
+                Create account and join</button
+              ><button type="button" disabled>Not now</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Display name is editable in the later prototype. Google identity/email
+          are verified fields. Create account and membership only on explicit
+          acceptance, atomically and retry-safely.
+        </p>
+      </section>
+      <section class="board" id="join-existing">
+        <h2>10 — Existing account: accept another household</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong>Personal <span aria-hidden="true">⌄</span></strong>
+            </div>
+            <span class="badge">Private</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Households
+            </button>
+          </div>
+          <div class="content">
+            <h3>Join Maple household</h3>
+            <p>Signed in as Morgan · morgan@example.invalid</p>
+            <p>Your existing account and display name will be kept.</p>
+            <div class="notice">
+              Accepting grants equal head authority and access to all retained
+              household content and History. Your other spaces stay private.
+            </div>
+            <div class="actions">
+              <button type="button" disabled class="primary">
+                Accept and join</button
+              ><button type="button" disabled>Not now</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Same acceptance and race checks as new users. No new account,
+          automatic personal-data copy or capacity contribution.
+        </p>
+      </section>
+      <section class="board" id="joined">
+        <h2>11 — Account ready / household joined</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong
+                >Maple household <span aria-hidden="true">⌄</span></strong
+              >
+            </div>
+            <span class="badge">Shared · Head</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Households
+            </button>
+          </div>
+          <div class="content">
+            <h3>You’ve joined Maple household</h3>
+            <p>Your account is ready. You and Alex are equal heads.</p>
+            <div class="actions">
+              <button type="button" disabled class="primary">
+                Open household</button
+              ><button type="button" disabled>Go to personal space</button>
+            </div>
+            <div class="notice">
+              Personal lists stay private unless you explicitly copy them into a
+              household.
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          An acknowledged retry lands in the same membership. A user who later
+          leaves or is removed keeps their normal account and personal data.
+        </p>
+      </section>
+      <section class="board" id="unavailable">
+        <h2>12 — Expired, revoked or invalid invitation</h2>
+        <div class="screen caution">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            >
+          </div>
+          <div class="content">
+            <h3>This invitation is unavailable</h3>
+            <p>Ask a current household head to send a new invitation.</p>
+            <div class="actions">
+              <button type="button" disabled>
+                Sign in to an existing account</button
+              ><button type="button" disabled>Contact support</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Use a general unavailable result without account enumeration.
+          Expired/revoked links do not create accounts. Do not expose a revoked
+          link or reuse an email outbox secret.
+        </p>
+      </section>
+      <section class="board" id="paused-join">
+        <h2>13 — Growth paused / acceptance held</h2>
+        <div class="screen caution">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            >
+          </div>
+          <div class="content">
+            <h3>Joining is temporarily unavailable</h3>
+            <p>No account or household membership has been created.</p>
+            <p>Please try again later or contact support.</p>
+            <div class="actions">
+              <button type="button" disabled class="primary">Try again</button
+              ><button type="button" disabled>
+                Sign in to an existing account</button
+              ><button type="button" disabled>Contact support</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Manual Pause growth blocks acceptance and sends. Merely exhausting the
+          email-send budget does not block an already delivered valid
+          invitation. Expiry still runs.
+        </p>
+      </section>
+      <section class="board" id="send-again">
+        <h2>14 — Send again confirmation</h2>
+        <div class="screen caution">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong
+                >Maple household <span aria-hidden="true">⌄</span></strong
+              >
+            </div>
+            <span class="badge">Shared · Head</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Households
+            </button>
+          </div>
+          <div class="content">
+            <h3>Send a new invitation?</h3>
+            <dl class="facts">
+              <dt>Household</dt>
+              <dd>Maple household</dd>
+              <dt>Recipient</dt>
+              <dd>morgan@example.invalid</dd>
+            </dl>
+            <div class="notice">
+              The previous link will stop working. A new private link will be
+              emailed and will expire seven days after it is created.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Send again</button
+              ><button type="button" disabled>Keep current invitation</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Explicit resend rotates the link; automatic technical retries reuse
+          it. Rate/budget limits can hold sends. A lost acknowledgment can be
+          retried without creating another logical resend.
+        </p>
+      </section>
+      <section class="board" id="inviter-removed">
+        <h2>15 — Inviter departure / removal</h2>
+        <div class="screen caution">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong
+                >Maple household <span aria-hidden="true">⌄</span></strong
+              >
+            </div>
+            <span class="badge">Shared · Head</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Households
+            </button>
+          </div>
+          <div class="content">
+            <h3>Household updated</h3>
+            <p>
+              Alex is no longer a head. Existing accepted memberships remain.
+            </p>
+            <article class="card">
+              <h4>Pending invitations</h4>
+              <p>Invitations issued by Alex have been revoked.</p>
+              <div class="actions">
+                <button type="button" disabled>Invite a head</button>
+              </div>
+            </article>
+            <div class="notice">
+              A current head can send a new invitation. Your personal space is
+              unchanged.
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Cancel pending mail when inviter authority ends. Do not reveal
+          site-wide suspension details to other heads. Last-head departure still
+          closes the household irreversibly.
+        </p>
+      </section>
+      <section class="board" id="head-management">
+        <h2>16 — Equal heads without personal ceilings</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong
+                >Maple household <span aria-hidden="true">⌄</span></strong
+              >
+            </div>
+            <span class="badge">Shared · Head</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Households
+            </button>
+          </div>
+          <div class="content">
+            <h3>Maple household</h3>
+            <div class="actions">
+              <button type="button" disabled>Invite a head</button
+              ><button type="button" disabled>Household History</button>
+            </div>
+            <article class="card">
+              <h4>Morgan · You</h4>
+              <p>Head · Equal authority</p>
+            </article>
+            <article class="card">
+              <h4>Alex</h4>
+              <p>Head · Equal authority</p>
+              <div class="actions">
+                <button type="button" disabled>Remove head Alex</button>
+              </div>
+            </article>
+            <div class="actions">
+              <button type="button" disabled class="danger-outline">
+                Leave household
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          No subscription, member-count ceiling or contribution controls.
+          Removing/leaving requires existing scope confirmations; last-head
+          closure shows its irreversible month-end UTC erasure deadline.
+        </p>
+      </section>
+      <section class="board" id="blocked-save">
+        <h2>17 — Ordinary user: change not saved</h2>
+        <div class="screen danger-state">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong
+                >Maple household <span aria-hidden="true">⌄</span></strong
+              >
+            </div>
+            <span class="badge">Shared · Head</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Households
+            </button>
+          </div>
+          <div class="content">
+            <h3>Edit task</h3>
+            <label for="field-5">Title</label
+            ><input id="field-5" value="Pack the chargers" readonly /><label
+              for="field-6"
+              >Notes</label
+            ><input id="field-6" value="Keep this draft available" readonly />
+            <div class="notice">
+              Your change wasn’t saved. Please contact support.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Keep editing</button
+              ><button type="button" disabled>Contact support</button
+              ><button type="button" disabled>Back to household</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Hide numerical safety limits and detailed resource reasons. Preserve
+          the draft and clearly report unsaved state. Conflict, connection and
+          identity recovery still use actionable messages.
+        </p>
+      </section>
+      <section class="board" id="session-recovery">
+        <h2>18 — Sign-in or connection interruption</h2>
+        <div class="screen caution">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            >
+          </div>
+          <div class="content">
+            <h3>Sign in to continue</h3>
+            <p>Your saved lists have not been changed.</p>
+            <div class="actions">
+              <button type="button" disabled class="primary">
+                Continue with Google</button
+              ><button type="button" disabled class="primary">Try again</button>
+            </div>
+            <div class="notice">
+              If this invitation can’t be resumed securely, reopen its email. If
+              you changed Google accounts, only that account’s data will be
+              shown.
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Resume only verified pending work within its secure lifetime. No
+          invitation use on GET, plaintext-token browser storage or silent
+          acceptance. Ordinary task-draft/session safeguards remain.
+        </p>
+      </section>
+      <section class="board" id="admin-overview">
+        <h2>19 — Owner admin: overview</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong>Personal <span aria-hidden="true">⌄</span></strong>
+            </div>
+            <span class="badge">Private</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button type="button" disabled>Households</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Admin
+            </button>
+          </div>
+          <div class="content">
+            <h3>Admin overview</h3>
+            <p>Site owner only · Metadata and operational controls</p>
+            <div class="stats">
+              <article class="card">
+                <h4>Accounts</h4>
+                <strong>8 active</strong>
+                <p>2 need review</p>
+              </article>
+              <article class="card">
+                <h4>Households</h4>
+                <strong>5 active · 1 closed</strong>
+                <p>Retained data remains counted</p>
+              </article>
+              <article class="card">
+                <h4>Logical retained storage</h4>
+                <strong>3.4 MiB</strong>
+                <p>Illustrative aggregate</p>
+              </article>
+              <article class="card">
+                <h4>Email sending</h4>
+                <strong>8,100 / 10,000 attempts</strong>
+                <div class="progress" aria-hidden="true"><span></span></div>
+                <p>80% warning reached</p>
+              </article>
+            </div>
+            <div class="notice">
+              Review unusually fast storage growth for one account. A flag
+              requests review; it does not automatically suspend them.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Review accounts</button
+              ><button type="button" disabled>Review households</button
+              ><button type="button" disabled>Safety thresholds</button
+              ><button type="button" disabled>Email operations</button
+              ><button type="button" disabled class="destructive">
+                Pause growth
+              </button>
+            </div>
+            <dl class="facts">
+              <dt>Latest backup</dt>
+              <dd>Verified · measured 2 hours ago</dd>
+              <dt>Export / recovery sizes</dt>
+              <dd>Separate measured values, not logical storage</dd>
+              <dt>Account-wide D1 daily usage</dt>
+              <dd>Unavailable · dashboard review required</dd>
+            </dl>
+          </div>
+        </div>
+        <p class="note">
+          Illustrative usage only. Show time windows, measurement freshness and
+          unknown values honestly. No private task/recipe contents, Google
+          subjects, credentials or raw provider bodies.
+        </p>
+      </section>
+      <section class="board" id="admin-account">
+        <h2>20 — Owner admin: account usage</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong>Personal <span aria-hidden="true">⌄</span></strong>
+            </div>
+            <span class="badge">Private</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button type="button" disabled>Households</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Admin
+            </button>
+          </div>
+          <div class="content">
+            <h3>Morgan · Account overview</h3>
+            <dl class="facts">
+              <dt>Email</dt>
+              <dd>morgan@example.invalid</dd>
+              <dt>Account state</dt>
+              <dd>Active</dd>
+              <dt>Personal retained storage</dt>
+              <dd>640 KiB · example</dd>
+              <dt>Recent growth</dt>
+              <dd>Review flag · illustrative trend</dd>
+              <dt>Email activity</dt>
+              <dd>Recent send attempts and failures</dd>
+            </dl>
+            <article class="card">
+              <h4>Personal space</h4>
+              <p>Resource counts, retained storage and safety status.</p>
+              <div class="actions">
+                <button type="button" disabled>
+                  Adjust space safety thresholds
+                </button>
+              </div>
+            </article>
+            <article class="card">
+              <h4>Maple household</h4>
+              <p>Head membership · shared-space metadata only.</p>
+              <div class="actions">
+                <button type="button" disabled>
+                  Review household metadata
+                </button>
+              </div>
+            </article>
+            <div class="actions">
+              <button type="button" disabled class="destructive">
+                Suspend account</button
+              ><button type="button" disabled>Back to overview</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Metadata access is not membership or content access. Site-wide
+          suspension differs from removal from one household; no private-list
+          inspection.
+        </p>
+      </section>
+      <section class="board" id="admin-thresholds">
+        <h2>21 — Owner admin: safety settings</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong>Personal <span aria-hidden="true">⌄</span></strong>
+            </div>
+            <span class="badge">Private</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button type="button" disabled>Households</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Admin
+            </button>
+          </div>
+          <div class="content">
+            <h3>Safety thresholds</h3>
+            <label for="field-7">Target</label
+            ><input
+              id="field-7"
+              value="Household defaults / selected space"
+              readonly
+            /><label for="field-8">Warning threshold</label
+            ><input
+              id="field-8"
+              value="Value to be chosen after sizing"
+              readonly
+            /><label for="field-9">Hard safety threshold</label
+            ><input
+              id="field-9"
+              value="Value to be chosen after sizing"
+              readonly
+            /><label for="field-10">Review reason</label
+            ><input
+              id="field-10"
+              value="Explain this administrative change"
+              readonly
+            />
+            <div class="notice">
+              Existing data is preserved when a proposed threshold is below
+              retained usage. Growth can be blocked; viewing and protected
+              erasure remain available.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Preview effects</button
+              ><button type="button" disabled>Cancel</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          No new numerical resource caps are approved by this wireframe. Preview
+          current revisions, affected spaces and overages. Changes require owner
+          confirmation and audit.
+        </p>
+      </section>
+      <section class="board" id="admin-confirm">
+        <h2>22 — Owner admin: review policy change</h2>
+        <div class="screen caution">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong>Personal <span aria-hidden="true">⌄</span></strong>
+            </div>
+            <span class="badge">Private</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button type="button" disabled>Households</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Admin
+            </button>
+          </div>
+          <div class="content">
+            <h3>Review safety change</h3>
+            <dl class="facts">
+              <dt>Target</dt>
+              <dd>Selected household</dd>
+              <dt>Proposed policy</dt>
+              <dd>Your reviewed warning / hard thresholds</dd>
+              <dt>Affected state</dt>
+              <dd>Existing retained usage exceeds proposed cap</dd>
+            </dl>
+            <div class="notice">
+              Existing content and History will remain. Further growth in
+              blocked dimensions will fail with the general user message.
+            </div>
+            <div class="actions">
+              <button type="button" disabled class="primary">
+                Apply reviewed change</button
+              ><button type="button" disabled>Keep editing</button>
+            </div>
+            <hr />
+            <h4>If usage changed meanwhile</h4>
+            <p>
+              Nothing was applied. Review the latest usage before confirming
+              again.
+            </p>
+            <div class="actions">
+              <button type="button" disabled class="primary">
+                Review latest
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Apply the reviewed revision, never a stale hidden default. Retry an
+          uncertain application using the same operation identity; owner sees
+          detailed effects.
+        </p>
+      </section>
+      <section class="board" id="admin-pause">
+        <h2>23 — Owner admin: Pause growth</h2>
+        <div class="screen caution">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong>Personal <span aria-hidden="true">⌄</span></strong>
+            </div>
+            <span class="badge">Private</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button type="button" disabled>Households</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Admin
+            </button>
+          </div>
+          <div class="content">
+            <h3>Pause invitations and registration?</h3>
+            <div class="notice">
+              This stops new invitations, queued email, resends and invitation
+              acceptance. Existing accounts and lists keep working. Invitations
+              continue to expire.
+            </div>
+            <div class="actions">
+              <button type="button" disabled class="destructive">
+                Pause growth</button
+              ><button type="button" disabled>Keep growth open</button>
+            </div>
+            <hr />
+            <h4>When paused</h4>
+            <p>Growth is paused by the site owner.</p>
+            <div class="actions">
+              <button type="button" disabled>Review and resume growth</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Distinct from a sending-only budget stop. Resume requires an explicit
+          owner action. After recovery, unresolved security/reconciliation
+          checks prevent premature reopening.
+        </p>
+      </section>
+      <section class="board" id="admin-suspend">
+        <h2>24 — Owner admin: suspend / restore</h2>
+        <div class="screen danger-state">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong>Personal <span aria-hidden="true">⌄</span></strong>
+            </div>
+            <span class="badge">Private</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button type="button" disabled>Households</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Admin
+            </button>
+          </div>
+          <div class="content">
+            <h3>Suspend Morgan?</h3>
+            <div class="notice">
+              End account access and revoke pending invitations Morgan issued.
+              Keep data and existing household memberships. Other heads retain
+              their own access.
+            </div>
+            <label for="field-11">Reason for the audit record</label
+            ><input
+              id="field-11"
+              value="Enter administrative reason"
+              readonly
+            />
+            <div class="actions">
+              <button type="button" disabled class="destructive">
+                Suspend account</button
+              ><button type="button" disabled>Cancel</button>
+            </div>
+            <hr />
+            <h4>Restoring access</h4>
+            <p>
+              Review current memberships and safety state. Restoring this
+              account does not resurrect removed memberships or revoked
+              invitations.
+            </p>
+            <div class="actions">
+              <button type="button" disabled>Review restoration</button>
+            </div>
+            <p>
+              The sole site administrator cannot suspend their own account
+              through this screen.
+            </p>
+          </div>
+        </div>
+        <p class="note">
+          Confirm and audit actions. A new invitation never bypasses suspension.
+          Preserve a separate administrator recovery path; no operator token
+          enters the browser.
+        </p>
+      </section>
+      <section class="board" id="admin-email">
+        <h2>25 — Owner admin: SES delivery operations</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong>Personal <span aria-hidden="true">⌄</span></strong>
+            </div>
+            <span class="badge">Private</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button type="button" disabled>Households</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Admin
+            </button>
+          </div>
+          <div class="content">
+            <h3>Email operations</h3>
+            <dl class="facts">
+              <dt>Application monthly attempts</dt>
+              <dd>8,100 / 10,000 · illustrative</dd>
+              <dt>Initial base-send estimate</dt>
+              <dd>$0.81 · data and other AWS charges separate</dd>
+              <dt>Queue</dt>
+              <dd>Queued / retrying / uncertain / blocked</dd>
+              <dt>Feedback</dt>
+              <dd>Last verified event and intake health</dd>
+            </dl>
+            <div class="notice">
+              Warning at 80%. At 10,000 attempts, application sending stops
+              until the month resets or the owner reviews a higher budget.
+              Existing valid delivered invitations can still be accepted unless
+              growth is manually paused.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Review delivery records</button
+              ><button type="button" disabled>Review send budget</button
+              ><button type="button" disabled>Review suppressions</button>
+            </div>
+            <p>
+              Infrastructure alerts use the independent operations channel when
+              SES itself fails.
+            </p>
+          </div>
+        </div>
+        <p class="note">
+          Count uncertain sends conservatively. Duplicate email can happen;
+          logical invitations/accounts stay once-only. The app ceiling is not a
+          guaranteed AWS invoice cap.
+        </p>
+      </section>
+      <section class="board" id="admin-feedback">
+        <h2>26 — Owner admin: delivery detail / suppression</h2>
+        <div class="screen caution">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong>Personal <span aria-hidden="true">⌄</span></strong>
+            </div>
+            <span class="badge">Private</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button type="button" disabled>Households</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Admin
+            </button>
+          </div>
+          <div class="content">
+            <h3>Delivery review</h3>
+            <dl class="facts">
+              <dt>Recipient</dt>
+              <dd>morgan@example.invalid</dd>
+              <dt>Invitation</dt>
+              <dd>Maple household · pending</dd>
+              <dt>Delivery outcome</dt>
+              <dd>Reported hard bounce</dd>
+              <dt>Automatic sending</dt>
+              <dd>Blocked for this destination</dd>
+            </dl>
+            <div class="notice">
+              The inviting head sees a general delivery failure. Review the
+              reason and recipient before clearing the block.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Review clearing suppression</button
+              ><button type="button" disabled>Back to delivery records</button>
+            </div>
+            <p>
+              Some mailbox providers do not report spam complaints. No
+              invitation token, email body or private list content is shown.
+            </p>
+          </div>
+        </div>
+        <p class="note">
+          Authenticate feedback, deduplicate and preserve out-of-order safety.
+          Detailed delivery logs expire after 30 days; current suppression
+          remains effective until reviewed/cleared.
+        </p>
+      </section>
+      <section class="board" id="admin-audit">
+        <h2>27 — Owner admin: audit and retention</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong>Personal <span aria-hidden="true">⌄</span></strong>
+            </div>
+            <span class="badge">Private</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button type="button" disabled>Households</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Admin
+            </button>
+          </div>
+          <div class="content">
+            <h3>Administrative audit</h3>
+            <article class="card">
+              <h4>25 October · Alex</h4>
+              <p>Paused growth · reason and affected scope recorded.</p>
+            </article>
+            <article class="card">
+              <h4>25 October · Alex</h4>
+              <p>Reviewed and changed a safety policy.</p>
+            </article>
+            <article class="card">
+              <h4>24 October · Alex</h4>
+              <p>Suspended an account · data preserved.</p>
+            </article>
+            <dl class="facts">
+              <dt>Detailed mail delivery records</dt>
+              <dd>30 days</dd>
+              <dt>Site-admin audit events</dt>
+              <dd>One year</dd>
+              <dt>Household History</dt>
+              <dd>Until its existing protected erasure</dd>
+              <dt>Current security blocks</dt>
+              <dd>Remain effective after event-log expiry</dd>
+            </dl>
+          </div>
+        </div>
+        <p class="note">
+          Show human-readable actors, times and scopes without raw
+          secrets/content. Event-log retention must not lift bans or undermine
+          independent security/erasure proof.
+        </p>
+      </section>
+      <section class="board" id="admin-recovery">
+        <h2>28 — Owner admin: protected restore review</h2>
+        <div class="screen caution">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            ><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">
+            <div>
+              <small>Current space</small
+              ><strong>Personal <span aria-hidden="true">⌄</span></strong>
+            </div>
+            <span class="badge">Private</span>
+          </div>
+          <div class="tabs" aria-label="Application navigation">
+            <button type="button" disabled>Tasks</button
+            ><button type="button" disabled>Shopping</button
+            ><button type="button" disabled>Checklists</button
+            ><button type="button" disabled>Households</button
+            ><button
+              type="button"
+              disabled
+              class="selected"
+              aria-current="page"
+            >
+              Admin
+            </button>
+          </div>
+          <div class="content">
+            <h3>Recovery review</h3>
+            <p>Growth remains paused.</p>
+            <dl class="facts">
+              <dt>Content erasure protection</dt>
+              <dd>Verified before reopening</dd>
+              <dt>Later suspensions / head removals</dt>
+              <dd>Independent security state replayed</dd>
+              <dt>Pending links / onboarding sessions</dt>
+              <dd>Invalidated</dd>
+              <dt>Queued invitation email</dt>
+              <dd>Cancelled</dd>
+              <dt>Mail budget / feedback state</dt>
+              <dd>Reconcile before resuming</dd>
+            </dl>
+            <div class="notice">
+              Restore must not silently restore revoked access. Existing user
+              data is preserved under the tested recovery procedure.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Review recovery checks</button
+              ><button type="button" disabled>
+                Resume growth — checks required
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Never blindly send restored queues. Do not claim a backup snapshot
+          preserves later security changes without independent protection.
+          Credentials and forensic/provider data remain outside this page.
+        </p>
+      </section>
+    </main>
+    <footer>
+      <p class="note">
+        MVP 3.1 · Design gate 2 · Awaiting owner approval. The standalone
+        prototype follows approved mockups.
+      </p>
+    </footer>
+  </body>
+</html>

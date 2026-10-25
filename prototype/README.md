@@ -1,6 +1,10 @@
 # Local design prototypes
 
-The current **MVP 3 Household foundation prototype** is [a self-contained HTML file](public/households/index.html). Open it directly, or run `npm --prefix prototype run dev` and visit <http://127.0.0.1:4321/households/index.html>. No Rust server, credentials or real Google login are needed. See [the guided walkthroughs and review boundaries](../design/mvp-3/PROTOTYPE.md). MVP 3 wireframes and mockups are approved; the interactive prototype is approved; production implementation proceeds separately.
+The current **MVP 3.1 invitations and normal accounts prototype** is a self-contained HTML file preserved on branch `prototype/mvp-3-1-invitations` (local review copy: `public/invitations/index.html`). Open it directly with `xdg-open prototype/public/invitations/index.html`, or use `npm --prefix prototype run dev` and visit <http://127.0.0.1:4321/invitations/index.html>. It needs no Rust server or real Google/email access. See [the walkthroughs and review boundaries](../design/mvp-3-1/PROTOTYPE.md). Wireframes and mockups are approved; the standalone prototype is approved.
+
+## MVP 3 Household foundation reference
+
+The earlier **MVP 3 Household foundation prototype** is [a self-contained HTML file](public/households/index.html). Open it directly, or run `npm --prefix prototype run dev` and visit <http://127.0.0.1:4321/households/index.html>. No Rust server, credentials or real Google login are needed. See [the guided walkthroughs and review boundaries](../design/mvp-3/PROTOTYPE.md). MVP 3 wireframes and mockups are approved; the interactive prototype is approved; production implementation proceeds separately.
 
 ## Earlier prototypes
 

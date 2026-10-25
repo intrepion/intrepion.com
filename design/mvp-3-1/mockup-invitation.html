@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      09 — New account: name and explicit acceptance · intrepion MVP 3.1
+    </title>
+    <style>
+      :root {
+        --canvas: #f4f5f1;
+        --surface: #fff;
+        --ink: #1b302c;
+        --muted: #596b65;
+        --line: #dce4de;
+        --outline: #7c8f85;
+        --primary: #185e52;
+        --soft: #eaf3ee;
+        --danger: #a52f2b;
+        --danger-soft: #fff2ef;
+        --warning: #785017;
+        --warning-soft: #fff5df;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+        color: var(--ink);
+        background: var(--canvas);
+        font-synthesis: none;
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.55;
+      }
+      a {
+        color: var(--primary);
+        text-underline-offset: 4px;
+      }
+      a:focus-visible,
+      input:focus-visible {
+        outline: 3px solid var(--primary);
+        outline-offset: 3px;
+      }
+      header,
+      main,
+      footer {
+        max-width: 1400px;
+        margin: auto;
+        padding: 32px;
+      }
+      h1 {
+        font-size: 42px;
+        line-height: 1.12;
+        letter-spacing: -0.045em;
+        max-width: 25ch;
+        margin: 12px 0 22px;
+      }
+      h2 {
+        font-size: 16px;
+        letter-spacing: -0.02em;
+        margin: 0 0 12px;
+      }
+      h3 {
+        font-size: 29px;
+        line-height: 1.2;
+        letter-spacing: -0.035em;
+        margin: 0 0 16px;
+      }
+      h4 {
+        font-size: 16px;
+        margin: 0 0 8px;
+      }
+      p {
+        margin: 10px 0;
+      }
+      .eyebrow {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .index {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px 22px;
+        margin-top: 24px;
+      }
+      .index a {
+        font-size: 13px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 40px 28px;
+        padding-top: 0;
+      }
+      .board {
+        min-width: 0;
+        scroll-margin-top: 24px;
+      }
+      .screen {
+        min-width: 0;
+        min-height: 570px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--surface);
+        box-shadow: 0 8px 32px #213b2f08;
+        overflow-wrap: anywhere;
+        overflow: hidden;
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--line);
+      }
+      .bar > span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 18px;
+        letter-spacing: -0.035em;
+      }
+      .brand svg {
+        width: 30px;
+        height: 30px;
+        flex: 0 0 30px;
+      }
+      .space {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 24px;
+        background: #fafbf9;
+        border-bottom: 1px solid var(--line);
+      }
+      .space small {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+      .space strong {
+        font-size: 14px;
+      }
+      .badge {
+        display: inline-block;
+        padding: 4px 9px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        background: var(--soft);
+        color: var(--primary);
+      }
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .tabs button {
+        min-height: 44px;
+        padding: 8px 10px;
+        border: 0;
+        background: transparent;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .tabs .selected {
+        color: var(--primary);
+        background: var(--soft);
+      }
+      .content {
+        padding: 28px 24px;
+      }
+      .content > p:first-of-type {
+        color: var(--muted);
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 20px 0;
+      }
+      button {
+        min-height: 44px;
+        max-width: 100%;
+        border: 1px solid var(--outline);
+        border-radius: 9px;
+        background: var(--surface);
+        color: var(--ink);
+        padding: 10px 16px;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+      }
+      button:disabled {
+        opacity: 1;
+        cursor: default;
+      }
+      button.primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+      }
+      button.destructive {
+        background: var(--danger);
+        border-color: var(--danger);
+        color: white;
+      }
+      button.danger-outline {
+        color: var(--danger);
+        border-color: var(--danger);
+      }
+      button.waiting {
+        background: #f0f2ef;
+        color: var(--muted);
+        border-style: dashed;
+      }
+      label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin: 18px 0 7px;
+      }
+      input {
+        display: block;
+        min-height: 46px;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        padding: 11px 13px;
+        border: 1px solid var(--outline);
+        border-radius: 9px;
+        background: #fff;
+        color: var(--ink);
+        font: inherit;
+      }
+      input.identity {
+        background: #f4f6f3;
+        color: var(--muted);
+      }
+      .notice {
+        padding: 16px 18px;
+        margin: 20px 0;
+        border: 1px solid #bed2c7;
+        border-left: 3px solid var(--primary);
+        border-radius: 10px;
+        background: var(--soft);
+      }
+      header > .notice {
+        background: white;
+      }
+      .caution .notice {
+        background: var(--warning-soft);
+        border-color: #c9ab72;
+        border-left-color: var(--warning);
+        color: var(--warning);
+      }
+      .danger-state .notice {
+        background: var(--danger-soft);
+        border-color: #d6aaa4;
+        border-left-color: var(--danger);
+        color: var(--danger);
+      }
+      .card {
+        padding: 18px;
+        margin: 16px 0;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      .card > p {
+        color: var(--muted);
+      }
+      .card h4 {
+        overflow-wrap: anywhere;
+      }
+      .facts {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+        gap: 12px 18px;
+        margin: 20px 0;
+        font-size: 14px;
+      }
+      .facts dt {
+        font-weight: 600;
+      }
+      .facts dd {
+        margin: 0;
+        min-width: 0;
+        color: var(--muted);
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .stats .card {
+        margin: 0;
+        background: #fafbf9;
+      }
+      .stats .card h4 {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .stats .card > strong {
+        display: block;
+        font-size: 23px;
+        color: var(--ink);
+        line-height: 1.3;
+        letter-spacing: -0.03em;
+      }
+      .note {
+        font-size: 13px;
+        color: var(--muted);
+        padding: 0 4px;
+      }
+      hr {
+        border: 0;
+        border-top: 1px solid var(--line);
+        margin: 28px 0;
+      }
+      .progress {
+        display: block;
+        width: 100%;
+        height: 7px;
+        margin: 12px 0;
+        border-radius: 7px;
+        background: #e4e9e3;
+        overflow: hidden;
+      }
+      .progress span {
+        display: block;
+        width: 81%;
+        height: 100%;
+        background: var(--warning);
+      }
+      .single main {
+        display: block;
+        max-width: 1120px;
+      }
+      .single header {
+        padding-bottom: 20px;
+      }
+      .single header h1 {
+        font-size: 24px;
+        max-width: none;
+        margin-bottom: 10px;
+      }
+      .single .screen {
+        min-height: 680px;
+      }
+      .single .content {
+        max-width: 860px;
+      }
+      .single.invitation main {
+        max-width: 640px;
+      }
+      .single.invitation .screen {
+        min-height: 0;
+      }
+      @media (max-width: 760px) {
+        header,
+        main,
+        footer {
+          padding: 20px 16px;
+        }
+        h1 {
+          font-size: 31px;
+        }
+        h3 {
+          font-size: 25px;
+        }
+        .grid,
+        .index {
+          grid-template-columns: 1fr;
+        }
+        .grid {
+          gap: 30px;
+        }
+        .bar,
+        .space {
+          padding: 16px;
+        }
+        .tabs {
+          padding: 8px;
+          gap: 2px;
+        }
+        .tabs button {
+          font-size: 12px;
+          padding: 8px;
+        }
+        .content {
+          padding: 24px 16px;
+        }
+        .stats {
+          grid-template-columns: 1fr;
+        }
+        .facts {
+          grid-template-columns: 1fr;
+          gap: 4px;
+        }
+        .facts dd {
+          margin-bottom: 10px;
+        }
+        .single .screen {
+          min-height: 0;
+        }
+      }
+    </style>
+  </head>
+  <body class="single invitation">
+    <header>
+      <p class="eyebrow">MVP 3.1 · Static visual review</p>
+      <h1>09 — New account: name and explicit acceptance</h1>
+      <p><a href="mockups.html#join-new">Back to all 28 mockups</a></p>
+    </header>
+    <main>
+      <section class="board" id="join-new">
+        <h2>09 — New account: name and explicit acceptance</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong class="brand"
+              ><svg viewBox="0 0 30 30" aria-hidden="true">
+                <rect width="30" height="30" rx="9" fill="#185e52" />
+                <path
+                  d="m8 15 5 5 9-11"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>intrepion</span></strong
+            >
+          </div>
+          <div class="content">
+            <h3>Join Maple household</h3>
+            <p>
+              Invited by Alex · Your Google address matches this invitation.
+            </p>
+            <label for="field-3">Google account email</label
+            ><input
+              class="identity"
+              id="field-3"
+              value="morgan@example.invalid"
+              readonly
+            /><label for="field-4">Your display name</label
+            ><input id="field-4" value="Morgan" readonly />
+            <div class="notice">
+              You will become an equal head and can see all retained household
+              content and History, including changes from before you joined.
+              Your personal space stays private.
+            </div>
+            <div class="actions">
+              <button type="button" disabled class="primary">
+                Create account and join</button
+              ><button type="button" disabled>Not now</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Display name is editable in the later prototype. Google identity/email
+          are verified fields. Create account and membership only on explicit
+          acceptance, atomically and retry-safely.
+        </p>
+      </section>
+    </main>
+    <footer>
+      <p class="note">
+        MVP 3.1 · Design gate 2 · Awaiting owner approval. The standalone
+        prototype follows approved mockups.
+      </p>
+    </footer>
+  </body>
+</html>

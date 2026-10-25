@@ -1,0 +1,1326 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MVP 3.1 — Normal accounts and email invitations — Wireframes</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: #eee;
+        color: #222;
+        font:
+          15px/1.5 system-ui,
+          sans-serif;
+      }
+      header,
+      main,
+      footer {
+        max-width: 1360px;
+        margin: auto;
+        padding: 24px;
+      }
+      h1 {
+        font-size: 30px;
+        line-height: 1.2;
+      }
+      h2 {
+        font-size: 18px;
+        margin: 0 0 12px;
+      }
+      h3 {
+        font-size: 23px;
+        line-height: 1.25;
+        margin: 0 0 18px;
+      }
+      h4 {
+        font-size: 16px;
+        margin: 0 0 8px;
+      }
+      p {
+        margin: 10px 0;
+      }
+      a {
+        color: inherit;
+        text-underline-offset: 3px;
+      }
+      .eyebrow {
+        font: 12px/1.5 monospace;
+        text-transform: uppercase;
+      }
+      .notice {
+        padding: 14px;
+        border: 1px dashed #777;
+        background: #f5f5f5;
+        margin: 16px 0;
+      }
+      .index {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px 20px;
+        margin: 20px 0;
+      }
+      .index a {
+        font-size: 13px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 30px;
+      }
+      .board {
+        min-width: 0;
+        scroll-margin-top: 16px;
+      }
+      .screen {
+        border: 2px solid #444;
+        background: #fff;
+        overflow-wrap: anywhere;
+        min-height: 460px;
+      }
+      .bar,
+      .space,
+      .tabs {
+        padding: 12px 18px;
+        border-bottom: 1px solid #bbb;
+      }
+      .bar {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .space {
+        background: #f2f2f2;
+      }
+      .tabs {
+        line-height: 1.9;
+      }
+      .content {
+        padding: 20px;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 16px 0;
+      }
+      button {
+        font: inherit;
+        border: 1px solid #444;
+        color: #222;
+        background: #f3f3f3;
+        padding: 10px 14px;
+        min-height: 44px;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+      }
+      button:disabled {
+        opacity: 1;
+        cursor: default;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin: 14px 0 6px;
+      }
+      input {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        padding: 11px;
+        border: 1px solid #777;
+        background: #fafafa;
+        color: #222;
+        font: inherit;
+      }
+      .card {
+        border: 1px solid #aaa;
+        padding: 14px;
+        margin: 14px 0;
+      }
+      .facts {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+        gap: 10px 16px;
+        margin: 16px 0;
+      }
+      .facts dt {
+        font-weight: 600;
+      }
+      .facts dd {
+        margin: 0;
+        min-width: 0;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .stats .card {
+        margin: 0;
+      }
+      .note {
+        font-size: 13px;
+        color: #444;
+        padding: 0 4px;
+      }
+      hr {
+        border: 0;
+        border-top: 1px dashed #aaa;
+        margin: 24px 0;
+      }
+      .skip {
+        display: inline-block;
+        margin-bottom: 8px;
+      }
+      @media (max-width: 760px) {
+        header,
+        main,
+        footer {
+          padding: 16px;
+        }
+        .index {
+          grid-template-columns: 1fr;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+          gap: 26px;
+        }
+        .content {
+          padding: 16px;
+        }
+        .bar,
+        .space,
+        .tabs {
+          padding: 12px 16px;
+        }
+        h1 {
+          font-size: 26px;
+        }
+        .stats {
+          grid-template-columns: 1fr;
+        }
+        .facts {
+          grid-template-columns: 1fr;
+          gap: 4px;
+        }
+        .facts dd {
+          margin-bottom: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <p class="eyebrow">
+        Design gate 1 · Wireframes · Awaiting owner approval
+      </p>
+      <h1>Normal accounts, emailed invitations and owner administration</h1>
+      <div class="notice">
+        <strong>Static layout review only.</strong> All people, addresses,
+        records and usage measurements are synthetic. Buttons do nothing; index
+        links navigate. No JavaScript, network requests, login, email sending,
+        saved data or production changes. Resource safety thresholds will be
+        measured later. The 10,000-attempt email budget, 80% warning and
+        retention periods reflect the accepted scope.
+      </div>
+      <p>
+        Review household onboarding first, then owner controls and recovery.
+        Visual styling comes after wireframe approval; the interactive
+        standalone prototype follows approved mockups.
+      </p>
+      <nav class="index" aria-label="Wireframe index">
+        <a href="#signin">01 — Sign in / invitation-only registration</a
+        ><a href="#households">02 — Households directory</a
+        ><a href="#create">03 — Create household: name only</a
+        ><a href="#invite">04 — Invite by email</a
+        ><a href="#invite-status">05 — Household invitation status</a
+        ><a href="#email">06 — Invitation email</a
+        ><a href="#landing"
+          >07 — Invitation landing before Google verification</a
+        ><a href="#wrong-account">08 — Wrong Google account</a
+        ><a href="#join-new">09 — New account: name and explicit acceptance</a
+        ><a href="#join-existing"
+          >10 — Existing account: accept another household</a
+        ><a href="#joined">11 — Account ready / household joined</a
+        ><a href="#unavailable">12 — Expired, revoked or invalid invitation</a
+        ><a href="#paused-join">13 — Growth paused / acceptance held</a
+        ><a href="#send-again">14 — Send again confirmation</a
+        ><a href="#inviter-removed">15 — Inviter departure / removal</a
+        ><a href="#head-management"
+          >16 — Equal heads without personal ceilings</a
+        ><a href="#blocked-save">17 — Ordinary user: change not saved</a
+        ><a href="#session-recovery">18 — Sign-in or connection interruption</a
+        ><a href="#admin-overview">19 — Owner admin: overview</a
+        ><a href="#admin-account">20 — Owner admin: account usage</a
+        ><a href="#admin-thresholds">21 — Owner admin: safety settings</a
+        ><a href="#admin-confirm">22 — Owner admin: review policy change</a
+        ><a href="#admin-pause">23 — Owner admin: Pause growth</a
+        ><a href="#admin-suspend">24 — Owner admin: suspend / restore</a
+        ><a href="#admin-email">25 — Owner admin: SES delivery operations</a
+        ><a href="#admin-feedback"
+          >26 — Owner admin: delivery detail / suppression</a
+        ><a href="#admin-audit">27 — Owner admin: audit and retention</a
+        ><a href="#admin-recovery"
+          >28 — Owner admin: protected restore review</a
+        >
+      </nav>
+    </header>
+    <main class="grid">
+      <section class="board" id="signin">
+        <h2>01 — Sign in / invitation-only registration</h2>
+        <div class="screen">
+          <div class="bar"><strong>intrepion</strong></div>
+          <div class="content">
+            <h3>A little clarity for your day</h3>
+            <p>Your personal lists and shared households.</p>
+            <div class="actions">
+              <button type="button" disabled>Continue with Google</button>
+            </div>
+            <div class="notice">
+              New here? Open the invitation email from a household head to
+              create your account.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Contact support</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Existing users sign in normally. A new Google identity is not enrolled
+          from this page. No pilot, approval-ID or public-signup controls.
+        </p>
+      </section>
+      <section class="board" id="households">
+        <h2>02 — Households directory</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">Space: Personal · Private ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong>
+          </div>
+          <div class="content">
+            <h3>Households</h3>
+            <p>Your personal content stays private. Sharing is explicit.</p>
+            <div class="actions">
+              <button type="button" disabled>Create household</button>
+            </div>
+            <article class="card">
+              <h4>Maple household</h4>
+              <p>Active · Head</p>
+              <p>You and Alex have equal head authority.</p>
+              <div class="actions">
+                <button type="button" disabled>Manage household</button>
+              </div>
+            </article>
+            <article class="card">
+              <h4>Former household</h4>
+              <p>You no longer have access.</p>
+              <p>Your existing personal lists remain available.</p>
+            </article>
+          </div>
+        </div>
+        <p class="note">
+          Persistent Households entry. No My capacity, plans, allocation totals,
+          contribution sliders or count-ceiling controls. Former membership
+          never offers content access.
+        </p>
+      </section>
+      <section class="board" id="create">
+        <h2>03 — Create household: name only</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">Space: Personal · Private ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong>
+          </div>
+          <div class="content">
+            <h3>Create household</h3>
+            <label for="field-1">Household name</label
+            ><input id="field-1" value="Maple household" readonly />
+            <div class="notice">
+              You will be the first head. Your personal lists are not copied or
+              shared.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Review household</button
+              ><button type="button" disabled>Cancel</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Creating asks only for a name. Review shows the name and head
+          authority; no capacity allocation step. Duplicate/lost responses must
+          not create multiple households.
+        </p>
+      </section>
+      <section class="board" id="invite">
+        <h2>04 — Invite by email</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household · Shared · Head ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong>
+          </div>
+          <div class="content">
+            <h3>Invite a head</h3>
+            <label for="field-2">Google account email</label
+            ><input id="field-2" value="morgan@example.invalid" readonly />
+            <div class="notice">
+              Use the address this person uses with Google. After accepting,
+              they will have equal head authority and access to all household
+              History.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Review invitation</button
+              ><button type="button" disabled>Cancel</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Head reviews recipient and household before Send invitation. Any
+          active head may invite within safety controls; no account IDs,
+          terminal approval or account directory.
+        </p>
+      </section>
+      <section class="board" id="invite-status">
+        <h2>05 — Household invitation status</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household · Shared · Head ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong>
+          </div>
+          <div class="content">
+            <h3>Invitations</h3>
+            <article class="card">
+              <h4>morgan@example.invalid</h4>
+              <dl class="facts">
+                <dt>Status</dt>
+                <dd>Delivered to receiving mail server</dd>
+                <dt>Expires</dt>
+                <dd>1 November 2026 · 14:00 UTC</dd>
+              </dl>
+              <div class="actions">
+                <button type="button" disabled>Send again</button
+                ><button type="button" disabled>Revoke</button>
+              </div>
+            </article>
+            <article class="card">
+              <h4>casey@example.invalid</h4>
+              <dl class="facts">
+                <dt>Status</dt>
+                <dd>Sending not yet confirmed</dd>
+              </dl>
+              <div class="actions">
+                <button type="button" disabled>Send again — wait</button
+                ><button type="button" disabled>Revoke</button>
+              </div>
+            </article>
+            <article class="card">
+              <h4>taylor@example.invalid</h4>
+              <p>Invitation revoked.</p>
+              <div class="actions">
+                <button type="button" disabled>Send a new invitation</button>
+              </div>
+            </article>
+          </div>
+        </div>
+        <p class="note">
+          No private link or token is displayed. Delivered does not mean read or
+          inbox placement. Suppression/provider detail is admin-only. Sending
+          can be uncertain after a timeout.
+        </p>
+      </section>
+      <section class="board" id="email">
+        <h2>06 — Invitation email</h2>
+        <div class="screen">
+          <div class="bar">Recipient’s mailbox · illustrative email</div>
+          <div class="content">
+            <h3>You’re invited to Maple household</h3>
+            <dl class="facts">
+              <dt>From</dt>
+              <dd>intrepion · verified sender configured at setup</dd>
+              <dt>To</dt>
+              <dd>morgan@example.invalid</dd>
+              <dt>Invited by</dt>
+              <dd>Alex</dd>
+            </dl>
+            <p>Join Alex as another head of Maple household.</p>
+            <div class="notice">
+              Heads have equal authority and can see retained household content
+              and History. Your personal lists stay private.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Review invitation</button>
+            </div>
+            <p>
+              Use morgan@example.invalid with Google. This invitation expires in
+              seven days.
+            </p>
+            <p>
+              Didn’t expect this? You can ignore it. Reply to the monitored
+              support address configured at setup.
+            </p>
+          </div>
+        </div>
+        <p class="note">
+          Static recipient email preview. No real email, address, token or
+          tracking link. Invitation secrets are delivered only to the intended
+          mailbox; opening the email/link does not accept.
+        </p>
+      </section>
+      <section class="board" id="landing">
+        <h2>07 — Invitation landing before Google verification</h2>
+        <div class="screen">
+          <div class="bar"><strong>intrepion</strong></div>
+          <div class="content">
+            <h3>You have a household invitation</h3>
+            <p>
+              Sign in with the Google account for the address that received the
+              email.
+            </p>
+            <div class="actions">
+              <button type="button" disabled>Continue with Google</button>
+            </div>
+            <div class="notice">
+              Review the invitation before joining. Opening this page does not
+              create an account.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Contact support</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Hide household/member details until invitation and matching Google
+          identity checks succeed. Remove captured secrets from visible
+          URL/history and never log them.
+        </p>
+      </section>
+      <section class="board" id="wrong-account">
+        <h2>08 — Wrong Google account</h2>
+        <div class="screen">
+          <div class="bar"><strong>intrepion</strong></div>
+          <div class="content">
+            <h3>Choose another Google account</h3>
+            <p>You signed in as casey@example.invalid.</p>
+            <div class="notice">
+              This invitation is for a different Google account. Use the address
+              that received the email.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Switch Google account</button
+              ><button type="button" disabled>Cancel</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Do not reveal the other recipient’s identity or consume the
+          invitation. Switching accounts cannot recover another person’s drafts
+          or grant household access.
+        </p>
+      </section>
+      <section class="board" id="join-new">
+        <h2>09 — New account: name and explicit acceptance</h2>
+        <div class="screen">
+          <div class="bar"><strong>intrepion</strong></div>
+          <div class="content">
+            <h3>Join Maple household</h3>
+            <p>
+              Invited by Alex · Your Google address matches this invitation.
+            </p>
+            <label for="field-3">Google account email</label
+            ><input
+              id="field-3"
+              value="morgan@example.invalid"
+              readonly
+            /><label for="field-4">Your display name</label
+            ><input id="field-4" value="Morgan" readonly />
+            <div class="notice">
+              You will become an equal head and can see all retained household
+              content and History, including changes from before you joined.
+              Your personal space stays private.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Create account and join</button
+              ><button type="button" disabled>Not now</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Display name is editable in the later prototype. Google identity/email
+          are verified fields. Create account and membership only on explicit
+          acceptance, atomically and retry-safely.
+        </p>
+      </section>
+      <section class="board" id="join-existing">
+        <h2>10 — Existing account: accept another household</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">Space: Personal · Private ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong>
+          </div>
+          <div class="content">
+            <h3>Join Maple household</h3>
+            <p>Signed in as Morgan · morgan@example.invalid</p>
+            <p>Your existing account and display name will be kept.</p>
+            <div class="notice">
+              Accepting grants equal head authority and access to all retained
+              household content and History. Your other spaces stay private.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Accept and join</button
+              ><button type="button" disabled>Not now</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Same acceptance and race checks as new users. No new account,
+          automatic personal-data copy or capacity contribution.
+        </p>
+      </section>
+      <section class="board" id="joined">
+        <h2>11 — Account ready / household joined</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household · Shared · Head ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong>
+          </div>
+          <div class="content">
+            <h3>You’ve joined Maple household</h3>
+            <p>Your account is ready. You and Alex are equal heads.</p>
+            <div class="actions">
+              <button type="button" disabled>Open household</button
+              ><button type="button" disabled>Go to personal space</button>
+            </div>
+            <div class="notice">
+              Personal lists stay private unless you explicitly copy them into a
+              household.
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          An acknowledged retry lands in the same membership. A user who later
+          leaves or is removed keeps their normal account and personal data.
+        </p>
+      </section>
+      <section class="board" id="unavailable">
+        <h2>12 — Expired, revoked or invalid invitation</h2>
+        <div class="screen">
+          <div class="bar"><strong>intrepion</strong></div>
+          <div class="content">
+            <h3>This invitation is unavailable</h3>
+            <p>Ask a current household head to send a new invitation.</p>
+            <div class="actions">
+              <button type="button" disabled>
+                Sign in to an existing account</button
+              ><button type="button" disabled>Contact support</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Use a general unavailable result without account enumeration.
+          Expired/revoked links do not create accounts. Do not expose a revoked
+          link or reuse an email outbox secret.
+        </p>
+      </section>
+      <section class="board" id="paused-join">
+        <h2>13 — Growth paused / acceptance held</h2>
+        <div class="screen">
+          <div class="bar"><strong>intrepion</strong></div>
+          <div class="content">
+            <h3>Joining is temporarily unavailable</h3>
+            <p>No account or household membership has been created.</p>
+            <p>Please try again later or contact support.</p>
+            <div class="actions">
+              <button type="button" disabled>Try again</button
+              ><button type="button" disabled>
+                Sign in to an existing account</button
+              ><button type="button" disabled>Contact support</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Manual Pause growth blocks acceptance and sends. Merely exhausting the
+          email-send budget does not block an already delivered valid
+          invitation. Expiry still runs.
+        </p>
+      </section>
+      <section class="board" id="send-again">
+        <h2>14 — Send again confirmation</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household · Shared · Head ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong>
+          </div>
+          <div class="content">
+            <h3>Send a new invitation?</h3>
+            <dl class="facts">
+              <dt>Household</dt>
+              <dd>Maple household</dd>
+              <dt>Recipient</dt>
+              <dd>morgan@example.invalid</dd>
+            </dl>
+            <div class="notice">
+              The previous link will stop working. A new private link will be
+              emailed and will expire seven days after it is created.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Send again</button
+              ><button type="button" disabled>Keep current invitation</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Explicit resend rotates the link; automatic technical retries reuse
+          it. Rate/budget limits can hold sends. A lost acknowledgment can be
+          retried without creating another logical resend.
+        </p>
+      </section>
+      <section class="board" id="inviter-removed">
+        <h2>15 — Inviter departure / removal</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household · Shared · Head ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong>
+          </div>
+          <div class="content">
+            <h3>Household updated</h3>
+            <p>
+              Alex is no longer a head. Existing accepted memberships remain.
+            </p>
+            <article class="card">
+              <h4>Pending invitations</h4>
+              <p>Invitations issued by Alex have been revoked.</p>
+              <div class="actions">
+                <button type="button" disabled>Invite a head</button>
+              </div>
+            </article>
+            <div class="notice">
+              A current head can send a new invitation. Your personal space is
+              unchanged.
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Cancel pending mail when inviter authority ends. Do not reveal
+          site-wide suspension details to other heads. Last-head departure still
+          closes the household irreversibly.
+        </p>
+      </section>
+      <section class="board" id="head-management">
+        <h2>16 — Equal heads without personal ceilings</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household · Shared · Head ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong>
+          </div>
+          <div class="content">
+            <h3>Maple household</h3>
+            <div class="actions">
+              <button type="button" disabled>Invite a head</button
+              ><button type="button" disabled>Household History</button>
+            </div>
+            <article class="card">
+              <h4>Morgan · You</h4>
+              <p>Head · Equal authority</p>
+            </article>
+            <article class="card">
+              <h4>Alex</h4>
+              <p>Head · Equal authority</p>
+              <div class="actions">
+                <button type="button" disabled>Remove head Alex</button>
+              </div>
+            </article>
+            <div class="actions">
+              <button type="button" disabled>Leave household</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          No subscription, member-count ceiling or contribution controls.
+          Removing/leaving requires existing scope confirmations; last-head
+          closure shows its irreversible month-end UTC erasure deadline.
+        </p>
+      </section>
+      <section class="board" id="blocked-save">
+        <h2>17 — Ordinary user: change not saved</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Morgan · Sign out</span>
+          </div>
+          <div class="space">Space: Maple household · Shared · Head ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong>
+          </div>
+          <div class="content">
+            <h3>Edit task</h3>
+            <label for="field-5">Title</label
+            ><input id="field-5" value="Pack the chargers" readonly /><label
+              for="field-6"
+              >Notes</label
+            ><input id="field-6" value="Keep this draft available" readonly />
+            <div class="notice">
+              Your change wasn’t saved. Please contact support.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Keep editing</button
+              ><button type="button" disabled>Contact support</button
+              ><button type="button" disabled>Back to household</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Hide numerical safety limits and detailed resource reasons. Preserve
+          the draft and clearly report unsaved state. Conflict, connection and
+          identity recovery still use actionable messages.
+        </p>
+      </section>
+      <section class="board" id="session-recovery">
+        <h2>18 — Sign-in or connection interruption</h2>
+        <div class="screen">
+          <div class="bar"><strong>intrepion</strong></div>
+          <div class="content">
+            <h3>Sign in to continue</h3>
+            <p>Your saved lists have not been changed.</p>
+            <div class="actions">
+              <button type="button" disabled>Continue with Google</button
+              ><button type="button" disabled>Try again</button>
+            </div>
+            <div class="notice">
+              If this invitation can’t be resumed securely, reopen its email. If
+              you changed Google accounts, only that account’s data will be
+              shown.
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Resume only verified pending work within its secure lifetime. No
+          invitation use on GET, plaintext-token browser storage or silent
+          acceptance. Ordinary task-draft/session safeguards remain.
+        </p>
+      </section>
+      <section class="board" id="admin-overview">
+        <h2>19 — Owner admin: overview</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">Space: Personal · Private ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong> ·
+            <strong>Admin</strong>
+          </div>
+          <div class="content">
+            <h3>Admin overview</h3>
+            <p>Site owner only · Metadata and operational controls</p>
+            <div class="stats">
+              <article class="card">
+                <h4>Accounts</h4>
+                <strong>8 active</strong>
+                <p>2 need review</p>
+              </article>
+              <article class="card">
+                <h4>Households</h4>
+                <strong>5 active · 1 closed</strong>
+                <p>Retained data remains counted</p>
+              </article>
+              <article class="card">
+                <h4>Logical retained storage</h4>
+                <strong>3.4 MiB</strong>
+                <p>Illustrative aggregate</p>
+              </article>
+              <article class="card">
+                <h4>Email sending</h4>
+                <strong>8,100 / 10,000 attempts</strong>
+                <p>80% warning reached</p>
+              </article>
+            </div>
+            <div class="notice">
+              Review unusually fast storage growth for one account. A flag
+              requests review; it does not automatically suspend them.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Review accounts</button
+              ><button type="button" disabled>Review households</button
+              ><button type="button" disabled>Safety thresholds</button
+              ><button type="button" disabled>Email operations</button
+              ><button type="button" disabled>Pause growth</button>
+            </div>
+            <dl class="facts">
+              <dt>Latest backup</dt>
+              <dd>Verified · measured 2 hours ago</dd>
+              <dt>Export / recovery sizes</dt>
+              <dd>Separate measured values, not logical storage</dd>
+              <dt>Account-wide D1 daily usage</dt>
+              <dd>Unavailable · dashboard review required</dd>
+            </dl>
+          </div>
+        </div>
+        <p class="note">
+          Illustrative usage only. Show time windows, measurement freshness and
+          unknown values honestly. No private task/recipe contents, Google
+          subjects, credentials or raw provider bodies.
+        </p>
+      </section>
+      <section class="board" id="admin-account">
+        <h2>20 — Owner admin: account usage</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">Space: Personal · Private ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong> ·
+            <strong>Admin</strong>
+          </div>
+          <div class="content">
+            <h3>Morgan · Account overview</h3>
+            <dl class="facts">
+              <dt>Email</dt>
+              <dd>morgan@example.invalid</dd>
+              <dt>Account state</dt>
+              <dd>Active</dd>
+              <dt>Personal retained storage</dt>
+              <dd>640 KiB · example</dd>
+              <dt>Recent growth</dt>
+              <dd>Review flag · illustrative trend</dd>
+              <dt>Email activity</dt>
+              <dd>Recent send attempts and failures</dd>
+            </dl>
+            <article class="card">
+              <h4>Personal space</h4>
+              <p>Resource counts, retained storage and safety status.</p>
+              <div class="actions">
+                <button type="button" disabled>
+                  Adjust space safety thresholds
+                </button>
+              </div>
+            </article>
+            <article class="card">
+              <h4>Maple household</h4>
+              <p>Head membership · shared-space metadata only.</p>
+              <div class="actions">
+                <button type="button" disabled>
+                  Review household metadata
+                </button>
+              </div>
+            </article>
+            <div class="actions">
+              <button type="button" disabled>Suspend account</button
+              ><button type="button" disabled>Back to overview</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Metadata access is not membership or content access. Site-wide
+          suspension differs from removal from one household; no private-list
+          inspection.
+        </p>
+      </section>
+      <section class="board" id="admin-thresholds">
+        <h2>21 — Owner admin: safety settings</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">Space: Personal · Private ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong> ·
+            <strong>Admin</strong>
+          </div>
+          <div class="content">
+            <h3>Safety thresholds</h3>
+            <label for="field-7">Target</label
+            ><input
+              id="field-7"
+              value="Household defaults / selected space"
+              readonly
+            /><label for="field-8">Warning threshold</label
+            ><input
+              id="field-8"
+              value="Value to be chosen after sizing"
+              readonly
+            /><label for="field-9">Hard safety threshold</label
+            ><input
+              id="field-9"
+              value="Value to be chosen after sizing"
+              readonly
+            /><label for="field-10">Review reason</label
+            ><input
+              id="field-10"
+              value="Explain this administrative change"
+              readonly
+            />
+            <div class="notice">
+              Existing data is preserved when a proposed threshold is below
+              retained usage. Growth can be blocked; viewing and protected
+              erasure remain available.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Preview effects</button
+              ><button type="button" disabled>Cancel</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          No new numerical resource caps are approved by this wireframe. Preview
+          current revisions, affected spaces and overages. Changes require owner
+          confirmation and audit.
+        </p>
+      </section>
+      <section class="board" id="admin-confirm">
+        <h2>22 — Owner admin: review policy change</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">Space: Personal · Private ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong> ·
+            <strong>Admin</strong>
+          </div>
+          <div class="content">
+            <h3>Review safety change</h3>
+            <dl class="facts">
+              <dt>Target</dt>
+              <dd>Selected household</dd>
+              <dt>Proposed policy</dt>
+              <dd>Your reviewed warning / hard thresholds</dd>
+              <dt>Affected state</dt>
+              <dd>Existing retained usage exceeds proposed cap</dd>
+            </dl>
+            <div class="notice">
+              Existing content and History will remain. Further growth in
+              blocked dimensions will fail with the general user message.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Apply reviewed change</button
+              ><button type="button" disabled>Keep editing</button>
+            </div>
+            <hr />
+            <h4>If usage changed meanwhile</h4>
+            <p>
+              Nothing was applied. Review the latest usage before confirming
+              again.
+            </p>
+            <div class="actions">
+              <button type="button" disabled>Review latest</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Apply the reviewed revision, never a stale hidden default. Retry an
+          uncertain application using the same operation identity; owner sees
+          detailed effects.
+        </p>
+      </section>
+      <section class="board" id="admin-pause">
+        <h2>23 — Owner admin: Pause growth</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">Space: Personal · Private ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong> ·
+            <strong>Admin</strong>
+          </div>
+          <div class="content">
+            <h3>Pause invitations and registration?</h3>
+            <div class="notice">
+              This stops new invitations, queued email, resends and invitation
+              acceptance. Existing accounts and lists keep working. Invitations
+              continue to expire.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Pause growth</button
+              ><button type="button" disabled>Keep growth open</button>
+            </div>
+            <hr />
+            <h4>When paused</h4>
+            <p>Growth is paused by the site owner.</p>
+            <div class="actions">
+              <button type="button" disabled>Review and resume growth</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Distinct from a sending-only budget stop. Resume requires an explicit
+          owner action. After recovery, unresolved security/reconciliation
+          checks prevent premature reopening.
+        </p>
+      </section>
+      <section class="board" id="admin-suspend">
+        <h2>24 — Owner admin: suspend / restore</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">Space: Personal · Private ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong> ·
+            <strong>Admin</strong>
+          </div>
+          <div class="content">
+            <h3>Suspend Morgan?</h3>
+            <div class="notice">
+              End account access and revoke pending invitations Morgan issued.
+              Keep data and existing household memberships. Other heads retain
+              their own access.
+            </div>
+            <label for="field-11">Reason for the audit record</label
+            ><input
+              id="field-11"
+              value="Enter administrative reason"
+              readonly
+            />
+            <div class="actions">
+              <button type="button" disabled>Suspend account</button
+              ><button type="button" disabled>Cancel</button>
+            </div>
+            <hr />
+            <h4>Restoring access</h4>
+            <p>
+              Review current memberships and safety state. Restoring this
+              account does not resurrect removed memberships or revoked
+              invitations.
+            </p>
+            <div class="actions">
+              <button type="button" disabled>Review restoration</button>
+            </div>
+            <p>
+              The sole site administrator cannot suspend their own account
+              through this screen.
+            </p>
+          </div>
+        </div>
+        <p class="note">
+          Confirm and audit actions. A new invitation never bypasses suspension.
+          Preserve a separate administrator recovery path; no operator token
+          enters the browser.
+        </p>
+      </section>
+      <section class="board" id="admin-email">
+        <h2>25 — Owner admin: SES delivery operations</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">Space: Personal · Private ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong> ·
+            <strong>Admin</strong>
+          </div>
+          <div class="content">
+            <h3>Email operations</h3>
+            <dl class="facts">
+              <dt>Application monthly attempts</dt>
+              <dd>8,100 / 10,000 · illustrative</dd>
+              <dt>Initial base-send estimate</dt>
+              <dd>$0.81 · data and other AWS charges separate</dd>
+              <dt>Queue</dt>
+              <dd>Queued / retrying / uncertain / blocked</dd>
+              <dt>Feedback</dt>
+              <dd>Last verified event and intake health</dd>
+            </dl>
+            <div class="notice">
+              Warning at 80%. At 10,000 attempts, application sending stops
+              until the month resets or the owner reviews a higher budget.
+              Existing valid delivered invitations can still be accepted unless
+              growth is manually paused.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Review delivery records</button
+              ><button type="button" disabled>Review send budget</button
+              ><button type="button" disabled>Review suppressions</button>
+            </div>
+            <p>
+              Infrastructure alerts use the independent operations channel when
+              SES itself fails.
+            </p>
+          </div>
+        </div>
+        <p class="note">
+          Count uncertain sends conservatively. Duplicate email can happen;
+          logical invitations/accounts stay once-only. The app ceiling is not a
+          guaranteed AWS invoice cap.
+        </p>
+      </section>
+      <section class="board" id="admin-feedback">
+        <h2>26 — Owner admin: delivery detail / suppression</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">Space: Personal · Private ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong> ·
+            <strong>Admin</strong>
+          </div>
+          <div class="content">
+            <h3>Delivery review</h3>
+            <dl class="facts">
+              <dt>Recipient</dt>
+              <dd>morgan@example.invalid</dd>
+              <dt>Invitation</dt>
+              <dd>Maple household · pending</dd>
+              <dt>Delivery outcome</dt>
+              <dd>Reported hard bounce</dd>
+              <dt>Automatic sending</dt>
+              <dd>Blocked for this destination</dd>
+            </dl>
+            <div class="notice">
+              The inviting head sees a general delivery failure. Review the
+              reason and recipient before clearing the block.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Review clearing suppression</button
+              ><button type="button" disabled>Back to delivery records</button>
+            </div>
+            <p>
+              Some mailbox providers do not report spam complaints. No
+              invitation token, email body or private list content is shown.
+            </p>
+          </div>
+        </div>
+        <p class="note">
+          Authenticate feedback, deduplicate and preserve out-of-order safety.
+          Detailed delivery logs expire after 30 days; current suppression
+          remains effective until reviewed/cleared.
+        </p>
+      </section>
+      <section class="board" id="admin-audit">
+        <h2>27 — Owner admin: audit and retention</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">Space: Personal · Private ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong> ·
+            <strong>Admin</strong>
+          </div>
+          <div class="content">
+            <h3>Administrative audit</h3>
+            <article class="card">
+              <h4>25 October · Alex</h4>
+              <p>Paused growth · reason and affected scope recorded.</p>
+            </article>
+            <article class="card">
+              <h4>25 October · Alex</h4>
+              <p>Reviewed and changed a safety policy.</p>
+            </article>
+            <article class="card">
+              <h4>24 October · Alex</h4>
+              <p>Suspended an account · data preserved.</p>
+            </article>
+            <dl class="facts">
+              <dt>Detailed mail delivery records</dt>
+              <dd>30 days</dd>
+              <dt>Site-admin audit events</dt>
+              <dd>One year</dd>
+              <dt>Household History</dt>
+              <dd>Until its existing protected erasure</dd>
+              <dt>Current security blocks</dt>
+              <dd>Remain effective after event-log expiry</dd>
+            </dl>
+          </div>
+        </div>
+        <p class="note">
+          Show human-readable actors, times and scopes without raw
+          secrets/content. Event-log retention must not lift bans or undermine
+          independent security/erasure proof.
+        </p>
+      </section>
+      <section class="board" id="admin-recovery">
+        <h2>28 — Owner admin: protected restore review</h2>
+        <div class="screen">
+          <div class="bar">
+            <strong>intrepion</strong><span>Alex · Site owner · Sign out</span>
+          </div>
+          <div class="space">Space: Personal · Private ▾</div>
+          <div class="tabs">
+            Tasks · Shopping · Checklists · <strong>Households</strong> ·
+            <strong>Admin</strong>
+          </div>
+          <div class="content">
+            <h3>Recovery review</h3>
+            <p>Growth remains paused.</p>
+            <dl class="facts">
+              <dt>Content erasure protection</dt>
+              <dd>Verified before reopening</dd>
+              <dt>Later suspensions / head removals</dt>
+              <dd>Independent security state replayed</dd>
+              <dt>Pending links / onboarding sessions</dt>
+              <dd>Invalidated</dd>
+              <dt>Queued invitation email</dt>
+              <dd>Cancelled</dd>
+              <dt>Mail budget / feedback state</dt>
+              <dd>Reconcile before resuming</dd>
+            </dl>
+            <div class="notice">
+              Restore must not silently restore revoked access. Existing user
+              data is preserved under the tested recovery procedure.
+            </div>
+            <div class="actions">
+              <button type="button" disabled>Review recovery checks</button
+              ><button type="button" disabled>
+                Resume growth — checks required
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="note">
+          Never blindly send restored queues. Do not claim a backup snapshot
+          preserves later security changes without independent protection.
+          Credentials and forensic/provider data remain outside this page.
+        </p>
+      </section>
+    </main>
+    <footer>
+      <p>
+        Existing everyday tasks, shopping lists, templates/runs, Sections,
+        Archive, Trash, copy and content-History workflows continue.
+        Personal/shared access and last-head month-end closure stay explicit. No
+        dependent/PIN access, billing or public signup is introduced.
+      </p>
+      <p>
+        Next gate: owner wireframe approval, then visual mockups. Prototype
+        application code remains separate from production.
+      </p>
+    </footer>
+  </body>
+</html>
