@@ -4657,6 +4657,60 @@ test("normal household copies use independent space budgets without exposing ret
     ).title,
     "Personal groceries to copy",
   );
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const policy = await admin.getPolicy({}, owner);
+  const change = {
+    operationId: crypto.randomUUID(),
+    expectedRevision: policy.revision,
+    policy: {
+      ...policy,
+      householdHard: { ...policy.householdHard!, shopping: 1n },
+      householdSoft: { ...policy.householdSoft!, shopping: 1n },
+    },
+    confirmed: true,
+  };
+  const review = await admin.previewPolicy(change, owner);
+  await admin.applyPolicy(
+    { ...change, previewToken: review.previewToken },
+    owner,
+  );
+  const blocked = {
+    ...request,
+    operationId: crypto.randomUUID(),
+    destinationCollectionId: crypto.randomUUID(),
+    expectedSourceRevision: (
+      await lists.getCollection({ id: source.id }, owner)
+    ).revision,
+  };
+  assert.equal(
+    (await households.previewCopy(blocked, owner)).reason,
+    "Your copy was not saved. Please try again later or contact support.",
+  );
+  await assert.rejects(
+    households.copyCollection(blocked, owner),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.ResourceExhausted,
+  );
+  const record = (await admin.listAudit({}, owner)).entries.find((e) =>
+    e.action.includes("Blocked resource write"),
+  )!;
+  assert.ok(record.action.includes("space_shopping_allowance"));
+  assert.ok(record.action.includes("selected request context personal"));
+  assert.equal(record.action.includes("scope personal"), false);
+  const restore = {
+    operationId: crypto.randomUUID(),
+    expectedRevision: (await admin.getPolicy({}, owner)).revision,
+    policy,
+    confirmed: true,
+  };
+  const restoration = await admin.previewPolicy(restore, owner);
+  await admin.applyPolicy(
+    { ...restore, previewToken: restoration.previewToken },
+    owner,
+  );
 });
 
 test("normal household closure remains visible and retains its household safety slot until erasure", async () => {

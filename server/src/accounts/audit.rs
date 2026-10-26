@@ -31,7 +31,7 @@ pub(crate) async fn record_resource_rejection(
     let operation = format!("resource-rejection:{}", account.public_id);
     auth.db.batch(&[
         crate::db::Statement::new("DELETE FROM site_audit WHERE operation_id=?",vec![operation.clone()]),
-        crate::db::Statement::new("INSERT INTO site_audit(operation_id,actor_sub,action) SELECT ?,?,? WHERE EXISTS(SELECT 1 FROM pilot_accounts WHERE subject=? AND approved=1) AND (?='personal' OR EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id WHERE m.household_id=? AND m.subject=? AND m.active=1 AND h.status='active'))",vec![operation,session.user_sub.clone(),format!("Blocked resource write: {reason}; scope {scope}. Latest rejection for this account."),session.user_sub.clone(),scope.into(),scope.into(),session.user_sub]),
+        crate::db::Statement::new("INSERT INTO site_audit(operation_id,actor_sub,action) SELECT ?,?,? WHERE EXISTS(SELECT 1 FROM pilot_accounts WHERE subject=? AND approved=1) AND (?='personal' OR EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id WHERE m.household_id=? AND m.subject=? AND m.active=1 AND h.status='active'))",vec![operation,session.user_sub.clone(),format!("Blocked resource write: {reason}; selected request context {scope}. Latest rejection for this account."),session.user_sub.clone(),scope.into(),scope.into(),session.user_sub]),
     ]).await?;
     Ok(())
 }
