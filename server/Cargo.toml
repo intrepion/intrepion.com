@@ -9,6 +9,12 @@ dev-auth = []
 
 [dependencies]
 axum = "0.8"
+aws-lc-rs = "1"
+base64 = "0.22"
+x509-cert = "0.3"
+time = {version="0.3",features=["parsing"]}
+aws-credential-types = "1"
+aws-sigv4 = { version = "1", default-features = false, features = ["sign-http", "http1"] }
 buffa = { version = "0.9", features = ["json"] }
 buffa-types = { version = "0.9", features = ["json"] }
 connectrpc = { version = "0.9", default-features = false, features = ["axum", "json"] }

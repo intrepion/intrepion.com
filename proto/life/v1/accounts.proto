@@ -1,0 +1,190 @@
+syntax = "proto3";
+package life.v1;
+import "life/v1/tasks.proto";
+import "life/v1/households.proto";
+
+// Owner Google session + CSRF. Household authority never grants site authority.
+service AccountAdminService {
+  rpc GetOverview(AdminOverviewQuery) returns (AdminOverview);
+  rpc GetPolicy(Empty) returns (SiteSafetyPolicy);
+  rpc GetGrowth(Empty) returns (GrowthState);
+  rpc GetEmailOperations(EmailOperationsQuery) returns (EmailOperationsOverview);
+  rpc ListAudit(AdminAuditQuery) returns (AdminAuditPage);
+  rpc ClearEmailSuppression(EmailSuppressionClear) returns (Empty);
+  rpc SetAccountAccess(AccountAccessChange) returns (AdminAccount);
+  rpc ChangeGrowth(GrowthChange) returns (GrowthState);
+  rpc PreviewPolicy(SitePolicyChange) returns (SitePolicyReview);
+  rpc ApplyPolicy(SitePolicyChange) returns (SiteSafetyPolicy);
+}
+message AdminAccount {
+  string id = 1;
+  string display_name = 2;
+  bool suspended = 3;
+  ResourceAmounts personal_usage = 4;
+  uint64 active_households = 5;
+  uint64 access_revision = 6;
+  bool protection_pending = 7;
+  bool site_owner = 8;
+}
+message AdminHousehold {
+  string id = 1;
+  string name = 2;
+  string status = 3;
+  ResourceAmounts usage = 4;
+  uint64 active_heads = 5;
+}
+message AdminOverview {
+  repeated AdminAccount accounts = 1;
+  repeated AdminHousehold households = 2;
+  // Logical retained space payloads; excludes site-wide operations and physical overhead.
+  uint64 logical_bytes = 3;
+  string provider_usage_status = 4;
+  string next_account = 5;
+  string next_household = 6;
+  uint64 account_count = 7;
+  uint64 suspended_account_count = 8;
+  uint64 active_household_count = 9;
+  uint64 closed_household_count = 10;
+  uint64 pending_security_changes = 11;
+  uint64 pending_closures = 12;
+  uint64 pending_content_erasures = 13;
+  string growth_status = 14;
+  int64 growth_since = 15;
+  sint64 logical_byte_change = 16;
+  sint64 account_change = 17;
+  sint64 household_change = 18;
+}
+message AdminAuditQuery { uint64 before_sequence = 1; uint32 page_size = 2; }
+message AdminAuditEntry {
+ uint64 sequence = 1;
+ string operation_id = 2;
+ string actor_name = 3;
+ string actor_id = 4;
+ string action = 5;
+ int64 occurred_at = 6;
+}
+message AdminAuditPage { repeated AdminAuditEntry entries = 1; uint64 next_before = 2; }
+message AdminOverviewQuery {
+ uint32 page_size = 1;
+ string after_account = 2;
+ string after_household = 3;
+}
+
+message SiteSafetyPolicy {
+  uint64 revision = 1;
+  bool enabled = 2;
+  ResourceAmounts personal_soft = 3;
+  ResourceAmounts personal_hard = 4;
+  ResourceAmounts household_soft = 5;
+  ResourceAmounts household_hard = 6;
+  uint64 max_items_per_collection = 7;
+  uint64 max_sections_per_collection = 8;
+}
+message SitePolicyChange {
+  string operation_id = 1;
+  uint64 expected_revision = 2;
+  SiteSafetyPolicy policy = 3;
+  string preview_token = 4;
+  bool confirmed = 5;
+}
+message SitePolicyReview {
+  string preview_token = 1;
+  string effect = 2;
+  uint64 account_count = 3;
+  uint64 household_count = 4;
+}
+
+service EmailInvitationService {
+  rpc ListInvitations(HouseholdKey) returns (EmailInvitationPage);
+  rpc GetOnboarding(Empty) returns (OnboardingPreview);
+  rpc AcceptInvitation(InvitationAcceptance) returns (AccountSession);
+  rpc ChangeInvitation(EmailInvitationChange) returns (EmailInvitation);
+}
+enum EmailInvitationAction {
+ EMAIL_INVITATION_ACTION_UNSPECIFIED = 0;
+ EMAIL_INVITATION_ACTION_CREATE = 1;
+ EMAIL_INVITATION_ACTION_REPLACE = 2;
+ EMAIL_INVITATION_ACTION_REVOKE = 3;
+}
+message EmailInvitationChange {
+ string operation_id = 1;
+ string household_id = 2;
+ string invitation_id = 3;
+ uint64 expected_revision = 4;
+ string recipient_email = 5;
+ EmailInvitationAction action = 6;
+ bool confirmed = 7;
+}
+message EmailInvitation {
+ string id = 1;
+ string recipient_email = 2;
+ string status = 3;
+ string delivery_status = 4;
+ int64 expires_at = 5;
+ uint64 revision = 6;
+}
+message EmailInvitationPage { repeated EmailInvitation invitations = 1; }
+message GrowthChange {
+ string operation_id = 1;
+ uint64 expected_revision = 2;
+ bool paused = 3;
+ bool confirmed = 4;
+}
+message GrowthState { uint64 revision = 1; bool paused = 2; }
+
+// Separate operations bearer credential; no invitation secrets in responses.
+service EmailOperationsService {
+ rpc ProcessQueue(Empty) returns (EmailQueueResult);
+}
+message EmailQueueResult {
+ uint64 attempted = 1;
+ uint64 monthly_attempts = 2;
+ bool warning = 3;
+}
+
+message OnboardingPreview {
+ string household_id = 1;
+ string household_name = 2;
+ string email = 3;
+ string display_name = 4;
+ bool existing_account = 5;
+ bool growth_paused = 6;
+ string status = 7;
+}
+message InvitationAcceptance { string operation_id = 1; string display_name = 2; bool confirmed = 3; }
+message AccountSession { string csrf = 1; uint64 expires_at = 2; string display_name = 3; string user_sub = 4; string household_id = 5; }
+
+message AccountAccessChange {
+ string operation_id = 1;
+ string account_id = 2;
+ uint64 expected_revision = 3;
+ bool suspended = 4;
+ bool confirmed = 5;
+}
+
+message EmailDeliveryRecord { string id = 1; string recipient_email = 2; string outcome = 3; int64 attempted_at = 4; }
+message EmailSuppression { string recipient_email = 1; string reason = 2; uint64 revision = 3; }
+message EmailOperationsOverview {
+ uint64 monthly_attempts = 1;
+ uint64 monthly_budget = 2;
+ bool warning = 3;
+ repeated EmailDeliveryRecord deliveries = 4;
+ repeated EmailSuppression suppressions = 5;
+ int64 next_delivery_time = 6;
+ string next_delivery_id = 7;
+ string next_suppression = 8;
+ string accounting_status = 9;
+}
+
+message EmailOperationsQuery {
+ int64 before_time = 1;
+ string before_id = 2;
+ string after_suppression = 3;
+ string recipient_email = 4;
+}
+message EmailSuppressionClear {
+ string operation_id = 1;
+ string recipient_email = 2;
+ uint64 expected_revision = 3;
+ bool confirmed = 4;
+}

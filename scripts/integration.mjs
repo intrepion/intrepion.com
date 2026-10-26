@@ -8,10 +8,12 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createHash } from "node:crypto";
 import { start, stop, run, localEnv, bridgeReady } from "./processes.mjs";
 const state = await mkdtemp(join(tmpdir(), "intrepion-integration-"));
 let bridge;
 let ledger;
+let email;
 try {
   await run("cargo", ["build", "--locked", "--features", "dev-auth"]);
   // Exercise an actual upgrade from MVP 1, not just a new empty database.
@@ -110,9 +112,21 @@ try {
     { env: localEnv },
   );
   const structureFixture = join(state, "structure-fixture.sql");
+  const recovered = createHash("sha256")
+    .update("development-recovered-member")
+    .digest("hex");
+  const blocked = createHash("sha256")
+    .update("development-recovered-blocked")
+    .digest("hex");
   await writeFile(
     structureFixture,
-    "UPDATE operator_settings SET max_items_per_collection=10000,max_sections_per_collection=1000 WHERE id=1;",
+    `UPDATE operator_settings SET max_items_per_collection=10000,max_sections_per_collection=1000 WHERE id=1;
+    -- Simulate independently replayed identities newer than a restored profile snapshot.
+    INSERT INTO protected_membership_state(household_id,subject_hash,public_id,active,security_revision) VALUES('00000000-0000-4000-a000-000000000090','${recovered}','${"44".repeat(16)}',0,1000000);
+    INSERT INTO protected_account_access(subject_hash,public_id,active,security_revision) VALUES('${blocked}','${"55".repeat(16)}',0,1000001);
+    INSERT INTO site_security_outbox(sequence,event_id,scope,subject_hash,public_id,household_id,active,published) VALUES
+    (1000000,'00000000-0000-4000-a000-000000000091','head_membership','${recovered}','${"44".repeat(16)}','00000000-0000-4000-a000-000000000090',0,1),
+    (1000001,'00000000-0000-4000-a000-000000000092','account_access','${blocked}','${"55".repeat(16)}','00000000-0000-0000-0000-000000000000',0,1);`,
   );
   await run(
     "node",
@@ -131,6 +145,8 @@ try {
     ],
     { env: localEnv },
   );
+  email = start("node", ["scripts/local-email.mjs"], { env: localEnv });
+  await (await import("./processes.mjs")).ready("http://127.0.0.1:8793/health");
   ledger = start("node", ["scripts/local-erasure-ledger.mjs"], {
     env: {
       ...localEnv,
@@ -174,9 +190,17 @@ try {
       },
     },
   );
+  if (process.env.ROUNDTRIP_BACKUP === "1") {
+    await stop(bridge);
+    bridge = undefined;
+    await run("node", ["scripts/local-recovery-roundtrip.mjs", state], {
+      env: localEnv,
+    });
+  }
 } finally {
   await stop(bridge);
   await stop(ledger);
+  await stop(email);
   await rm(state, { recursive: true, force: true });
 }
 async function readyLedger() {

@@ -121,11 +121,28 @@ pub(crate) async fn personal_capacity(
     db: &Database,
     account: &Account,
 ) -> Result<Amounts, ConnectError> {
+    if normal_accounts(db).await? {
+        return db.query::<Amounts>("SELECT items,shopping,templates,runs,bytes,0 AS households FROM space_capacity WHERE owner_sub=?", std::slice::from_ref(&account.subject)).await?.pop().ok_or_else(||ConnectError::failed_precondition("Safety policy is unavailable."));
+    }
     let expressions = RESOURCES
         .map(|key| format!("coalesce(sum(json_extract(x.amounts_json,'$.{key}')),0) AS {key}"));
     let reserved=db.query::<Amounts>(&format!("SELECT {},0 AS households FROM household_allocations x JOIN households h ON h.id=x.household_id WHERE x.subject=? AND h.status<>'erased'",expressions.join(",")),std::slice::from_ref(&account.subject)).await?.pop().unwrap_or_default();
     account.plan()?.subtract(&reserved)
 }
+pub(crate) async fn normal_accounts(db: &Database) -> Result<bool, ConnectError> {
+    #[derive(Deserialize)]
+    struct Mode {
+        enabled: i32,
+    }
+    Ok(db
+        .query::<Mode>("SELECT enabled FROM site_safety_policy WHERE id=1", &[])
+        .await?
+        .pop()
+        .is_some_and(|m| m.enabled == 1))
+}
+// The closing head retains responsibility for a closed household until erasure.
+// This expression is correlated with a pilot_accounts row aliased as `a`.
+pub(crate) const NORMAL_HOUSEHOLDS_SQL: &str = "(SELECT count(*) FROM households h WHERE h.status<>'erased' AND (EXISTS(SELECT 1 FROM household_heads m WHERE m.household_id=h.id AND m.subject=a.subject AND m.active=1 AND h.status='active') OR EXISTS(SELECT 1 FROM household_lifecycle l WHERE l.household_id=h.id AND l.actor_sub=a.subject)))";
 // Correlated SQL is evaluated inside the same D1 transaction as the allocation.
 // A Rust preflight alone would race with another household reserving this plan.
 fn account_resource_checks() -> [String; 5] {
@@ -135,16 +152,14 @@ pub(crate) fn account_guard(subject: &str) -> Statement {
     let checks = account_resource_checks();
     Statement::new(
         &format!(
-            "INSERT INTO invariant_guards(valid) SELECT EXISTS(SELECT 1 FROM pilot_accounts a WHERE a.subject=? AND a.approved=1 AND a.plan_revision>0 AND {} AND (SELECT count(*) FROM household_heads m JOIN households h ON h.id=m.household_id WHERE m.subject=a.subject AND m.active=1 AND h.status='active')<=json_extract(a.plan_json,'$.households'))",
+            "INSERT INTO invariant_guards(valid) SELECT EXISTS(SELECT 1 FROM pilot_accounts a WHERE a.subject=? AND a.approved=1 AND ((EXISTS(SELECT 1 FROM site_safety_policy p WHERE p.id=1 AND p.enabled=1 AND {NORMAL_HOUSEHOLDS_SQL}<=json_extract(p.personal_hard_json,'$.households'))) OR ((SELECT enabled FROM site_safety_policy WHERE id=1)=0 AND a.plan_revision>0 AND {} AND (SELECT count(*) FROM household_heads m JOIN households h ON h.id=m.household_id WHERE m.subject=a.subject AND m.active=1 AND h.status='active')<=json_extract(a.plan_json,'$.households'))))",
             checks.join(" AND ")
         ),
         vec![subject.into()],
     )
 }
 pub(crate) async fn household_capacity(db: &Database, id: &str) -> Result<Amounts, ConnectError> {
-    let expressions = RESOURCES
-        .map(|key| format!("coalesce(sum(json_extract(x.amounts_json,'$.{key}')),0) AS {key}"));
-    Ok(db.query::<Amounts>(&format!("SELECT {},0 AS households FROM household_allocations x JOIN households h ON h.id=x.household_id WHERE h.id=? AND h.status<>'erased'",expressions.join(",")), &[id.into()]).await?.pop().unwrap_or_default())
+    Ok(db.query::<Amounts>("SELECT c.items,c.shopping,c.templates,c.runs,c.bytes,0 AS households FROM space_capacity c JOIN households h ON h.scope_sub=c.owner_sub WHERE h.id=? AND h.status<>'erased'",&[id.into()]).await?.pop().unwrap_or_default())
 }
 
 impl From<Amounts> for buffa::MessageField<ResourceAmounts, buffa::Inline<ResourceAmounts>> {
@@ -220,7 +235,7 @@ pub(crate) fn snapshot(scope: &str, actor: &str, collection: &str) -> Statement 
 }
 pub(crate) fn content_checks() -> Vec<Statement> {
     let space=RESOURCES.map(|k|format!("NOT EXISTS(SELECT 1 FROM write_budgets b JOIN space_usage u ON u.owner_sub=b.owner_sub JOIN space_capacity c ON c.owner_sub=b.owner_sub WHERE u.{k}>c.{k} AND u.{k}>json_extract(b.usage_json,'$.{k}'))"));
-    let member=RESOURCES.iter().filter(|k|**k!="bytes").map(|k|format!("NOT EXISTS(SELECT 1 FROM write_budgets b JOIN creator_usage u ON u.owner_sub=b.owner_sub AND u.creator_sub=b.actor_sub JOIN households h ON h.scope_sub=b.owner_sub JOIN household_heads m ON m.household_id=h.id AND m.subject=b.actor_sub WHERE u.{k}>json_extract(m.ceilings_json,'$.{k}') AND u.{k}>json_extract(b.own_json,'$.{k}'))")).collect::<Vec<_>>();
+    let member=RESOURCES.iter().filter(|k|**k!="bytes").map(|k|format!("NOT EXISTS(SELECT 1 FROM write_budgets b JOIN creator_usage u ON u.owner_sub=b.owner_sub AND u.creator_sub=b.actor_sub JOIN households h ON h.scope_sub=b.owner_sub JOIN household_heads m ON m.household_id=h.id AND m.subject=b.actor_sub WHERE (SELECT enabled FROM site_safety_policy WHERE id=1)=0 AND u.{k}>json_extract(m.ceilings_json,'$.{k}') AND u.{k}>json_extract(b.own_json,'$.{k}'))")).collect::<Vec<_>>();
     vec![
         Statement::new(
             "INSERT INTO invariant_guards(valid) SELECT count(*)=1 FROM write_budgets",

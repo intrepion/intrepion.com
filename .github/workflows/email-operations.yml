@@ -1,0 +1,41 @@
+name: Email delivery operations
+on:
+  schedule:
+    - cron: "31 * * * *"
+  workflow_dispatch:
+    inputs:
+      test_failure:
+        description: Test the owner's failure notification without making an API request
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: email-delivery-operations
+  cancel-in-progress: false
+jobs:
+  process:
+    # Enable only after SES, signed feedback, DLQ and notification checks pass.
+    if: >-
+      vars.EMAIL_OPERATIONS_ENABLED == 'true' ||
+      (github.event_name == 'workflow_dispatch' && inputs.test_failure)
+    runs-on: ubuntu-24.04
+    environment: operations
+    timeout-minutes: 12
+    steps:
+      - name: Test notification without processing or sending email
+        if: github.event_name == 'workflow_dispatch' && inputs.test_failure
+        run: |
+          echo "Controlled notification test; no API request or email attempted."
+          exit 1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .node-version
+      - name: Process bounded queue and check application attempt allowance
+        env:
+          EMAIL_OPERATIONS_TOKEN: ${{ secrets.EMAIL_OPERATIONS_TOKEN }}
+          EMAIL_API_ORIGIN: ${{ vars.API_ORIGIN }}
+        run: node scripts/email-operations.mjs

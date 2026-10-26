@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -320,7 +321,7 @@ test("recovering an MVP 1 archive upgrades retained tasks and the migration ledg
       );
       assert.equal(
         restored.prepare("SELECT count(*) n FROM d1_migrations").get().n,
-        14,
+        24,
       );
       assert.equal(restored.prepare("SELECT count(*) n FROM tasks").get().n, 0);
     } finally {
@@ -372,7 +373,7 @@ test("encrypted recovery cannot reopen a household closed after the snapshot or 
       migrations +
         householdMigrations +
         `
-      INSERT INTO pilot_accounts(subject,display_name,public_id) VALUES('head-one','Alex','alex-public');
+      INSERT INTO pilot_accounts(subject,display_name,public_id) VALUES('head-one','Alex','aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
       INSERT INTO households(id,scope_sub,name,created_by,last_operation) VALUES('${id(701)}','household:${id(701)}','Retained closed name','head-one','${id(702)}');
       INSERT INTO household_heads(household_id,subject,ceilings_json) VALUES('${id(701)}','head-one','{}');
       INSERT INTO household_allocations(household_id,subject,amounts_json) VALUES('${id(701)}','head-one','{"items":10,"bytes":4096}');
@@ -657,6 +658,345 @@ test("oversized recovery estimates stay measurable while encrypted restores keep
       }),
       /Recovery output exceeds the MVP size budget/,
     );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("encrypted recovery preserves later account suspensions and head removals and pauses invitation growth", async () => {
+  const directory = await mkdtemp(
+    join(tmpdir(), "intrepion-security-recovery-"),
+  );
+  try {
+    const identity = join(directory, "identity.agekey");
+    const keygen = spawnSync(
+      process.env.AGE_KEYGEN_BIN ?? "age-keygen",
+      ["-o", identity],
+      { encoding: "utf8" },
+    );
+    assert.equal(keygen.status, 0);
+    const recipient = spawnSync(
+      process.env.AGE_KEYGEN_BIN ?? "age-keygen",
+      ["-y", identity],
+      { encoding: "utf8" },
+    ).stdout.trim();
+    const files = [
+      "0001_initial",
+      "0002_retired_task_ids",
+      "0003_everyday_collections",
+      "0004_list_items_and_sections",
+      "0005_migrate_personal_tasks",
+      "0006_erasure_protocol",
+      "0007_pilot_accounts",
+      "0008_household_foundation",
+      "0009_transactional_limits",
+      "0010_active_erasure_confirmation",
+      "0011_household_lifecycle",
+      "0012_budget_aware_writers",
+      "0013_household_content_erasure",
+      "0014_operator_policy",
+    ];
+    const schema = (
+      await Promise.all(
+        files.map((name) => readFile(`server/migrations/${name}.sql`, "utf8")),
+      )
+    ).join("\n");
+    const publicId = (n) => String(n).padStart(32, "0");
+    const sql = Buffer.from(
+      schema +
+        `\n
+   INSERT INTO pilot_accounts(subject,display_name,public_id) VALUES('restore-owner','Owner','${publicId(1)}'),('later-suspended','Suspended head','${publicId(2)}'),('later-removed','Removed head','${publicId(3)}');
+   INSERT INTO households(id,scope_sub,name,created_by,last_operation) VALUES('${id(901)}','household:${id(901)}','Recovery household','restore-owner','${id(902)}');
+   INSERT INTO household_heads(household_id,subject,ceilings_json) VALUES('${id(901)}','restore-owner','{}'),('${id(901)}','later-suspended','{}'),('${id(901)}','later-removed','{}');
+   INSERT INTO household_invitations(id,household_id,recipient_sub,token_hash,expires_at,created_by) VALUES('${id(903)}','${id(901)}','later-suspended','old-invitation-hash',9999999999,'restore-owner');
+   INSERT INTO sessions VALUES('old-session','later-suspended','old-csrf',9999999999);
+   INSERT INTO login_challenges VALUES('old-login',9999999999);
+  `,
+    );
+    const marker = (n, scope, subject, public_id, revision) => ({
+      version: 4,
+      database_id: databaseId,
+      operation_id: id(n),
+      collection_id:
+        scope === "head_membership"
+          ? id(901)
+          : "00000000-0000-0000-0000-000000000000",
+      scope,
+      target_id: "",
+      security: {
+        subject_hash: createHash("sha256").update(subject).digest("hex"),
+        public_id,
+        revision,
+        active: false,
+      },
+    });
+    const suspension = marker(
+      910,
+      "account_access",
+      "later-suspended",
+      publicId(2),
+      10,
+    );
+    const removal = marker(
+      911,
+      "head_membership",
+      "later-removed",
+      publicId(3),
+      11,
+    );
+    const output = await recoverArchive(encrypt(sql, recipient), identity, {
+      databaseId,
+      complete: true,
+      records: [removal, suspension, suspension],
+    });
+    await assert.rejects(
+      recoverArchive(
+        encrypt(
+          Buffer.concat([
+            output,
+            Buffer.from("\nDROP TRIGGER record_account_access_change;"),
+          ]),
+          recipient,
+        ),
+        identity,
+        { databaseId, complete: true, records: [removal, suspension] },
+      ),
+      /normal.account.*protection/i,
+    );
+    const unknownIdentity = marker(
+      930,
+      "account_access",
+      "not-in-snapshot",
+      publicId(8),
+      12,
+    );
+    const conflictingIdentity = marker(
+      931,
+      "head_membership",
+      "not-in-snapshot",
+      publicId(9),
+      13,
+    );
+    await assert.rejects(
+      recoverArchive(encrypt(output, recipient), identity, {
+        databaseId,
+        complete: true,
+        records: [suspension, removal, unknownIdentity, conflictingIdentity],
+      }),
+      /conflicting.*identity/i,
+    );
+    // A backup can contain a newer restriction that had not yet reached the
+    // independent ledger. An older published restoration must not undo it.
+    const pendingRestriction = Buffer.concat([
+      output,
+      Buffer.from(`
+      UPDATE security_replay_control SET replaying=1 WHERE id=1;
+      UPDATE pilot_accounts SET approved=0 WHERE subject='later-removed';
+      INSERT INTO site_security_outbox(sequence,event_id,scope,subject,public_id,household_id,active,published) VALUES(12,'${id(912)}','account_access','later-removed','${publicId(3)}','00000000-0000-0000-0000-000000000000',0,0);
+      UPDATE security_replay_control SET replaying=0 WHERE id=1;
+      INSERT INTO email_send_attempts(id,invitation_id,generation,recipient_email,attempted_at) VALUES('${id(914)}','${id(903)}',1,'expired-log@example.invalid',unixepoch()-31*86400);
+      INSERT INTO email_feedback_receipts(id,digest,claim_id,received_at) VALUES('${id(915)}','test-digest','test-claim',unixepoch()-31*86400);
+      INSERT INTO site_audit(operation_id,actor_sub,action,occurred_at) VALUES('${id(916)}','restore-owner','Expired audit',unixepoch('now','-2 years'));
+      INSERT INTO email_suppressions(recipient_email,reason) VALUES('retained-block@example.invalid','complaint');
+      INSERT OR REPLACE INTO email_monthly_attempts(month,attempted) VALUES(strftime('%Y-%m','now'),9999);
+    `),
+    ]);
+    const olderRestoration = marker(
+      913,
+      "account_access",
+      "later-removed",
+      publicId(3),
+      9,
+    );
+    olderRestoration.security.active = true;
+    const recoveredPending = await recoverArchive(
+      encrypt(pendingRestriction, recipient),
+      identity,
+      {
+        databaseId,
+        complete: true,
+        records: [olderRestoration, removal, suspension],
+      },
+    );
+    const pendingDb = new DatabaseSync(":memory:");
+    try {
+      pendingDb.exec(recoveredPending.toString());
+      assert.equal(
+        pendingDb.prepare("SELECT count(*) n FROM email_send_attempts").get().n,
+        0,
+      );
+      assert.equal(
+        pendingDb
+          .prepare("SELECT count(*) n FROM email_feedback_receipts")
+          .get().n,
+        0,
+      );
+      assert.equal(
+        pendingDb.prepare("SELECT count(*) n FROM site_audit").get().n,
+        0,
+      );
+      assert.equal(
+        pendingDb
+          .prepare(
+            "SELECT reason FROM email_suppressions WHERE recipient_email='retained-block@example.invalid'",
+          )
+          .get().reason,
+        "complaint",
+      );
+      assert.equal(
+        pendingDb
+          .prepare(
+            "SELECT attempted FROM email_monthly_attempts WHERE month=strftime('%Y-%m','now')",
+          )
+          .get().attempted,
+        10000,
+      );
+      assert.equal(
+        pendingDb
+          .prepare(
+            "SELECT accounting_state FROM email_monthly_attempts WHERE month=strftime('%Y-%m','now')",
+          )
+          .get().accounting_state,
+        "recovery_hold",
+      );
+      assert.equal(
+        pendingDb
+          .prepare(
+            "SELECT approved FROM pilot_accounts WHERE subject='later-removed'",
+          )
+          .get().approved,
+        0,
+      );
+      assert.equal(
+        pendingDb
+          .prepare(
+            "SELECT published FROM site_security_outbox WHERE sequence=12",
+          )
+          .get().published,
+        0,
+      );
+    } finally {
+      pendingDb.close();
+    }
+    const withHouseholdMail = Buffer.concat([
+      pendingRestriction,
+      Buffer.from(`
+      INSERT INTO email_invitations(id,household_id,recipient_email,token_hash,expires_at,created_by,last_operation) VALUES('${id(919)}','${id(901)}','household-recipient@example.invalid','unique-erasure-test-hash',unixepoch()+86400,'restore-owner','${id(920)}');
+      INSERT INTO email_send_attempts(id,invitation_id,generation,recipient_email,attempted_at) VALUES('${id(921)}','${id(919)}',1,'household-recipient@example.invalid',unixepoch());
+      INSERT INTO email_feedback_receipts(id,digest,claim_id,invitation_id) VALUES('${id(922)}','test-digest','test-claim','${id(919)}');
+      INSERT INTO email_invitation_operations(actor_sub,operation_id,fingerprint,invitation_id) VALUES('restore-owner','${id(923)}','test-fingerprint','${id(919)}');
+      INSERT INTO invitation_acceptance_receipts(user_sub,operation_id,fingerprint,invitation_id,household_id) VALUES('later-removed','${id(924)}','test-fingerprint','${id(919)}','${id(901)}');
+    `),
+    ]);
+    const erased = await recoverArchive(
+      encrypt(withHouseholdMail, recipient),
+      identity,
+      {
+        databaseId,
+        complete: true,
+        records: [
+          suspension,
+          removal,
+          {
+            version: 2,
+            database_id: databaseId,
+            operation_id: id(925),
+            collection_id: id(901),
+            scope: "household",
+            target_id: "",
+            erase_due_at: 1,
+          },
+        ],
+      },
+    );
+    const erasedDb = new DatabaseSync(":memory:");
+    try {
+      erasedDb.exec(erased.toString());
+      for (const table of [
+        "email_invitations",
+        "email_send_attempts",
+        "email_feedback_receipts",
+        "email_invitation_operations",
+        "invitation_acceptance_receipts",
+      ])
+        assert.equal(
+          erasedDb.prepare(`SELECT count(*) n FROM ${table}`).get().n,
+          0,
+          `${table} must not retain erased household invitation data`,
+        );
+      assert.equal(
+        erasedDb
+          .prepare(
+            "SELECT reason FROM email_suppressions WHERE recipient_email='retained-block@example.invalid'",
+          )
+          .get().reason,
+        "complaint",
+      );
+    } finally {
+      erasedDb.close();
+    }
+    verifySql(output);
+    const db = new DatabaseSync(":memory:");
+    try {
+      db.exec(output.toString());
+      assert.equal(
+        db
+          .prepare(
+            "SELECT approved FROM pilot_accounts WHERE subject='later-suspended'",
+          )
+          .get().approved,
+        0,
+      );
+      assert.equal(
+        db
+          .prepare(
+            "SELECT active FROM household_heads WHERE subject='later-removed'",
+          )
+          .get().active,
+        0,
+      );
+      assert.equal(
+        db
+          .prepare(
+            "SELECT active FROM household_heads WHERE subject='restore-owner'",
+          )
+          .get().active,
+        1,
+      );
+      assert.equal(
+        db
+          .prepare("SELECT status FROM household_invitations WHERE id=?")
+          .get(id(903)).status,
+        "revoked",
+      );
+      assert.equal(db.prepare("SELECT count(*) n FROM sessions").get().n, 0);
+      assert.equal(
+        db.prepare("SELECT count(*) n FROM onboarding_sessions").get().n,
+        0,
+      );
+      assert.equal(
+        db.prepare("SELECT paused FROM invitation_growth WHERE id=1").get()
+          .paused,
+        1,
+      );
+      assert.equal(
+        db
+          .prepare(
+            "SELECT active FROM protected_account_access WHERE subject_hash=?",
+          )
+          .get(suspension.security.subject_hash).active,
+        0,
+      );
+      assert.ok(
+        db
+          .prepare(
+            "SELECT seq FROM sqlite_sequence WHERE name='site_security_outbox'",
+          )
+          .get().seq >= 11,
+      );
+    } finally {
+      db.close();
+    }
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

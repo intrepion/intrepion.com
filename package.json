@@ -3,10 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate": "protoc -I proto --plugin=protoc-gen-es=./node_modules/.bin/protoc-gen-es --es_out=web/src/gen --es_opt=target=ts,import_extension=js proto/life/v1/tasks.proto proto/life/v1/lists.proto proto/life/v1/households.proto proto/life/v1/operator.proto",
+    "generate": "protoc -I proto --plugin=protoc-gen-es=./node_modules/.bin/protoc-gen-es --es_out=web/src/gen --es_opt=target=ts,import_extension=js proto/life/v1/tasks.proto proto/life/v1/lists.proto proto/life/v1/households.proto proto/life/v1/operator.proto proto/life/v1/accounts.proto",
     "db:migrate": "wrangler d1 migrations apply DB --local --config server/local/wrangler.toml",
     "db:dev": "wrangler dev --local --config server/local/wrangler.toml --ip 127.0.0.1 --port 8791",
     "dev": "node scripts/dev.mjs",
+    "dev:normal": "node scripts/dev.mjs --normal-accounts",
     "test:integration": "node scripts/integration.mjs",
     "test:rpc": "tsx --test server/tests/rpc.test.ts",
     "lint": "eslint web/src web/tests scripts server/tests server/local/*.mjs --ignore-pattern '**/gen/**'",

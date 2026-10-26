@@ -117,6 +117,7 @@ impl Households {
                         target_id: String::new(),
                         erase_due_at: None,
                         collection_ids: Some(chunk.to_vec()),
+                        security: None,
                     }
                     .namespaced(&format!("household-content:{}:{index}", h.id)),
                 )

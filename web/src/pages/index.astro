@@ -33,8 +33,13 @@ if (
       <nav id="main-nav" aria-label="Lists" hidden>
         <button id="nav-tasks">Tasks</button><button id="nav-shopping"
           >Shopping</button
-        ><button id="nav-checklists">Checklists</button>
+        ><button id="nav-checklists">Checklists</button><button
+          id="nav-admin"
+          hidden>Admin</button
+        >
       </nav>
+      <section id="onboarding-view" class="content" hidden></section>
+      <section id="admin-view" class="content" hidden></section>
       <section id="household-view" class="content" hidden></section>
       <section id="everyday-view" class="content" hidden></section>
       <section id="status-view" class="center" aria-live="polite">
@@ -51,7 +56,25 @@ if (
           hidden>Sign in as development owner</button
         ><button id="development-morgan" hidden
           >Sign in as development Morgan</button
-        ><button id="retry-load" hidden>Try again</button>
+        ><button id="development-another" hidden
+          >Use another development Google account</button
+        ><form id="development-identity-form" class="editor" hidden>
+          <p class="muted">
+            Development only: simulate a Google account. Use example.invalid
+            addresses; no Google service is contacted.
+          </p><label for="development-email">Development Google email</label
+          ><input
+            id="development-email"
+            type="email"
+            required
+            placeholder="name@example.invalid"
+          /><label for="development-name">Development Google display name</label
+          ><input
+            id="development-name"
+            maxlength="100"
+            value="New head"
+          /><button type="submit">Continue development sign-in</button>
+        </form><button id="retry-load" hidden>Try again</button>
       </section>
       <section id="list-view" class="content" hidden>
         <div class="heading">
@@ -141,6 +164,9 @@ if (
           >
         </div><button class="quiet" id="sign-out">Sign out</button>
       </footer>
+      <p id="support-contact" class="small" hidden>
+        <a id="contact-support">Contact support</a>
+      </p>
       <noscript
         ><p>
           This task application needs JavaScript. Your tasks remain on the

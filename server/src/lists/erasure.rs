@@ -109,6 +109,7 @@ impl Lists {
                     version: 1,
                     erase_due_at: None,
                     collection_ids: None,
+                    security: None,
                     database_id,
                     operation_id: r.operation_id.clone(),
                     collection_id: c.id.clone(),

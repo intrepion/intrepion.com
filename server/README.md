@@ -1,5 +1,7 @@
 # Rust Everyday lists API
 
+MVP 3.1 adds normal invitation-only accounts, independent safety budgets, owner metadata administration, durable SES delivery and signed feedback. Migration does not activate this mode. See the [release preparation](../docs/mvp-3-1-release.md) for migrations 0015–0024, schema version 4, provider settings and the separate launch gates. Use `npm run dev:normal` for isolated local review with fake email and illustrative policy; existing pilot behavior below remains available until explicit policy activation.
+
 Native Axum serves generated ConnectRPC task and Everyday lists methods from [`/proto`](../proto/life/v1/tasks.proto). Google Identity Services exchanges a verified ID token for an opaque, revocable seven-day session. Operator-approved stable Google subjects may sign in; the configured original owner is the bootstrap identity. Personal data is isolated per subject, and household access requires current head membership. Tasks and hashed session tokens live in D1; the server has no durable local filesystem dependency.
 
 Run `npm run dev` from the repository root to start local D1, the Rust server on `127.0.0.1:8788`, and Astro on `127.0.0.1:4322`. Install root and web npm dependencies first. Local data lives under `server/local/.wrangler`; isolated integration/browser tests use temporary directories. Stop the complete development stack before running integration or browser tests because they use the same ports.

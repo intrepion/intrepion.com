@@ -36,6 +36,8 @@ jobs:
         run: |
           node scripts/deploy-gate.mjs
           git merge-base --is-ancestor "$DEPLOY_SHA" origin/main
+          # Refuse binaries from before the normal-account schema transition.
+          git cat-file -e "$DEPLOY_SHA:server/migrations/0024_protected_account_admission.sql"
           git checkout --detach "$DEPLOY_SHA"
       - run: npm ci
       - run: npm --prefix web ci

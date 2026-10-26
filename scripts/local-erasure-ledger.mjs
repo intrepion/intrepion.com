@@ -107,7 +107,19 @@ const server = createServer(async (req, res) => {
             (id) => typeof id === "string" && uuid.test(id),
           ) &&
           Object.keys(body).sort().join(",") ===
-            "collection_id,collection_ids,database_id,operation_id,scope,target_id,version")
+            "collection_id,collection_ids,database_id,operation_id,scope,target_id,version") ||
+        (body.version === 4 &&
+          ["account_access", "head_membership"].includes(body.scope) &&
+          body.security &&
+          Object.keys(body.security).sort().join(",") ===
+            "active,public_id,revision,subject_hash" &&
+          typeof body.security.active === "boolean" &&
+          /^[a-f0-9]{64}$/.test(body.security.subject_hash) &&
+          /^[a-f0-9]{32}$/.test(body.security.public_id) &&
+          Number.isSafeInteger(body.security.revision) &&
+          body.security.revision > 0 &&
+          Object.keys(body).sort().join(",") ===
+            "collection_id,database_id,operation_id,scope,security,target_id,version")
       ) ||
       ![body.collection_id, body.database_id, body.operation_id].every(
         (value) => typeof value === "string" && uuid.test(value),

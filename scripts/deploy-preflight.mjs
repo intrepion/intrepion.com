@@ -1,4 +1,4 @@
-// Read-only compatibility fence. The first MVP 3 upgrade uses the separately
+// Read-only compatibility fence. The first MVP 3.1 upgrade uses the separately
 // reviewed stopped-service procedure, never the ordinary migration step.
 const required = (name) => {
   const value = process.env[name];
@@ -7,7 +7,7 @@ const required = (name) => {
 };
 const maintenanceRequired = () =>
   new Error(
-    "MVP 3 requires its completed maintenance upgrade and policy bootstrap before normal deployment. Follow docs/mvp-3-release.md; do not migrate underneath the old API.",
+    "MVP 3.1 requires its completed maintenance upgrade before normal deployment. Follow docs/mvp-3-1-release.md; do not migrate underneath the old API.",
   );
 try {
   const account = required("CLOUDFLARE_ACCOUNT_ID");
@@ -72,10 +72,38 @@ try {
       "household_releases",
       "household_content_erasures",
       "pilot_operator_operations",
+      "site_safety_policy",
+      "site_admin_operations",
+      "site_audit",
+      "site_usage_samples",
+      "invitation_growth",
+      "email_invitations",
+      "email_invitation_operations",
+      "email_monthly_attempts",
+      "email_send_attempts",
+      "email_suppressions",
+      "email_suppression_reviews",
+      "email_feedback_receipts",
+      "onboarding_sessions",
+      "invitation_acceptance_receipts",
+      "security_replay_control",
+      "site_security_outbox",
+      "protected_account_access",
+      "protected_membership_state",
       "d1_migrations",
     ],
-    view: ["space_usage", "creator_usage", "space_capacity"],
-    index: ["one_pending_household_erasure"],
+    view: [
+      "space_usage",
+      "creator_usage",
+      "space_capacity",
+      "legacy_space_capacity",
+      "content_space_usage",
+    ],
+    index: [
+      "one_pending_household_erasure",
+      "one_pending_email_invitation",
+      "email_accounting_review",
+    ],
     trigger: [
       "remember_deleted_task",
       "tasks_replaced_insert",
@@ -101,6 +129,16 @@ try {
       "no_household_reopening",
       "content_erasure_requires_unused_operation",
       "household_receipt_requires_matching_erasure",
+      "revoke_departed_issuer_email",
+      "revoke_suspended_issuer_email",
+      "retire_legacy_invitation_writes",
+      "retire_legacy_allocation_inserts",
+      "retire_legacy_allocation_updates",
+      "retire_legacy_ceiling_updates",
+      "record_account_access_change",
+      "record_account_admission",
+      "record_head_admission",
+      "record_head_access_change",
     ],
   };
   const names = Object.values(anchors).flat();
@@ -136,10 +174,20 @@ try {
     "0012_budget_aware_writers.sql",
     "0013_household_content_erasure.sql",
     "0014_operator_policy.sql",
+    "0015_independent_safety_policy.sql",
+    "0016_email_invitations.sql",
+    "0017_email_delivery.sql",
+    "0018_invitation_onboarding.sql",
+    "0019_protected_account_access.sql",
+    "0020_signed_email_feedback.sql",
+    "0021_mail_recovery_accounting.sql",
+    "0022_household_metadata_storage.sql",
+    "0023_aggregate_usage_history.sql",
+    "0024_protected_account_admission.sql",
   ])
     if (!migrations.has(name)) throw maintenanceRequired();
   const [policy] = await query(
-    "SELECT (SELECT count(*) FROM operator_settings WHERE id=1 AND revision>0 AND max_items_per_collection>0 AND max_sections_per_collection>0) AS structural_ready,(SELECT count(*) FROM pilot_accounts WHERE approved=1) AS approved_accounts,(SELECT count(*) FROM pilot_accounts WHERE approved=1 AND plan_revision=0) AS unconfigured_accounts,(SELECT count(*) FROM tasks) AS legacy_tasks,(SELECT count(*) FROM write_budgets)+(SELECT count(*) FROM invariant_guards)+(SELECT count(*) FROM limit_guards) AS leftover_guards",
+    "SELECT (SELECT count(*) FROM operator_settings WHERE id=1 AND revision>0 AND max_items_per_collection>0 AND max_sections_per_collection>0) AS structural_ready,(SELECT count(*) FROM pilot_accounts WHERE approved=1) AS approved_accounts,(SELECT count(*) FROM pilot_accounts WHERE approved=1 AND plan_revision=0 AND (SELECT enabled FROM site_safety_policy WHERE id=1)=0) AS unconfigured_accounts,(SELECT count(*) FROM tasks) AS legacy_tasks,(SELECT count(*) FROM write_budgets)+(SELECT count(*) FROM invariant_guards)+(SELECT count(*) FROM limit_guards) AS leftover_guards,(SELECT count(*) FROM security_replay_control WHERE id=1 AND replaying=0) AS replay_ready",
   );
   if (
     !policy ||
@@ -147,19 +195,20 @@ try {
     Number(policy.approved_accounts) < 1 ||
     Number(policy.unconfigured_accounts) !== 0 ||
     Number(policy.legacy_tasks) !== 0 ||
-    Number(policy.leftover_guards) !== 0
+    Number(policy.leftover_guards) !== 0 ||
+    Number(policy.replay_ready) !== 1
   )
     throw maintenanceRequired();
   if ((await query("PRAGMA foreign_key_check")).length)
     throw maintenanceRequired();
   console.log(
-    "MVP 3 schema, migration ledger, writer fences and policy bootstrap verified; compatible deployment may continue.",
+    "MVP 3.1 schema, migration ledger, writer fences and policy bootstrap verified; compatible deployment may continue.",
   );
 } catch (error) {
   console.error(
-    error instanceof Error && error.message.startsWith("MVP 3 requires")
+    error instanceof Error && error.message.startsWith("MVP 3.1 requires")
       ? error.message
-      : "MVP 3 deployment preflight failed. Keep the current service unchanged and inspect private operator diagnostics.",
+      : "MVP 3.1 deployment preflight failed. Keep the current service unchanged and inspect private operator diagnostics.",
   );
   process.exitCode = 1;
 }

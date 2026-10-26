@@ -53,4 +53,6 @@ jobs:
       - name: Verify emitted Pages security headers
         run: test -s web/dist/_headers
       - run: npm run test:integration
+        env:
+          ROUNDTRIP_BACKUP: "1"
       # Owner policy: coverage and browser E2E are deliberately local-only.

@@ -3,6 +3,9 @@ if (process.env.CI)
   throw new Error("E2E tests run locally only, by owner policy.");
 export default defineConfig({
   testDir: "tests/browser",
+  ...(process.env.NORMAL_ACCOUNTS_TEST
+    ? { testMatch: "normal-accounts.spec.ts" }
+    : { testIgnore: "normal-accounts.spec.ts" }),
   workers: 1,
   retries: 0,
   reporter: "list",

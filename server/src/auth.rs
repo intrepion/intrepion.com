@@ -15,12 +15,20 @@ use std::{
 };
 use tokio::sync::Mutex;
 
+mod onboarding;
+pub(crate) use onboarding::Onboarding;
+
 pub type SharedAuth = Arc<Auth>;
 pub struct Auth {
     pub config: Config,
     pub db: Database,
     pub(crate) erasure_ledger: Option<crate::erasure_ledger::ErasureLedger>,
-    http: reqwest::Client,
+    pub(crate) http: reqwest::Client,
+    pub(crate) mail_lock: Mutex<()>,
+    pub(crate) security_lock: Mutex<()>,
+    pub(crate) retention_lock: Mutex<u64>,
+    pub(crate) mail_wake: tokio::sync::Notify,
+    pub(crate) feedback: crate::feedback::Verifier,
     keys: Mutex<Option<(Instant, Duration, JwkSet)>>,
     login_limit: Mutex<LoginLimiter>,
 }
@@ -29,12 +37,26 @@ pub struct Auth {
 struct Claims {
     sub: String,
     nonce: String,
+    #[serde(default)]
+    email: Option<String>,
+    #[serde(default)]
+    email_verified: bool,
+    #[serde(default)]
+    name: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct Login {
     pub credential: String,
     pub nonce: String,
+    #[serde(default)]
+    pub invitation_token: Option<String>,
+    #[cfg(feature = "dev-auth")]
+    #[serde(default)]
+    pub development_email: Option<String>,
+    #[cfg(feature = "dev-auth")]
+    #[serde(default)]
+    pub development_name: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -43,6 +65,8 @@ pub struct Session {
     pub expires_at: u64,
     pub user_sub: String,
     pub display_name: String,
+    #[serde(default)]
+    pub is_admin: bool,
 }
 
 #[derive(Debug)]
@@ -79,6 +103,15 @@ fn render_client_ip(headers: &HeaderMap) -> Result<IpAddr, AuthError> {
         ))
 }
 pub fn now() -> u64 {
+    #[cfg(feature = "dev-auth")]
+    if std::env::var("APP_ENV").as_deref() == Ok("development")
+        && let Some(now) = std::env::var("APP_TEST_NOW")
+            .ok()
+            .and_then(|s| s.parse::<u64>().ok())
+            .filter(|n| *n > 0 && *n <= 253_402_300_799)
+    {
+        return now;
+    }
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("system clock")
@@ -133,10 +166,16 @@ impl Auth {
             db,
             erasure_ledger,
             http: reqwest::Client::builder()
+                .retry(reqwest::retry::never())
                 .timeout(Duration::from_secs(8))
                 .redirect(reqwest::redirect::Policy::none())
                 .build()?,
             keys: Mutex::new(None),
+            mail_lock: Mutex::new(()),
+            security_lock: Mutex::new(()),
+            retention_lock: Mutex::new(0),
+            mail_wake: tokio::sync::Notify::new(),
+            feedback: crate::feedback::Verifier::new(),
             login_limit: Mutex::new(LoginLimiter::new()),
         }))
     }
@@ -147,7 +186,7 @@ impl Auth {
             format!("__Host-{kind}")
         }
     }
-    fn set_cookie(&self, kind: &str, value: &str, age: u64) -> String {
+    pub(crate) fn set_cookie(&self, kind: &str, value: &str, age: u64) -> String {
         format!(
             "{}={value}; Path=/; HttpOnly; SameSite=Lax; Max-Age={age}{}",
             self.name(kind),
@@ -166,8 +205,9 @@ impl Auth {
         let token = cookie(headers, &self.name("session"))
             .filter(|value| value.len() == 64)
             .ok_or_else(unauthorized)?;
-        let mut rows = self.db.query::<Session>("SELECT s.csrf,s.expires_at,s.owner_sub AS user_sub,a.display_name FROM sessions s JOIN pilot_accounts a ON a.subject=s.owner_sub AND a.approved=1 WHERE s.token_hash=? AND s.expires_at>?", &[hash(token), now().to_string()]).await?;
-        let session = rows.pop().ok_or_else(unauthorized)?;
+        let mut rows = self.db.query::<Session>("SELECT s.csrf,s.expires_at,s.owner_sub AS user_sub,a.display_name FROM sessions s JOIN pilot_accounts a ON a.subject=s.owner_sub AND a.approved=1 WHERE s.token_hash=? AND s.expires_at>? AND NOT EXISTS(SELECT 1 FROM protected_account_access p WHERE p.public_id=a.public_id AND p.active=0)", &[hash(token), now().to_string()]).await?;
+        let mut session = rows.pop().ok_or_else(unauthorized)?;
+        session.is_admin = session.user_sub == self.config.owner_sub;
         if write {
             self.check_origin(headers)?;
             if headers
@@ -206,7 +246,7 @@ impl Auth {
         }
         Ok(())
     }
-    async fn verify_google(&self, token: &str, nonce: &str) -> Result<String, AuthError> {
+    async fn verify_google(&self, token: &str, nonce: &str) -> Result<Claims, AuthError> {
         if token.len() > 16_384 {
             return Err(unauthorized());
         }
@@ -257,17 +297,45 @@ impl Auth {
             .ok_or_else(unauthorized)?;
         let key = DecodingKey::from_jwk(key).map_err(|_| unauthorized())?;
         let claims = verify_claims(token, nonce, &key, &self.config.google_client_id)?;
-        self.approved_identity(&claims.sub).await?;
-        Ok(claims.sub)
+        Ok(claims)
     }
     async fn approved_identity(&self, subject: &str) -> Result<String, AuthError> {
+        if !self
+            .db
+            .query::<serde_json::Value>(
+                "SELECT 1 FROM protected_account_access WHERE subject_hash=? AND active=0",
+                &[crate::security::subject_hash(subject)],
+            )
+            .await?
+            .is_empty()
+        {
+            return Err(forbidden());
+        }
         if subject == self.config.owner_sub {
+            let public_id = crate::security::canonical_public_id(&self.db, subject)
+                .await
+                .map_err(|_| {
+                    AuthError(
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        "Identity recovery is temporarily unavailable.",
+                    )
+                })?
+                .unwrap_or_else(|| secret()[..32].into());
             self.db.query::<serde_json::Value>(
-                "INSERT INTO pilot_accounts(subject,display_name) VALUES(?,'Owner') ON CONFLICT(subject) DO NOTHING",
-                &[subject.into()],
+                "INSERT INTO pilot_accounts(subject,display_name,public_id) VALUES(?,'Owner',?) ON CONFLICT(subject) DO NOTHING",
+                &[subject.into(),public_id],
             ).await?;
         }
-        self.db.query::<serde_json::Value>("UPDATE pilot_accounts SET public_id=? WHERE subject=? AND public_id='' AND approved=1", &[secret()[..32].into(),subject.into()]).await?;
+        let public_id = crate::security::canonical_public_id(&self.db, subject)
+            .await
+            .map_err(|_| {
+                AuthError(
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    "Identity recovery is temporarily unavailable.",
+                )
+            })?
+            .unwrap_or_else(|| secret()[..32].into());
+        self.db.query::<serde_json::Value>("UPDATE pilot_accounts SET public_id=? WHERE subject=? AND public_id='' AND approved=1", &[public_id,subject.into()]).await?;
         #[derive(Deserialize)]
         struct Account {
             display_name: String,
@@ -282,7 +350,7 @@ impl Auth {
             .map(|account| account.display_name)
             .ok_or_else(forbidden)
     }
-    async fn issue_session(&self, subject: &str) -> Result<Response, AuthError> {
+    pub(crate) async fn new_session(&self, subject: &str) -> Result<(Session, String), AuthError> {
         let display_name = self.approved_identity(subject).await?;
         let token = secret();
         let session = Session {
@@ -290,6 +358,7 @@ impl Auth {
             expires_at: now() + 7 * 86400,
             user_sub: subject.into(),
             display_name,
+            is_admin: subject == self.config.owner_sub,
         };
         self.db
             .query::<serde_json::Value>(
@@ -308,6 +377,10 @@ impl Auth {
                 ],
             )
             .await?;
+        Ok((session, token))
+    }
+    pub(crate) async fn issue_session(&self, subject: &str) -> Result<Response, AuthError> {
+        let (session, token) = self.new_session(subject).await?;
         let mut response = Json(session).into_response();
         // Axum's array header conversion inserts, rather than appends, duplicate names.
         response.headers_mut().append(
@@ -326,11 +399,15 @@ impl Auth {
     }
 }
 
-pub async fn configuration(State(auth): State<SharedAuth>) -> Json<serde_json::Value> {
-    Json(
-        serde_json::json!({"google_client_id":auth.config.google_client_id,"development":auth.config.local,"erasure_storage_configured":auth.erasure_ledger.is_some(),"schema_version":3,"customer_writes_frozen":auth.config.customer_writes_frozen}),
-    )
+pub async fn configuration(
+    State(auth): State<SharedAuth>,
+) -> Result<Json<serde_json::Value>, AuthError> {
+    let normal = crate::capacity::normal_accounts(&auth.db).await?;
+    Ok(Json(
+        serde_json::json!({"google_client_id":auth.config.google_client_id,"development":auth.config.local,"erasure_storage_configured":auth.erasure_ledger.is_some(),"schema_version":4,"customer_writes_frozen":auth.config.customer_writes_frozen,"normal_accounts":normal,"email_onboarding_configured":auth.config.mail.is_some(),"support_email":auth.config.mail.as_ref().map(|m|m.reply_to.as_str()).unwrap_or("")}),
+    ))
 }
+
 pub async fn challenge(
     State(auth): State<SharedAuth>,
     ConnectInfo(peer): ConnectInfo<SocketAddr>,
@@ -366,8 +443,21 @@ pub async fn login(
     auth.check_origin(&headers)?;
     auth.limit_login(&headers, peer.ip()).await?;
     auth.consume_challenge(&headers, &login.nonce).await?;
-    let subject = auth.verify_google(&login.credential, &login.nonce).await?;
-    auth.issue_session(&subject).await
+    let claims = auth.verify_google(&login.credential, &login.nonce).await?;
+    if let Some(token) = login.invitation_token {
+        if !claims.email_verified {
+            return Err(forbidden());
+        }
+        return auth
+            .begin_invitation(
+                &claims.sub,
+                claims.email.as_deref().ok_or_else(forbidden)?,
+                claims.name.as_deref().unwrap_or(""),
+                &token,
+            )
+            .await;
+    }
+    auth.issue_session(&claims.sub).await
 }
 #[cfg(feature = "dev-auth")]
 pub async fn development_login(
@@ -386,28 +476,61 @@ pub async fn development_login(
     } else {
         &login.credential
     };
+    if let Some(token) = login.invitation_token.as_deref() {
+        return auth
+            .begin_invitation(
+                subject,
+                login.development_email.as_deref().ok_or_else(forbidden)?,
+                login.development_name.as_deref().unwrap_or(""),
+                token,
+            )
+            .await;
+    }
     auth.issue_session(subject).await
 }
 pub async fn current_session(
     State(auth): State<SharedAuth>,
     headers: HeaderMap,
-) -> Result<Json<Session>, AuthError> {
-    Ok(Json(auth.session(&headers, false).await?))
+) -> Result<Json<serde_json::Value>, AuthError> {
+    if let Ok(session) = auth.session(&headers, false).await {
+        return Ok(Json(serde_json::to_value(session).expect("session")));
+    }
+    let session = auth.onboarding(&headers, false).await?;
+    Ok(Json(
+        serde_json::json!({"onboarding":true,"csrf":session.csrf,"expires_at":session.expires_at,"user_sub":session.user_sub,"display_name":session.display_name,"email":session.email}),
+    ))
 }
 pub async fn logout(
     State(auth): State<SharedAuth>,
     headers: HeaderMap,
 ) -> Result<Response, AuthError> {
-    auth.session(&headers, true).await?;
-    let token = cookie(&headers, &auth.name("session")).ok_or_else(unauthorized)?;
+    if auth.session(&headers, true).await.is_err() {
+        auth.onboarding(&headers, true).await?;
+    }
+    let session = cookie(&headers, &auth.name("session")).unwrap_or("");
+    let onboarding = cookie(&headers, &auth.name("onboarding")).unwrap_or("");
     auth.db
-        .query::<serde_json::Value>("DELETE FROM sessions WHERE token_hash = ?", &[hash(token)])
+        .batch(&[
+            crate::db::Statement::new(
+                "DELETE FROM sessions WHERE token_hash=?",
+                vec![hash(session)],
+            ),
+            crate::db::Statement::new(
+                "DELETE FROM onboarding_sessions WHERE token_hash=?",
+                vec![hash(onboarding)],
+            ),
+        ])
         .await?;
-    Ok((
-        [(header::SET_COOKIE, auth.set_cookie("session", "", 0))],
-        StatusCode::NO_CONTENT,
-    )
-        .into_response())
+    let mut response = StatusCode::NO_CONTENT.into_response();
+    for kind in ["session", "onboarding"] {
+        response.headers_mut().append(
+            header::SET_COOKIE,
+            auth.set_cookie(kind, "", 0)
+                .parse()
+                .expect("generated cookie"),
+        );
+    }
+    Ok(response)
 }
 
 // Signature and required OIDC claims are checked together; no decoded claim is trusted first.

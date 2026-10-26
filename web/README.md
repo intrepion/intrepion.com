@@ -1,5 +1,7 @@
 # Astro Everyday lists client
 
+MVP 3.1 normal-account review uses `npm run dev:normal` from the repository root, then <http://127.0.0.1:4322>. The fake mailbox is <http://127.0.0.1:8793/mailbox>; only `@example.invalid` recipients work locally. Normal accounts use name-only household creation and emailed onboarding; only the site owner sees Admin. The ordinary capacity/allocation controls described for legacy MVP 3 below disappear in this mode. Run `NORMAL_ACCOUNTS_TEST=1 npm --prefix web run test:e2e` separately from the default legacy suite and development stack.
+
 This static Astro/TypeScript client independently implements the approved MVP 1, MVP 2 and MVP 3 prototype interactions. It imports no prototype application code. It uses generated ConnectRPC clients and real server acknowledgments; lists, tasks, drafts and credentials are never persisted in browser storage.
 
 After `npm ci` and `npm --prefix web ci` at the repository root, run `npm run dev` there to start the complete development stack, then open <http://127.0.0.1:4322>. The Owner and Morgan development buttons appear only when the local server advertises development mode. Production renders Google's official SDK button.

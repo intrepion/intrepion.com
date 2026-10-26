@@ -6,6 +6,14 @@ import { pathToFileURL } from "node:url";
 import { B2, verifySql } from "./backups.mjs";
 
 const MAX_BYTES = 20 * 1024 * 1024;
+const householdEmailErasure = (
+  await readFile(
+    new URL("../server/household-email-erasure.sql", import.meta.url),
+    "utf8",
+  )
+)
+  .split(";")
+  .filter((sql) => sql.trim());
 const uuid = (value) =>
   typeof value === "string" &&
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -56,7 +64,23 @@ function validateLedger(ledger) {
             record.collection_ids.length &&
           record.collection_ids.every(uuid) &&
           Object.keys(record).sort().join(",") ===
-            "collection_id,collection_ids,database_id,operation_id,scope,target_id,version")
+            "collection_id,collection_ids,database_id,operation_id,scope,target_id,version") ||
+        (record.version === 4 &&
+          ["account_access", "head_membership"].includes(record.scope) &&
+          record.security &&
+          Object.keys(record.security).sort().join(",") ===
+            "active,public_id,revision,subject_hash" &&
+          typeof record.security.active === "boolean" &&
+          typeof record.security.subject_hash === "string" &&
+          /^[0-9a-f]{64}$/.test(record.security.subject_hash) &&
+          typeof record.security.public_id === "string" &&
+          /^[0-9a-f]{32}$/.test(record.security.public_id) &&
+          Number.isSafeInteger(record.security.revision) &&
+          record.security.revision > 0 &&
+          (record.scope !== "account_access" ||
+            record.collection_id === "00000000-0000-0000-0000-000000000000") &&
+          Object.keys(record).sort().join(",") ===
+            "collection_id,database_id,operation_id,scope,security,target_id,version")
       ) ||
       record.database_id !== ledger.databaseId ||
       !uuid(record.operation_id) ||
@@ -77,6 +101,7 @@ function validateLedger(ledger) {
       record.version,
       record.erase_due_at ?? null,
       record.collection_ids ?? null,
+      record.security ?? null,
     ]);
     const previous = operations.get(record.operation_id);
     if (previous && previous.canonical !== canonical)
@@ -109,6 +134,16 @@ async function upgrade(db) {
     ["trigger", "budget_collections_insert", "0012_budget_aware_writers"],
     ["table", "household_content_erasures", "0013_household_content_erasure"],
     ["table", "pilot_operator_operations", "0014_operator_policy"],
+    ["table", "site_safety_policy", "0015_independent_safety_policy"],
+    ["table", "email_invitations", "0016_email_invitations"],
+    ["table", "email_send_attempts", "0017_email_delivery"],
+    ["table", "onboarding_sessions", "0018_invitation_onboarding"],
+    ["table", "site_security_outbox", "0019_protected_account_access"],
+    ["table", "email_feedback_receipts", "0020_signed_email_feedback"],
+    ["index", "email_accounting_review", "0021_mail_recovery_accounting"],
+    ["view", "content_space_usage", "0022_household_metadata_storage"],
+    ["table", "site_usage_samples", "0023_aggregate_usage_history"],
+    ["trigger", "record_account_admission", "0024_protected_account_admission"],
   ])
     if (!exists(type, anchor))
       db.exec(
@@ -132,6 +167,16 @@ async function upgrade(db) {
     "0012_budget_aware_writers.sql",
     "0013_household_content_erasure.sql",
     "0014_operator_policy.sql",
+    "0015_independent_safety_policy.sql",
+    "0016_email_invitations.sql",
+    "0017_email_delivery.sql",
+    "0018_invitation_onboarding.sql",
+    "0019_protected_account_access.sql",
+    "0020_signed_email_feedback.sql",
+    "0021_mail_recovery_accounting.sql",
+    "0022_household_metadata_storage.sql",
+    "0023_aggregate_usage_history.sql",
+    "0024_protected_account_admission.sql",
   ];
   db.exec(
     "CREATE TABLE IF NOT EXISTS d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
@@ -148,13 +193,22 @@ async function upgrade(db) {
   for (const name of names)
     db.prepare("INSERT OR IGNORE INTO d1_migrations(name) VALUES(?)").run(name);
 }
-function replay(db, records) {
+function replay(
+  db,
+  records,
+  nested = false,
+  retainedPublicIdentities = new Set(),
+) {
   const retire = db.prepare(
     "INSERT OR IGNORE INTO retired_list_ids(kind,id) VALUES(?,?)",
   );
-  for (const record of [...records].sort(
-    (a, b) => Number(a.scope === "household") - Number(b.scope === "household"),
-  )) {
+  db.exec("UPDATE security_replay_control SET replaying=1 WHERE id=1;");
+  for (const record of [...records]
+    .filter((r) => r.version !== 4)
+    .sort(
+      (a, b) =>
+        Number(a.scope === "household") - Number(b.scope === "household"),
+    )) {
     if (record.scope === "household_content") {
       for (const id of record.collection_ids) {
         const parent = db
@@ -173,6 +227,7 @@ function replay(db, records) {
           collection_id: id,
           target_id: "",
         })),
+        true,
       );
       continue;
     }
@@ -235,6 +290,8 @@ function replay(db, records) {
             "collections",
           ])
             db.prepare(`DELETE FROM ${table} WHERE owner_sub=?`).run(space);
+          for (const sql of householdEmailErasure)
+            db.prepare(sql).run(record.collection_id);
           for (const table of [
             "household_invitations",
             "household_content_erasures",
@@ -322,7 +379,167 @@ function replay(db, records) {
     );
     db.exec("DELETE FROM write_budgets;");
   }
-  db.exec("DELETE FROM sessions; DELETE FROM login_challenges;");
+  if (nested) return;
+  replaySecurity(
+    db,
+    records.filter((r) => r.version === 4),
+    retainedPublicIdentities,
+  );
+  db.exec(
+    "DELETE FROM sessions; DELETE FROM login_challenges; DELETE FROM onboarding_sessions; UPDATE email_invitations SET status='revoked',delivery_status='canceled',claim_id='',claim_until=0,revision=revision+1 WHERE status='pending'; UPDATE household_invitations SET status='revoked' WHERE status='pending'; UPDATE invitation_growth SET paused=1,revision=revision+1 WHERE id=1; UPDATE security_replay_control SET replaying=0 WHERE id=1;",
+  );
+}
+function replaySecurity(db, records, retainedPublicIdentities) {
+  const sequences = new Map();
+  const publishedIds = new Set(records.map((r) => r.operation_id));
+  // A snapshot can be ahead of the independent journal. Merge its durable
+  // outbox before ordering changes, preserving unpublished restrictions.
+  records = [
+    ...records,
+    ...db
+      .prepare("SELECT * FROM site_security_outbox")
+      .all()
+      .map((row) => ({
+        version: 4,
+        operation_id: row.event_id,
+        scope: row.scope,
+        collection_id: row.household_id,
+        security: {
+          subject_hash:
+            row.subject_hash ||
+            createHash("sha256").update(row.subject).digest("hex"),
+          public_id: row.public_id,
+          revision: row.sequence,
+          active: !!row.active,
+        },
+      })),
+  ];
+  const profiles = new Map(
+    db
+      .prepare("SELECT subject,public_id FROM pilot_accounts")
+      .all()
+      .map((p) => [createHash("sha256").update(p.subject).digest("hex"), p]),
+  );
+  const identities = new Map(),
+    publicOwners = new Map();
+  const bindIdentity = (hash, publicId) => {
+    if (
+      !/^[a-f0-9]{64}$/.test(hash) ||
+      !/^[a-f0-9]{32}$/.test(publicId) ||
+      (identities.has(hash) && identities.get(hash) !== publicId) ||
+      (publicOwners.has(publicId) && publicOwners.get(publicId) !== hash)
+    )
+      throw new Error(
+        "Recovery rejected conflicting protected identity records.",
+      );
+    identities.set(hash, publicId);
+    publicOwners.set(publicId, hash);
+  };
+  for (const [hash, profile] of profiles)
+    if (retainedPublicIdentities.has(profile.subject))
+      bindIdentity(hash, profile.public_id);
+  for (const row of db
+    .prepare(
+      "SELECT subject_hash,public_id FROM protected_account_access UNION SELECT subject_hash,public_id FROM protected_membership_state",
+    )
+    .all())
+    bindIdentity(row.subject_hash, row.public_id);
+  for (const record of [...records].sort(
+    (a, b) => a.security.revision - b.security.revision,
+  )) {
+    const event = record.security;
+    bindIdentity(event.subject_hash, event.public_id);
+    const canonical = JSON.stringify([
+      record.scope,
+      record.collection_id,
+      record.operation_id,
+      event.subject_hash,
+      event.public_id,
+      event.revision,
+      event.active,
+    ]);
+    const previous = sequences.get(event.revision);
+    if (previous && previous !== canonical)
+      throw new Error("Recovery rejected conflicting security revisions.");
+    sequences.set(event.revision, canonical);
+    const profile = profiles.get(event.subject_hash);
+    if (profile && profile.public_id !== event.public_id) {
+      if (retainedPublicIdentities.has(profile.subject))
+        throw new Error(
+          "Recovery rejected a mismatched protected account identity.",
+        );
+      db.prepare("UPDATE pilot_accounts SET public_id=? WHERE subject=?").run(
+        event.public_id,
+        profile.subject,
+      );
+      profile.public_id = event.public_id;
+    }
+    if (record.scope === "account_access") {
+      db.prepare(
+        "INSERT INTO protected_account_access(subject_hash,public_id,active,security_revision) VALUES(?,?,?,?) ON CONFLICT(subject_hash) DO UPDATE SET public_id=excluded.public_id,active=excluded.active,security_revision=excluded.security_revision WHERE excluded.security_revision>protected_account_access.security_revision",
+      ).run(
+        event.subject_hash,
+        event.public_id,
+        Number(event.active),
+        event.revision,
+      );
+    } else {
+      db.prepare(
+        "INSERT INTO protected_membership_state(household_id,subject_hash,public_id,active,security_revision) VALUES(?,?,?,?,?) ON CONFLICT(household_id,subject_hash) DO UPDATE SET public_id=excluded.public_id,active=excluded.active,security_revision=excluded.security_revision WHERE excluded.security_revision>protected_membership_state.security_revision",
+      ).run(
+        record.collection_id,
+        event.subject_hash,
+        event.public_id,
+        Number(event.active),
+        event.revision,
+      );
+      // A replay never grants a new membership. A later admitted state only
+      // supersedes an earlier revocation, leaving snapshot membership as-is.
+    }
+    const existing = db
+      .prepare("SELECT * FROM site_security_outbox WHERE sequence=?")
+      .get(event.revision);
+    if (!existing)
+      db.prepare(
+        "INSERT INTO site_security_outbox(sequence,event_id,scope,subject_hash,public_id,household_id,active,published) VALUES(?,?,?,?,?,?,?,1)",
+      ).run(
+        event.revision,
+        record.operation_id,
+        record.scope,
+        event.subject_hash,
+        event.public_id,
+        record.collection_id,
+        Number(event.active),
+      );
+    else if (publishedIds.has(record.operation_id))
+      db.prepare(
+        "UPDATE site_security_outbox SET published=1,subject='',subject_hash=? WHERE sequence=?",
+      ).run(event.subject_hash, event.revision);
+  }
+  for (const row of db
+    .prepare("SELECT * FROM protected_account_access")
+    .all()) {
+    const profile = profiles.get(row.subject_hash);
+    if (profile) {
+      if (profile.public_id !== row.public_id)
+        throw new Error(
+          "Recovery rejected a mismatched protected account identity.",
+        );
+      db.prepare("UPDATE pilot_accounts SET approved=? WHERE subject=?").run(
+        row.active,
+        profile.subject,
+      );
+    }
+  }
+  for (const row of db
+    .prepare("SELECT * FROM protected_membership_state WHERE active=0")
+    .all()) {
+    const profile = profiles.get(row.subject_hash);
+    if (profile)
+      db.prepare(
+        "UPDATE household_heads SET active=0 WHERE household_id=? AND subject=?",
+      ).run(row.household_id, profile.subject);
+  }
 }
 function dump(db, enforceBudget = true) {
   const schema = db
@@ -369,6 +586,14 @@ function dump(db, enforceBudget = true) {
   return bytes;
 }
 
+function holdRecoveryMailBudget(db) {
+  // The snapshot can undercount attempts handed off after it was captured.
+  // Hold the current UTC month's budget instead of pretending that gap is zero.
+  db.exec(
+    "INSERT INTO email_monthly_attempts(month,attempted,accounting_state) VALUES(strftime('%Y-%m','now'),10000,'recovery_hold') ON CONFLICT(month) DO UPDATE SET attempted=max(email_monthly_attempts.attempted,excluded.attempted),accounting_state='recovery_hold';",
+  );
+}
+
 /** Measure current-schema SQL before independent ledger replay; never a restore guarantee. */
 export async function estimateRecoverySqlBytes(sql) {
   verifySql(sql);
@@ -376,6 +601,7 @@ export async function estimateRecoverySqlBytes(sql) {
   try {
     db.exec(sql.toString());
     await upgrade(db);
+    holdRecoveryMailBudget(db);
     const serialized = dump(db, false);
     const size = serialized.length;
     serialized.fill(0);
@@ -476,9 +702,36 @@ export async function recoverArchive(archive, identity, ledger) {
   const db = new DatabaseSync(":memory:");
   try {
     db.exec(decrypted.stdout.toString());
+    const hadAccounts = db
+      .prepare(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='pilot_accounts'",
+      )
+      .get();
+    const hadPublicIds =
+      hadAccounts &&
+      db
+        .prepare("PRAGMA table_info(pilot_accounts)")
+        .all()
+        .some((c) => c.name === "public_id");
+    const retainedPublicIdentities = new Set(
+      hadPublicIds
+        ? db
+            .prepare("SELECT subject FROM pilot_accounts WHERE public_id<>''")
+            .all()
+            .map((r) => r.subject)
+        : [],
+    );
     await upgrade(db);
     db.exec("PRAGMA foreign_keys=ON; BEGIN IMMEDIATE;");
-    replay(db, records);
+    replay(db, records, false, retainedPublicIdentities);
+    holdRecoveryMailBudget(db);
+    db.exec("DELETE FROM site_usage_samples;");
+    db.exec(
+      await readFile(
+        new URL("../server/operational-retention.sql", import.meta.url),
+        "utf8",
+      ),
+    );
     if (db.prepare("PRAGMA foreign_key_check").all().length)
       throw new Error("Recovery foreign-key integrity check failed.");
     db.exec("COMMIT;");

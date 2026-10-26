@@ -2,6 +2,7 @@ mod allocation;
 mod content_erasure;
 mod lifecycle;
 mod membership;
+mod normal_accounts;
 use crate::{
     auth::SharedAuth,
     capacity::{self, Account, Amounts},
@@ -121,6 +122,7 @@ impl Households {
         &self,
         h: &HouseholdRow,
         subject: &str,
+        normal: bool,
     ) -> Result<HouseholdSummary, ConnectError> {
         let closure_protection_pending = matches!(h.status.as_str(), "closed" | "erasing") && !self.0.db.query::<serde_json::Value>("SELECT 1 FROM household_lifecycle WHERE household_id=? AND closure_published=0", std::slice::from_ref(&h.id)).await?.is_empty();
         Ok(HouseholdSummary {
@@ -129,11 +131,14 @@ impl Households {
             name: h.name.clone(),
             status: h.status.clone(),
             is_head: self.is_head(&h.id, subject).await?,
-            own_contribution: self
-                .contribution(&h.id, subject)
-                .await?
-                .map(Into::into)
-                .into(),
+            own_contribution: if normal {
+                Default::default()
+            } else {
+                self.contribution(&h.id, subject)
+                    .await?
+                    .map(Into::into)
+                    .into()
+            },
             erase_due_at: h.erase_due_at,
             erasure_delayed: h.erasure_delayed != 0,
             revision: h.revision,
@@ -141,10 +146,19 @@ impl Households {
         })
     }
     async fn overview(&self, account: &Account) -> Result<AccountOverview, ConnectError> {
-        let rows=self.0.db.query::<HouseholdRow>("SELECT h.id,h.scope_sub,h.name,h.status,h.revision,h.erase_due_at,h.erasure_delayed FROM households h WHERE EXISTS(SELECT 1 FROM household_heads m WHERE m.household_id=h.id AND m.subject=? AND m.active=1) OR EXISTS(SELECT 1 FROM household_allocations x WHERE x.household_id=h.id AND x.subject=?) OR EXISTS(SELECT 1 FROM household_releases x WHERE x.household_id=h.id AND x.subject=?) ORDER BY h.id", &[account.subject.clone(),account.subject.clone(),account.subject.clone()]).await?;
+        let normal = capacity::normal_accounts(&self.0.db).await?;
+        let rows=self.0.db.query::<HouseholdRow>("SELECT h.id,h.scope_sub,h.name,h.status,h.revision,h.erase_due_at,h.erasure_delayed FROM households h WHERE EXISTS(SELECT 1 FROM household_heads m WHERE m.household_id=h.id AND m.subject=? AND m.active=1) OR EXISTS(SELECT 1 FROM household_allocations x WHERE x.household_id=h.id AND x.subject=?) OR EXISTS(SELECT 1 FROM household_releases x WHERE x.household_id=h.id AND x.subject=?) OR EXISTS(SELECT 1 FROM household_lifecycle l WHERE l.household_id=h.id AND l.actor_sub=?) ORDER BY h.id", &[account.subject.clone(),account.subject.clone(),account.subject.clone(),account.subject.clone()]).await?;
         let mut households = Vec::new();
         for h in rows {
-            households.push(self.summary(&h, &account.subject).await?);
+            households.push(self.summary(&h, &account.subject, normal).await?);
+        }
+        if normal {
+            return Ok(AccountOverview {
+                identity: identity(account.public_id.clone(), account.display_name.clone()).into(),
+                households,
+                normal_accounts: true,
+                ..Default::default()
+            });
         }
         let limits = capacity::structural_limits(&self.0.db).await?;
         let mut personal_usage = capacity::usage(&self.0.db, &account.subject).await?;
@@ -165,6 +179,7 @@ impl Households {
     }
     async fn details(&self, id: &str, subject: &str) -> Result<HouseholdDetails, ConnectError> {
         let h = self.require_head(id, subject).await?;
+        let normal = capacity::normal_accounts(&self.0.db).await?;
         let rows=self.0.db.query::<HeadRow>("SELECT a.subject,a.public_id,a.display_name,m.ceilings_json FROM household_heads m JOIN pilot_accounts a ON a.subject=m.subject WHERE m.household_id=? AND m.active=1 ORDER BY a.public_id", &[id.into()]).await?;
         let mut heads = Vec::new();
         for row in rows {
@@ -207,12 +222,24 @@ impl Households {
             id: i.id, recipient: identity(i.public_id, i.display_name).into(),
             status: i.status, expires_at: i.expires_at, ..Default::default()
         }).collect();
+        if normal {
+            for head in &mut heads {
+                head.ceilings = Default::default();
+            }
+            return Ok(HouseholdDetails {
+                pending_content_erasure: self.pending_content_erasure(id).await?.into(),
+                household: self.summary(&h, subject, normal).await?.into(),
+                heads,
+                closure_erase_due_at: self.closure_cutoff().await?,
+                ..Default::default()
+            });
+        }
         let pending_content_erasure = self.pending_content_erasure(id).await?;
         Ok(HouseholdDetails {
             pending_content_erasure: pending_content_erasure.into(),
             invitations,
             closure_erase_due_at: self.closure_cutoff().await?,
-            household: self.summary(&h, subject).await?.into(),
+            household: self.summary(&h, subject, normal).await?.into(),
             capacity: capacity::household_capacity(&self.0.db, id).await?.into(),
             usage: capacity::usage(&self.0.db, &h.scope_sub).await?.into(),
             heads,
@@ -260,6 +287,21 @@ impl Households {
                 ..Default::default()
             });
         }
+        if capacity::normal_accounts(&self.0.db).await?
+            && matches!(
+                r.action.as_known(),
+                Some(
+                    HouseholdAction::Allocate
+                        | HouseholdAction::SetOwnCeilings
+                        | HouseholdAction::Invite
+                        | HouseholdAction::AcceptInvitation
+                )
+            )
+        {
+            return Err(ConnectError::failed_precondition(
+                "Use emailed invitations and normal household management. Allocation and individual ceiling controls are retired.",
+            ));
+        }
         if r.action.as_known() == Some(HouseholdAction::EraseContent) {
             return self.erase_content(account, &r, &fingerprint).await;
         }
@@ -268,6 +310,11 @@ impl Households {
             self.protect_closure(&account.subject, &r.operation_id)
                 .await?;
             return Ok(result);
+        }
+        if capacity::normal_accounts(&self.0.db).await? {
+            return self
+                .create_without_allocation(account, &r, &fingerprint)
+                .await;
         }
         let name = r.name.trim();
         if name.is_empty()
@@ -424,7 +471,9 @@ impl HouseholdService for Households {
     ) -> ServiceResult<HouseholdMutationResult> {
         let session = self.0.authorize_rpc(&ctx).await?;
         let a = capacity::account(&self.0.db, &session.user_sub).await?;
-        Response::ok(self.change(&a, r.to_owned_message()).await?)
+        let result = self.change(&a, r.to_owned_message()).await?;
+        crate::security::protect(&self.0).await?;
+        Response::ok(result)
     }
     async fn preview_allocation(
         &self,

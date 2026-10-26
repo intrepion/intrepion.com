@@ -157,23 +157,32 @@ impl Lists {
         })
     }
     async fn prepared_preview(&self, p: &PreparedCopy) -> Result<CopyPreview, ConnectError> {
+        let normal = capacity::normal_accounts(&self.0.db).await?;
         let usage = capacity::usage(&self.0.db, &self.owner()).await?;
         let capacity =
             capacity::household_capacity(&self.0.db, self.owner().trim_start_matches("household:"))
                 .await?;
         let mut result = CopyPreview {
             allowed: true,
-            required: p.required.clone().into(),
-            destination_usage: usage.clone().into(),
-            destination_capacity: capacity.clone().into(),
             ..Default::default()
         };
+        if !normal {
+            result.required = p.required.clone().into();
+            result.destination_usage = usage.clone().into();
+            result.destination_capacity = capacity.clone().into();
+        }
+        let blocked = "Your copy was not saved. Please try again later or contact support.";
         let limits = capacity::structural_limits(&self.0.db).await?;
         if p.copied.items.len() as u64 > limits.max_items_per_collection
             || p.copied.sections.len() as u64 > limits.max_sections_per_collection
         {
             result.allowed = false;
-            result.reason = "The source exceeds a per-collection structural cap.".into();
+            result.reason = if normal {
+                blocked
+            } else {
+                "The source exceeds a per-collection structural cap."
+            }
+            .into();
             return Ok(result);
         }
         for (index, key) in capacity::RESOURCES.iter().enumerate() {
@@ -182,11 +191,18 @@ impl Lists {
                 .is_none_or(|new| new > capacity.values()[index])
             {
                 result.allowed = false;
-                result.reason = format!(
-                    "This complete copy would exceed the destination's {key} allowance. Trash and History remain counted."
-                );
+                result.reason = if normal {
+                    blocked.into()
+                } else {
+                    format!(
+                        "This complete copy would exceed the destination's {key} allowance. Trash and History remain counted."
+                    )
+                };
                 return Ok(result);
             }
+        }
+        if normal {
+            return Ok(result);
         }
         #[derive(Deserialize)]
         struct Ceilings {

@@ -45,6 +45,7 @@ impl Households {
                     target_id: String::new(),
                     erase_due_at: Some(pending.erase_due_at),
                     collection_ids: None,
+                    security: None,
                 }
                 .namespaced(&format!("household:{}", pending.household_id)),
             )
@@ -98,6 +99,7 @@ impl Households {
             target_id: String::new(),
             erase_due_at: Some(h.erase_due_at),
             collection_ids: None,
+            security: None,
         }
         .namespaced(&h.scope_sub);
         let ledger = self.0.erasure_ledger.as_ref().ok_or_else(closure_pending)?;
@@ -132,6 +134,12 @@ impl Households {
                 &format!("DELETE FROM {table} WHERE owner_sub=?"),
                 vec![h.scope_sub.clone()],
             ));
+        }
+        for sql in include_str!("../../household-email-erasure.sql")
+            .split(';')
+            .filter(|sql| !sql.trim().is_empty())
+        {
+            statements.push(Statement::new(sql, vec![h.id.clone()]));
         }
         for table in [
             "household_invitations",
@@ -221,6 +229,8 @@ impl HouseholdMaintenanceService for Maintenance {
                 "Operator automation authentication required.",
             ));
         }
+        crate::retention::prune(&self.0).await?;
+        crate::security::protect(&self.0).await?;
         Response::ok(Households(self.0.clone()).maintain(r.household_id).await?)
     }
 }

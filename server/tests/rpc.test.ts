@@ -1,3 +1,11 @@
+import { createSign, createPrivateKey } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { EmailOperationsService } from "../../web/src/gen/life/v1/accounts_pb.js";
+import {
+  EmailInvitationService,
+  EmailInvitationAction,
+} from "../../web/src/gen/life/v1/accounts_pb.js";
+import { AccountAdminService } from "../../web/src/gen/life/v1/accounts_pb.js";
 import { PilotOperatorService } from "../../web/src/gen/life/v1/operator_pb.js";
 import assert from "node:assert/strict";
 import test, { before, after } from "node:test";
@@ -3351,4 +3359,1776 @@ test("maintenance freezes customer writes and retention while operator bootstrap
   } finally {
     await stop(instance);
   }
+});
+
+test("site owner can review account and household usage metadata without private content; other accounts cannot", async () => {
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const owner = await login();
+  const other = await login("development-second");
+  await client.createTask(
+    {
+      id: crypto.randomUUID(),
+      title: "Admin cannot read my private title",
+      notes: "Private metadata boundary sentinel",
+    },
+    other,
+  );
+  const overview = await admin.getOverview({}, owner);
+  assert.ok(overview.accounts.length >= 2);
+  assert.ok(
+    overview.accounts.every((account) => account.id && account.personalUsage),
+  );
+  assert.equal(overview.providerUsageStatus, "unavailable");
+  const firstPage = await admin.getOverview({ pageSize: 1 }, owner);
+  assert.equal(firstPage.accounts.length, 1);
+  assert.equal(firstPage.nextAccount, firstPage.accounts[0].id);
+  assert.equal(firstPage.accountCount, BigInt(overview.accounts.length));
+  assert.equal(firstPage.logicalBytes, overview.logicalBytes);
+  const secondPage = await admin.getOverview(
+    { pageSize: 1, afterAccount: firstPage.nextAccount },
+    owner,
+  );
+  assert.equal(secondPage.accounts.length, 1);
+  assert.notEqual(secondPage.accounts[0].id, firstPage.accounts[0].id);
+  await assert.rejects(admin.getOverview({ pageSize: 101 }, owner));
+  assert.equal(
+    JSON.stringify(overview, (_, value: unknown) =>
+      typeof value === "bigint" ? value.toString() : value,
+    ).includes("Admin cannot read my private title"),
+    false,
+  );
+  await assert.rejects(
+    admin.getOverview({}, other),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.PermissionDenied,
+  );
+  await assert.rejects(
+    admin.getOverview({}),
+    (error: unknown) =>
+      error instanceof ConnectError && error.code === Code.Unauthenticated,
+  );
+});
+
+test("reviewed site safety policy replaces reserved contributions and head ceilings without deleting retained content", async () => {
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const owner = await login();
+  const other = await login("development-second");
+  const before = await admin.getPolicy({}, owner);
+  // Generous disposable migration-fixture budgets cover retained legacy test
+  // data. Specific exhaustion regressions lower only their tested boundary.
+  const hard = {
+    items: 1000000n,
+    shopping: 10000n,
+    templates: 10000n,
+    runs: 10000n,
+    bytes: 1073741824n,
+    households: 1000n,
+  };
+  const soft = {
+    items: 800000n,
+    shopping: 8000n,
+    templates: 8000n,
+    runs: 8000n,
+    bytes: 800000000n,
+    households: 800n,
+  };
+  const policy = {
+    enabled: true,
+    personalHard: hard,
+    personalSoft: soft,
+    householdHard: hard,
+    householdSoft: soft,
+    maxItemsPerCollection: 30n,
+    maxSectionsPerCollection: 10n,
+  };
+  const change = {
+    operationId: crypto.randomUUID(),
+    expectedRevision: before.revision,
+    policy,
+    confirmed: true,
+  };
+  const review = await admin.previewPolicy(change, owner);
+  assert.ok(review.effect.includes("preserved"));
+  await assert.rejects(
+    admin.applyPolicy(change, owner),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.FailedPrecondition,
+  );
+  await assert.rejects(
+    admin.applyPolicy({ ...change, previewToken: review.previewToken }, other),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.PermissionDenied,
+  );
+  const applied = await admin.applyPolicy(
+    { ...change, previewToken: review.previewToken },
+    owner,
+  );
+  assert.equal(applied.enabled, true);
+  assert.equal(applied.revision, before.revision + 1n);
+  const currentAccounts = (await admin.getOverview({}, owner)).accounts;
+  const initialJournal = (await (
+    await fetch("http://127.0.0.1:8792/records", {
+      headers: { authorization: "Bearer local-erasure-only" },
+    })
+  ).json()) as {
+    records: {
+      scope: string;
+      security?: { public_id: string; active: boolean };
+    }[];
+  };
+  assert.ok(
+    currentAccounts.every((account) =>
+      initialJournal.records.some(
+        (r) =>
+          r.scope === "account_access" &&
+          r.security?.public_id === account.id &&
+          r.security.active === !account.suspended,
+      ),
+    ),
+  );
+  assert.equal(
+    (
+      await admin.applyPolicy(
+        { ...change, previewToken: review.previewToken },
+        owner,
+      )
+    ).revision,
+    applied.revision,
+  );
+  const id = crypto.randomUUID();
+  const created = await households.changeHousehold(
+    {
+      action: HouseholdAction.CREATE,
+      householdId: id,
+      operationId: crypto.randomUUID(),
+      name: "Name-only household",
+    },
+    owner,
+  );
+  assert.equal(created.householdId, id);
+  const detail = await households.getHousehold({ id }, owner);
+  assert.equal(detail.household?.name, "Name-only household");
+  const task = await client.createTask(
+    { id: crypto.randomUUID(), title: "Shared after safety migration" },
+    { headers: { ...owner.headers, "x-space-id": id } },
+  );
+  assert.equal(task.title, "Shared after safety migration");
+  assert.ok(
+    (await households.listHouseholdActivity({ householdId: id }, owner)).entries
+      .length,
+  );
+  const overview = await households.getOverview({}, owner);
+  assert.equal(overview.normalAccounts, true);
+  assert.equal(overview.personalCapacity, undefined);
+  assert.equal(detail.contributions.length, 0);
+  assert.equal(detail.heads[0]?.ceilings, undefined);
+});
+
+test("normal-account safety rejection is generic and concurrent increases preserve the winning saved task", async () => {
+  const owner = await login();
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const policy = await admin.getPolicy({}, owner);
+  const change = {
+    operationId: crypto.randomUUID(),
+    expectedRevision: policy.revision,
+    policy: {
+      ...policy,
+      householdHard: { ...policy.householdHard!, items: 1n },
+      householdSoft: { ...policy.householdSoft!, items: 1n },
+    },
+    confirmed: true,
+  };
+  const review = await admin.previewPolicy(change, owner);
+  await admin.applyPolicy(
+    { ...change, previewToken: review.previewToken },
+    owner,
+  );
+  const id = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      action: HouseholdAction.CREATE,
+      householdId: id,
+      operationId: crypto.randomUUID(),
+      name: "Concurrent safety",
+    },
+    owner,
+  );
+  const shared = { headers: { ...owner.headers, "x-space-id": id } };
+  const results = await Promise.allSettled([
+    client.createTask(
+      { id: crypto.randomUUID(), title: "First contender" },
+      shared,
+    ),
+    client.createTask(
+      { id: crypto.randomUUID(), title: "Second contender" },
+      shared,
+    ),
+  ]);
+  assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+  const failed = results.find(
+    (r) => r.status === "rejected",
+  ) as PromiseRejectedResult;
+  assert.equal((failed.reason as ConnectError).code, Code.ResourceExhausted);
+  assert.equal(
+    (failed.reason as ConnectError).rawMessage,
+    "Your change was not saved. Please try again later or contact support.",
+  );
+  const saved = (await client.listTasks({}, shared)).tasks;
+  assert.equal(saved.length, 1);
+  const winning = results.find(
+    (r) => r.status === "fulfilled",
+  ) as PromiseFulfilledResult<(typeof saved)[number]>;
+  assert.equal(saved[0]!.id, winning.value.id);
+});
+
+test("emailed invitations expose delivery metadata without secrets and pause prevents invitation growth", async () => {
+  const owner = await login();
+  const other = await login("development-second");
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const invitations = createClient(
+    EmailInvitationService,
+    createConnectTransport({ baseUrl }),
+  );
+  const initial = await admin.getGrowth({}, owner);
+  assert.equal(initial.paused, true);
+  const id = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      action: HouseholdAction.CREATE,
+      householdId: id,
+      operationId: crypto.randomUUID(),
+      name: "Email invitation household",
+    },
+    owner,
+  );
+  const change = {
+    operationId: crypto.randomUUID(),
+    householdId: id,
+    recipientEmail: "morgan@example.invalid",
+    action: EmailInvitationAction.CREATE,
+    confirmed: true,
+  };
+  await assert.rejects(
+    invitations.changeInvitation(change, owner),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.FailedPrecondition,
+  );
+  await admin.changeGrowth(
+    {
+      operationId: crypto.randomUUID(),
+      expectedRevision: initial.revision,
+      paused: false,
+      confirmed: true,
+    },
+    owner,
+  );
+  const sent = await invitations.changeInvitation(change, owner);
+  assert.equal(sent.recipientEmail, "morgan@example.invalid");
+  assert.equal(sent.deliveryStatus, "queued");
+  assert.equal((await invitations.changeInvitation(change, owner)).id, sent.id);
+  assert.equal(
+    (await invitations.listInvitations({ id }, owner)).invitations.length,
+    1,
+  );
+  await assert.rejects(
+    invitations.listInvitations({ id }, other),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.PermissionDenied,
+  );
+  assert.equal(
+    Object.keys(sent).some((k) => /token|secret|link/i.test(k)),
+    false,
+  );
+  const replacement = await invitations.changeInvitation(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      invitationId: sent.id,
+      expectedRevision: sent.revision,
+      action: EmailInvitationAction.REPLACE,
+      confirmed: true,
+    },
+    owner,
+  );
+  assert.equal(replacement.revision, sent.revision + 1n);
+  const revoked = await invitations.changeInvitation(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      invitationId: sent.id,
+      expectedRevision: replacement.revision,
+      action: EmailInvitationAction.REVOKE,
+      confirmed: true,
+    },
+    owner,
+  );
+  assert.equal(revoked.status, "revoked");
+});
+
+test("private email operations deliver the recipient link and count attempts without exposing it to heads", async () => {
+  const owner = await login();
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const invitations = createClient(
+    EmailInvitationService,
+    createConnectTransport({ baseUrl }),
+  );
+  const mail = createClient(
+    EmailOperationsService,
+    createConnectTransport({ baseUrl }),
+  );
+  const growth = await admin.getGrowth({}, owner);
+  if (growth.paused)
+    await admin.changeGrowth(
+      {
+        operationId: crypto.randomUUID(),
+        expectedRevision: growth.revision,
+        paused: false,
+        confirmed: true,
+      },
+      owner,
+    );
+  const id = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      action: HouseholdAction.CREATE,
+      householdId: id,
+      operationId: crypto.randomUUID(),
+      name: "Dinner <script>alert(1)</script>",
+    },
+    owner,
+  );
+  const invitation = await invitations.changeInvitation(
+    {
+      action: EmailInvitationAction.CREATE,
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      recipientEmail: "delivery@example.invalid",
+      confirmed: true,
+    },
+    owner,
+  );
+  await assert.rejects(
+    mail.processQueue({}, owner),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.PermissionDenied,
+  );
+  const result = await mail.processQueue(
+    {},
+    { headers: { authorization: `Bearer ${"ef".repeat(32)}` } },
+  );
+  assert.ok(result.attempted >= 1n);
+  assert.ok(result.monthlyAttempts >= 1n);
+  const inboxResponse = await fetch("http://127.0.0.1:8793/messages", {
+    headers: { authorization: "Bearer local-email-only" },
+  });
+  assert.equal(inboxResponse.status, 200);
+  const inbox = (await inboxResponse.json()) as {
+    messages: { recipient: string; text: string; html?: string }[];
+  };
+  const received = inbox.messages.find(
+    (m) => m.recipient === "delivery@example.invalid",
+  );
+  assert.ok(received);
+  assert.equal(typeof received.html, "string");
+  assert.match(
+    received.html ?? "",
+    /Dinner &lt;script&gt;alert\(1\)&lt;\/script&gt;/,
+  );
+  assert.equal((received.html ?? "").includes("<script>"), false);
+  assert.match(received.html ?? "", /Review invitation/);
+  const token = received.text.match(/#invite=([a-f0-9]{64})/)?.[1];
+  assert.ok(token);
+  assert.equal(
+    JSON.stringify(
+      await invitations.listInvitations({ id }, owner),
+      (_, v: unknown) => (typeof v === "bigint" ? v.toString() : v),
+    ).includes(token),
+    false,
+  );
+  const current = (
+    await invitations.listInvitations({ id }, owner)
+  ).invitations.find((i) => i.id === invitation.id)!;
+  assert.equal(current.deliveryStatus, "submitted");
+});
+
+async function invitationLogin(token: string, subject: string, email: string) {
+  const challenge = await fetch(`${baseUrl}/auth/challenge`, {
+    method: "POST",
+    headers: { origin },
+  });
+  assert.equal(challenge.status, 200);
+  const { nonce } = (await challenge.json()) as { nonce: string };
+  const response = await fetch(`${baseUrl}/auth/development`, {
+    method: "POST",
+    headers: {
+      origin,
+      "content-type": "application/json",
+      cookie: challenge.headers
+        .getSetCookie()
+        .map((v) => v.split(";")[0])
+        .join("; "),
+    },
+    body: JSON.stringify({
+      nonce,
+      credential: subject,
+      invitation_token: token,
+      development_email: email,
+      development_name: "Prefilled Google name",
+    }),
+  });
+  return response;
+}
+
+test("Google invitation onboarding creates an isolated normal account only on explicit once-only acceptance", async () => {
+  const owner = await login();
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const invitations = createClient(
+    EmailInvitationService,
+    createConnectTransport({ baseUrl }),
+  );
+  const mail = createClient(
+    EmailOperationsService,
+    createConnectTransport({ baseUrl }),
+  );
+  const growth = await admin.getGrowth({}, owner);
+  if (growth.paused)
+    await admin.changeGrowth(
+      {
+        operationId: crypto.randomUUID(),
+        expectedRevision: growth.revision,
+        paused: false,
+        confirmed: true,
+      },
+      owner,
+    );
+  const id = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      action: HouseholdAction.CREATE,
+      householdId: id,
+      operationId: crypto.randomUUID(),
+      name: "Family onboarding household",
+    },
+    owner,
+  );
+  await client.createTask(
+    { id: crypto.randomUUID(), title: "Retained shared task" },
+    { headers: { ...owner.headers, "x-space-id": id } },
+  );
+  await invitations.changeInvitation(
+    {
+      action: EmailInvitationAction.CREATE,
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      recipientEmail: "family@example.invalid",
+      confirmed: true,
+    },
+    owner,
+  );
+  await mail.processQueue(
+    {},
+    { headers: { authorization: `Bearer ${"ef".repeat(32)}` } },
+  );
+  const response = await fetch("http://127.0.0.1:8793/messages", {
+    headers: { authorization: "Bearer local-email-only" },
+  });
+  const inbox = (await response.json()) as {
+    messages: { recipient: string; text: string }[];
+  };
+  const token = inbox.messages
+    .find((m) => m.recipient === "family@example.invalid")
+    ?.text.match(/#invite=([a-f0-9]{64})/)?.[1];
+  assert.ok(token);
+  const before = (await admin.getOverview({}, owner)).accounts.length;
+  await assert.rejects(
+    invitations.getOnboarding({}),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.Unauthenticated,
+  );
+  const wrong = await invitationLogin(
+    token,
+    "development-wrong-family",
+    "wrong@example.invalid",
+  );
+  assert.equal(wrong.status, 403);
+  assert.equal((await wrong.text()).includes("family@example.invalid"), false);
+  const unavailableLink = await invitationLogin(
+    "ab".repeat(32),
+    "development-family",
+    "family@example.invalid",
+  );
+  assert.equal(unavailableLink.status, 410);
+  assert.equal(
+    (await unavailableLink.text()).includes("Family onboarding household"),
+    false,
+  );
+  const verified = await invitationLogin(
+    token,
+    "development-family",
+    "family@example.invalid",
+  );
+  assert.equal(verified.status, 200);
+  const context = (await verified.json()) as {
+    csrf: string;
+    onboarding: boolean;
+  };
+  assert.equal(context.onboarding, true);
+  const onboarding = {
+    headers: {
+      origin,
+      "x-csrf-token": context.csrf,
+      cookie: verified.headers
+        .getSetCookie()
+        .map((v) => v.split(";")[0])
+        .join("; "),
+    },
+  };
+  const preview = await invitations.getOnboarding({}, onboarding);
+  assert.equal(preview.householdName, "Family onboarding household");
+  assert.equal(preview.existingAccount, false);
+  assert.equal(preview.displayName, "Prefilled Google name");
+  assert.equal((await admin.getOverview({}, owner)).accounts.length, before);
+  await assert.rejects(
+    client.listTasks({}, onboarding),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.Unauthenticated,
+  );
+  const request = {
+    operationId: crypto.randomUUID(),
+    displayName: "Family head",
+    confirmed: true,
+  };
+  const beforeMembership = (await households.getHousehold({ id }, owner))
+    .household!.revision;
+  let cookies = "";
+  const accepted = await invitations.acceptInvitation(request, {
+    ...onboarding,
+    onHeader: (headers) => {
+      cookies = headers
+        .getSetCookie()
+        .map((v) => v.split(";")[0])
+        .join("; ");
+    },
+  });
+  assert.equal(accepted.displayName, "Family head");
+  assert.equal(accepted.householdId, id);
+  const family = {
+    headers: { origin, "x-csrf-token": accepted.csrf, cookie: cookies },
+  };
+  assert.equal((await client.listTasks({}, family)).tasks.length, 0);
+  assert.equal(
+    (
+      await client.listTasks(
+        {},
+        { headers: { ...family.headers, "x-space-id": id } },
+      )
+    ).tasks.length,
+    1,
+  );
+  const repeated = await invitations.acceptInvitation(request, onboarding);
+  assert.equal(repeated.householdId, id);
+  // Simulate losing the accepted response and its normal-session cookie, then
+  // reloading with only the previously verified onboarding cookie.
+  let recoveredCookie = "";
+  const recovered = await invitations.getOnboarding(
+    {},
+    {
+      ...onboarding,
+      onHeader: (headers) => {
+        recoveredCookie = headers
+          .getSetCookie()
+          .map((v) => v.split(";")[0])
+          .join("; ");
+      },
+    },
+  );
+  assert.equal(recovered.status, "accepted");
+  assert.match(recoveredCookie, /local_session=/);
+  const recoveredSession = await fetch(`${baseUrl}/auth/session`, {
+    headers: { cookie: recoveredCookie },
+  });
+  assert.equal(recoveredSession.status, 200);
+  assert.equal(
+    ((await recoveredSession.json()) as { onboarding?: boolean }).onboarding,
+    undefined,
+  );
+  assert.equal(
+    (await households.getHousehold({ id }, owner)).household!.revision,
+    beforeMembership + 1n,
+  );
+  assert.equal(
+    (await admin.getOverview({}, owner)).accounts.length,
+    before + 1,
+  );
+  assert.equal(
+    (await households.getHousehold({ id }, family)).heads.filter(
+      (h) => h.identity?.name === "Family head",
+    ).length,
+    1,
+  );
+  await assert.rejects(
+    admin.getOverview({}, family),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.PermissionDenied,
+  );
+});
+
+test("onboarding respects growth pause and replacement, and sign-out invalidates its private session", async () => {
+  const owner = await login();
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const invitations = createClient(
+    EmailInvitationService,
+    createConnectTransport({ baseUrl }),
+  );
+  const mail = createClient(
+    EmailOperationsService,
+    createConnectTransport({ baseUrl }),
+  );
+  let growth = await admin.getGrowth({}, owner);
+  if (growth.paused)
+    growth = await admin.changeGrowth(
+      {
+        operationId: crypto.randomUUID(),
+        expectedRevision: growth.revision,
+        paused: false,
+        confirmed: true,
+      },
+      owner,
+    );
+  const id = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      action: HouseholdAction.CREATE,
+      householdId: id,
+      operationId: crypto.randomUUID(),
+      name: "Invitation session recovery",
+    },
+    owner,
+  );
+  const pending = await invitations.changeInvitation(
+    {
+      action: EmailInvitationAction.CREATE,
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      recipientEmail: "session@example.invalid",
+      confirmed: true,
+    },
+    owner,
+  );
+  const ops = { headers: { authorization: `Bearer ${"ef".repeat(32)}` } };
+  await mail.processQueue({}, ops);
+  const readToken = async () => {
+    const response = await fetch("http://127.0.0.1:8793/messages", {
+      headers: { authorization: "Bearer local-email-only" },
+    });
+    const inbox = (await response.json()) as {
+      messages: { recipient: string; text: string }[];
+    };
+    const token = inbox.messages
+      .filter((m) => m.recipient === "session@example.invalid")
+      .at(-1)
+      ?.text.match(/#invite=([a-f0-9]{64})/)?.[1];
+    assert.ok(token);
+    return token;
+  };
+  const token = await readToken();
+  const response = await invitationLogin(
+    token,
+    "development-invitation-session",
+    "session@example.invalid",
+  );
+  assert.equal(response.status, 200);
+  const context = (await response.json()) as { csrf: string };
+  const onboarding = {
+    headers: {
+      origin,
+      "x-csrf-token": context.csrf,
+      cookie: response.headers
+        .getSetCookie()
+        .map((v) => v.split(";")[0])
+        .join("; "),
+    },
+  };
+  growth = await admin.changeGrowth(
+    {
+      operationId: crypto.randomUUID(),
+      expectedRevision: growth.revision,
+      paused: true,
+      confirmed: true,
+    },
+    owner,
+  );
+  assert.equal(
+    (await invitations.getOnboarding({}, onboarding)).growthPaused,
+    true,
+  );
+  const acceptance = {
+    operationId: crypto.randomUUID(),
+    displayName: "Session head",
+    confirmed: true,
+  };
+  await assert.rejects(
+    invitations.acceptInvitation(acceptance, onboarding),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.FailedPrecondition,
+  );
+  await admin.changeGrowth(
+    {
+      operationId: crypto.randomUUID(),
+      expectedRevision: growth.revision,
+      paused: false,
+      confirmed: true,
+    },
+    owner,
+  );
+  await invitations.changeInvitation(
+    {
+      action: EmailInvitationAction.REPLACE,
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      invitationId: pending.id,
+      expectedRevision: pending.revision,
+      confirmed: true,
+    },
+    owner,
+  );
+  await assert.rejects(
+    invitations.getOnboarding({}, onboarding),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.Unauthenticated,
+  );
+  const oldLogin = await invitationLogin(
+    token,
+    "development-invitation-session",
+    "session@example.invalid",
+  );
+  assert.equal(oldLogin.status, 410);
+  await mail.processQueue({}, ops);
+  const replacement = await readToken();
+  assert.notEqual(replacement, token);
+  const fresh = await invitationLogin(
+    replacement,
+    "development-invitation-session",
+    "session@example.invalid",
+  );
+  assert.equal(fresh.status, 200);
+  const freshContext = (await fresh.json()) as { csrf: string };
+  const freshHeaders = {
+    origin,
+    "x-csrf-token": freshContext.csrf,
+    cookie: fresh.headers
+      .getSetCookie()
+      .map((v) => v.split(";")[0])
+      .join("; "),
+  };
+  const signedOut = await fetch(`${baseUrl}/auth/logout`, {
+    method: "POST",
+    headers: freshHeaders,
+  });
+  assert.equal(signedOut.status, 204);
+  await assert.rejects(
+    invitations.acceptInvitation(acceptance, { headers: freshHeaders }),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.Unauthenticated,
+  );
+});
+
+test("site account suspension and restoration preserve data, end old sessions and publish independent pseudonymous protection", async () => {
+  const owner = await login();
+  const other = await login("development-second");
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const otherId = (await households.getOverview({}, other)).identity!.id;
+  const ownerId = (await households.getOverview({}, owner)).identity!.id;
+  const before = (await client.listTasks({}, other)).tasks
+    .map((t) => t.id)
+    .sort();
+  const metadata = (await admin.getOverview({}, owner)).accounts.find(
+    (a) => a.id === otherId,
+  )!;
+  const priorJournal = (await (
+    await fetch("http://127.0.0.1:8792/records", {
+      headers: { authorization: "Bearer local-erasure-only" },
+    })
+  ).json()) as {
+    records: { scope: string; security?: { public_id: string } }[];
+  };
+  const priorChanges = priorJournal.records.filter(
+    (r) => r.scope === "account_access" && r.security?.public_id === otherId,
+  ).length;
+  const change = {
+    operationId: crypto.randomUUID(),
+    accountId: otherId,
+    expectedRevision: metadata.accessRevision,
+    suspended: true,
+    confirmed: true,
+  };
+  await assert.rejects(
+    admin.setAccountAccess(change, other),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.PermissionDenied,
+  );
+  await assert.rejects(
+    admin.setAccountAccess(
+      { ...change, operationId: crypto.randomUUID(), accountId: ownerId },
+      owner,
+    ),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.PermissionDenied,
+  );
+  const suspended = await admin.setAccountAccess(change, owner);
+  assert.equal(suspended.suspended, true);
+  assert.equal(suspended.accessRevision, metadata.accessRevision + 1n);
+  assert.equal(suspended.protectionPending, false);
+  assert.equal(
+    (await admin.setAccountAccess(change, owner)).accessRevision,
+    suspended.accessRevision,
+  );
+  await assert.rejects(
+    client.listTasks({}, other),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.Unauthenticated,
+  );
+  const restored = await admin.setAccountAccess(
+    {
+      operationId: crypto.randomUUID(),
+      accountId: otherId,
+      expectedRevision: suspended.accessRevision,
+      suspended: false,
+      confirmed: true,
+    },
+    owner,
+  );
+  assert.equal(restored.suspended, false);
+  const audit = await admin.listAudit({}, owner);
+  assert.equal(
+    audit.entries.filter((entry) => entry.operationId === change.operationId)
+      .length,
+    1,
+  );
+  const event = audit.entries.find(
+    (entry) => entry.operationId === change.operationId,
+  )!;
+  assert.equal(event.actorId, ownerId);
+  assert.ok(event.actorName);
+  assert.ok(event.action.includes("Suspended account"));
+  assert.equal(
+    JSON.stringify(audit, (_, v: unknown) =>
+      typeof v === "bigint" ? v.toString() : v,
+    ).includes("development-owner"),
+    false,
+  );
+  await assert.rejects(
+    admin.listAudit({}, await login("development-second")),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.PermissionDenied,
+  );
+  await assert.rejects(
+    client.listTasks({}, other),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.Unauthenticated,
+  );
+  const fresh = await login("development-second");
+  assert.deepEqual(
+    (await client.listTasks({}, fresh)).tasks.map((t) => t.id).sort(),
+    before,
+  );
+  const ledgerResponse = await fetch("http://127.0.0.1:8792/records", {
+    headers: { authorization: "Bearer local-erasure-only" },
+  });
+  assert.equal(ledgerResponse.status, 200);
+  const ledger = (await ledgerResponse.json()) as {
+    records: {
+      version: number;
+      scope: string;
+      security?: { public_id: string; subject_hash: string; active: boolean };
+    }[];
+  };
+  const changes = ledger.records.filter(
+    (r) =>
+      r.version === 4 &&
+      r.scope === "account_access" &&
+      r.security?.public_id === otherId,
+  );
+  assert.equal(changes.length, priorChanges + 2);
+  assert.ok(
+    changes.slice(priorChanges).some((r) => r.security?.active === false),
+  );
+  assert.ok(
+    changes.slice(priorChanges).some((r) => r.security?.active === true),
+  );
+  assert.ok(
+    changes.every((r) => /^[a-f0-9]{64}$/.test(r.security!.subject_hash)),
+  );
+  assert.equal(JSON.stringify(changes).includes("development-second"), false);
+});
+
+async function signedFeedback(
+  message: unknown,
+  overrides: Record<string, string> = {},
+) {
+  const envelope: Record<string, string> = {
+    Type: "Notification",
+    MessageId: crypto.randomUUID(),
+    TopicArn: "arn:aws:sns:us-west-2:000000000000:local-email-feedback",
+    Message: JSON.stringify(message),
+    Timestamp: new Date().toISOString(),
+    SignatureVersion: "2",
+    SigningCertURL: "http://127.0.0.1:8793/SimpleNotificationService-local.pem",
+    Subject: "SES delivery feedback",
+    ...overrides,
+  };
+  const names =
+    envelope.Type === "Notification"
+      ? [
+          "Message",
+          "MessageId",
+          ...(envelope.Subject ? ["Subject"] : []),
+          "Timestamp",
+          "TopicArn",
+          "Type",
+        ]
+      : [
+          "Message",
+          "MessageId",
+          "SubscribeURL",
+          "Timestamp",
+          "Token",
+          "TopicArn",
+          "Type",
+        ];
+  const canonical = names
+    .map((name) => `${name}\n${envelope[name]}\n`)
+    .join("");
+  const key = createPrivateKey({
+    key: await readFile("server/tests/fixtures/signing-key.der"),
+    format: "der",
+    type: "pkcs1",
+  });
+  envelope.Signature = createSign("RSA-SHA256")
+    .update(canonical)
+    .sign(key, "base64");
+  return envelope;
+}
+
+test("signed SES feedback rejects forgeries and applies hard-bounce suppression once through the real HTTP boundary", async () => {
+  const owner = await login();
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const invitations = createClient(
+    EmailInvitationService,
+    createConnectTransport({ baseUrl }),
+  );
+  const mail = createClient(
+    EmailOperationsService,
+    createConnectTransport({ baseUrl }),
+  );
+  const growth = await admin.getGrowth({}, owner);
+  if (growth.paused)
+    await admin.changeGrowth(
+      {
+        operationId: crypto.randomUUID(),
+        expectedRevision: growth.revision,
+        paused: false,
+        confirmed: true,
+      },
+      owner,
+    );
+  const id = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      action: HouseholdAction.CREATE,
+      householdId: id,
+      operationId: crypto.randomUUID(),
+      name: "Feedback household",
+    },
+    owner,
+  );
+  const invitation = await invitations.changeInvitation(
+    {
+      action: EmailInvitationAction.CREATE,
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      recipientEmail: "bounce@example.invalid",
+      confirmed: true,
+    },
+    owner,
+  );
+  const ops = { headers: { authorization: `Bearer ${"ef".repeat(32)}` } };
+  await mail.processQueue({}, ops);
+  const inboxResponse = await fetch("http://127.0.0.1:8793/messages", {
+    headers: { authorization: "Bearer local-email-only" },
+  });
+  const inbox = (await inboxResponse.json()) as {
+    messages: {
+      id: string;
+      recipient: string;
+      tags: { Name: string; Value: string }[];
+    }[];
+  };
+  const received = inbox.messages.find(
+    (m) => m.recipient === "bounce@example.invalid",
+  )!;
+  assert.ok(received);
+  const event = {
+    eventType: "Bounce",
+    mail: {
+      messageId: received.id,
+      destination: [received.recipient],
+      tags: Object.fromEntries(received.tags.map((t) => [t.Name, [t.Value]])),
+    },
+    bounce: {
+      bounceType: "Permanent",
+      bouncedRecipients: [{ emailAddress: received.recipient }],
+    },
+  };
+  const envelope = await signedFeedback(event);
+  const post = (body: unknown) =>
+    fetch(`${baseUrl}/email/feedback`, {
+      method: "POST",
+      headers: { "content-type": "text/plain; charset=UTF-8" },
+      body: JSON.stringify(body),
+    });
+  assert.equal((await post({ ...envelope, Signature: "AA==" })).status, 403);
+  assert.equal(
+    (
+      await post(
+        await signedFeedback(event, {
+          TopicArn: "arn:aws:sns:us-west-2:000000000000:wrong-topic",
+        }),
+      )
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await post(
+        await signedFeedback(event, {
+          SigningCertURL: "http://169.254.169.254/latest/meta-data/",
+        }),
+      )
+    ).status,
+    403,
+  );
+  assert.equal((await post(envelope)).status, 204);
+  assert.equal((await post(envelope)).status, 204);
+  const status = await admin.getEmailOperations({}, owner);
+  const block = status.suppressions.find(
+    (s) => s.recipientEmail === received.recipient,
+  )!;
+  assert.equal(block.reason, "hard_bounce");
+  assert.equal(block.revision, 1n);
+  const visible = (
+    await invitations.listInvitations({ id }, owner)
+  ).invitations.find((i) => i.id === invitation.id)!;
+  assert.equal(visible.deliveryStatus, "failed");
+  assert.equal(
+    JSON.stringify(visible, (_, v: unknown) =>
+      typeof v === "bigint" ? v.toString() : v,
+    ).includes("hard_bounce"),
+    false,
+  );
+  await invitations.changeInvitation(
+    {
+      action: EmailInvitationAction.REPLACE,
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      invitationId: invitation.id,
+      expectedRevision: visible.revision,
+      confirmed: true,
+    },
+    owner,
+  );
+  assert.equal((await mail.processQueue({}, ops)).attempted, 0n);
+  const clear = {
+    operationId: crypto.randomUUID(),
+    recipientEmail: received.recipient,
+    expectedRevision: block.revision,
+    confirmed: true,
+  };
+  await assert.rejects(
+    admin.clearEmailSuppression(clear, await login("development-second")),
+  );
+  await assert.rejects(
+    admin.clearEmailSuppression({ ...clear, confirmed: false }, owner),
+  );
+  await assert.rejects(
+    admin.clearEmailSuppression({ ...clear, expectedRevision: 0n }, owner),
+  );
+  await admin.clearEmailSuppression(clear, owner);
+  await admin.clearEmailSuppression(clear, owner);
+  assert.equal(
+    (await admin.getEmailOperations({}, owner)).suppressions.some(
+      (s) => s.recipientEmail === received.recipient,
+    ),
+    false,
+  );
+  // The provider can retry a report after receipt/log retention. A new SNS ID
+  // with the same signed event timestamp must not undo the reviewed clear.
+  assert.equal(
+    (await post(await signedFeedback(event, { Timestamp: envelope.Timestamp })))
+      .status,
+    204,
+  );
+  assert.equal(
+    (await admin.getEmailOperations({}, owner)).suppressions.some(
+      (s) => s.recipientEmail === received.recipient,
+    ),
+    false,
+  );
+  assert.equal((await mail.processQueue({}, ops)).attempted, 1n);
+});
+
+test("normal household copies use independent space budgets without exposing retired head ceilings", async () => {
+  const owner = await login();
+  const householdId = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      action: HouseholdAction.CREATE,
+      name: "Normal independent copies",
+    },
+    owner,
+  );
+  const source = (
+    await lists.applyChange(
+      {
+        operationId: crypto.randomUUID(),
+        collectionId: crypto.randomUUID(),
+        action: ChangeAction.CREATE_COLLECTION,
+        details: {
+          kind: CollectionKind.SHOPPING,
+          title: "Personal groceries to copy",
+        },
+      },
+      owner,
+    )
+  ).collection!;
+  const request = {
+    operationId: crypto.randomUUID(),
+    sourceCollectionId: source.id,
+    expectedSourceRevision: source.revision,
+    householdId,
+    destinationCollectionId: crypto.randomUUID(),
+  };
+  const preview = await households.previewCopy(request, owner);
+  assert.equal(preview.allowed, true);
+  assert.equal(preview.required, undefined);
+  assert.equal(preview.destinationUsage, undefined);
+  assert.equal(preview.destinationCapacity, undefined);
+  const copied = (await households.copyCollection(request, owner)).collection!;
+  assert.equal(copied.title, source.title);
+  assert.equal(
+    (await households.copyCollection(request, owner)).collection!.id,
+    copied.id,
+  );
+  assert.equal(
+    (await lists.getCollection({ id: source.id }, owner)).title,
+    source.title,
+  );
+  await lists.applyChange(
+    changeRequest(source, ChangeAction.UPDATE_METADATA, {
+      details: { title: "Changed personal groceries" },
+    }),
+    owner,
+  );
+  assert.equal(
+    (
+      await lists.getCollection(
+        { id: copied.id },
+        { headers: { ...owner.headers, "x-space-id": householdId } },
+      )
+    ).title,
+    "Personal groceries to copy",
+  );
+});
+
+test("normal household closure remains visible and retains its household safety slot until erasure", async () => {
+  const owner = await login();
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const id = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      action: HouseholdAction.CREATE,
+      name: "Retained normal closure",
+    },
+    owner,
+  );
+  const ownerId = (await households.getOverview({}, owner)).identity!.id;
+  const beforeUsed = (await admin.getOverview({}, owner)).accounts.find(
+    (a) => a.id === ownerId,
+  )!.personalUsage!.households;
+  const detail = await households.getHousehold({ id }, owner);
+  const leave = {
+    operationId: crypto.randomUUID(),
+    householdId: id,
+    expectedRevision: detail.household!.revision,
+    action: HouseholdAction.LEAVE,
+    confirmClose: true,
+    expectedEraseDueAt: detail.closureEraseDueAt,
+  };
+  await households.changeHousehold(leave, owner);
+  await households.changeHousehold(leave, owner);
+  const closed = (await households.getOverview({}, owner)).households.find(
+    (h) => h.id === id,
+  );
+  assert.equal(closed?.status, "closed");
+  assert.equal(closed?.isHead, false);
+  assert.equal(closed?.ownContribution, undefined);
+  assert.equal(closed?.eraseDueAt, detail.closureEraseDueAt);
+  assert.ok(beforeUsed > 0n);
+  assert.equal(
+    (await admin.getOverview({}, owner)).accounts.find((a) => a.id === ownerId)!
+      .personalUsage!.households,
+    beforeUsed,
+  );
+  await assert.rejects(households.getHousehold({ id }, owner));
+  const original = await admin.getPolicy({}, owner);
+  const apply = async (policy: typeof original) => {
+    const latest = await admin.getPolicy({}, owner);
+    const change = {
+      operationId: crypto.randomUUID(),
+      expectedRevision: latest.revision,
+      policy,
+      confirmed: true,
+    };
+    const review = await admin.previewPolicy(change, owner);
+    await admin.applyPolicy(
+      { ...change, previewToken: review.previewToken },
+      owner,
+    );
+  };
+  try {
+    await apply({
+      ...original,
+      personalHard: { ...original.personalHard!, households: beforeUsed },
+      personalSoft: { ...original.personalSoft!, households: 1n },
+    });
+    await assert.rejects(
+      households.changeHousehold(
+        {
+          operationId: crypto.randomUUID(),
+          householdId: crypto.randomUUID(),
+          action: HouseholdAction.CREATE,
+          name: "Cannot cycle a retained slot",
+        },
+        owner,
+      ),
+      (e: unknown) =>
+        e instanceof ConnectError && e.code === Code.ResourceExhausted,
+    );
+  } finally {
+    await apply(original);
+  }
+});
+
+test("normal household invitation growth shares retained metadata storage guards while revocation remains possible when full", async () => {
+  const owner = await login();
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const invites = createClient(
+    EmailInvitationService,
+    createConnectTransport({ baseUrl }),
+  );
+  const id = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      action: HouseholdAction.CREATE,
+      name: "Invitation metadata storage",
+    },
+    owner,
+  );
+  const growth = await admin.getGrowth({}, owner);
+  if (growth.paused)
+    await admin.changeGrowth(
+      {
+        operationId: crypto.randomUUID(),
+        expectedRevision: growth.revision,
+        paused: false,
+        confirmed: true,
+      },
+      owner,
+    );
+  const original = await admin.getPolicy({}, owner);
+  const usage = async () =>
+    (await admin.getOverview({}, owner)).households.find((h) => h.id === id)!
+      .usage!.bytes;
+  const setBytes = async (bytes: bigint) => {
+    const latest = await admin.getPolicy({}, owner);
+    const change = {
+      operationId: crypto.randomUUID(),
+      expectedRevision: latest.revision,
+      policy: {
+        ...original,
+        householdHard: { ...original.householdHard!, bytes },
+        householdSoft: { ...original.householdSoft!, bytes },
+      },
+      confirmed: true,
+    };
+    const review = await admin.previewPolicy(change, owner);
+    await admin.applyPolicy(
+      { ...change, previewToken: review.previewToken },
+      owner,
+    );
+  };
+  const create = {
+    operationId: crypto.randomUUID(),
+    householdId: id,
+    recipientEmail: "metadata-storage@example.invalid",
+    action: EmailInvitationAction.CREATE,
+    confirmed: true,
+  };
+  try {
+    const before = await usage();
+    const historyBefore = (
+      await households.listHouseholdActivity({ householdId: id }, owner)
+    ).entries.length;
+    await setBytes(before);
+    await assert.rejects(
+      invites.changeInvitation(create, owner),
+      (e: unknown) =>
+        e instanceof ConnectError &&
+        e.code === Code.ResourceExhausted &&
+        e.rawMessage.includes("not saved"),
+    );
+    assert.equal(
+      (await invites.listInvitations({ id }, owner)).invitations.length,
+      0,
+    );
+    assert.equal(await usage(), before);
+    assert.equal(
+      (await households.listHouseholdActivity({ householdId: id }, owner))
+        .entries.length,
+      historyBefore,
+    );
+    await setBytes(original.householdHard!.bytes);
+    const invitation = await invites.changeInvitation(create, owner);
+    await setBytes(await usage());
+    const revoked = await invites.changeInvitation(
+      {
+        operationId: crypto.randomUUID(),
+        householdId: id,
+        invitationId: invitation.id,
+        expectedRevision: invitation.revision,
+        action: EmailInvitationAction.REVOKE,
+        confirmed: true,
+      },
+      owner,
+    );
+    assert.equal(revoked.status, "revoked");
+  } finally {
+    await setBytes(original.householdHard!.bytes);
+  }
+});
+
+test("owner growth measurements stay unknown without a comparable history window and become measurable after a day", async () => {
+  const owner = await login();
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  assert.equal(
+    (await admin.getOverview({}, owner)).growthStatus,
+    "insufficient_history",
+  );
+  const mail = createClient(
+    EmailOperationsService,
+    createConnectTransport({ baseUrl }),
+  );
+  await mail.processQueue(
+    {},
+    { headers: { authorization: `Bearer ${"ef".repeat(32)}` } },
+  );
+  await client.createTask(
+    { id: crypto.randomUUID(), title: "A new day of private growth" },
+    owner,
+  );
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: crypto.randomUUID(),
+      action: HouseholdAction.CREATE,
+      name: "Growth after daily sample",
+    },
+    owner,
+  );
+  const futureBase = "http://127.0.0.1:8789";
+  const instance = start("target/debug/intrepion-server", [], {
+    env: {
+      ...localEnv,
+      PORT: "8789",
+      APP_TEST_NOW: String(Math.floor(Date.now() / 1000) + 25 * 3600),
+    },
+  });
+  try {
+    await ready(`${futureBase}/health/live`);
+    const futureAdmin = createClient(
+      AccountAdminService,
+      createConnectTransport({ baseUrl: futureBase }),
+    );
+    const measured = await futureAdmin.getOverview({}, owner);
+    assert.equal(measured.growthStatus, "measured");
+    assert.ok(measured.growthSince > 0n);
+    assert.ok(measured.logicalByteChange > 0n);
+    assert.ok(measured.householdChange >= 1n);
+    await assert.rejects(
+      futureAdmin.getOverview({}, await login("development-second")),
+      (e: unknown) =>
+        e instanceof ConnectError && e.code === Code.PermissionDenied,
+    );
+  } finally {
+    await stop(instance);
+  }
+});
+
+test("post-backup identities keep their independent public identity when a missing account is readmitted or privately recovered", async () => {
+  const owner = await login();
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const invites = createClient(
+    EmailInvitationService,
+    createConnectTransport({ baseUrl }),
+  );
+  const mail = createClient(
+    EmailOperationsService,
+    createConnectTransport({ baseUrl }),
+  );
+  const growth = await admin.getGrowth({}, owner);
+  if (growth.paused)
+    await admin.changeGrowth(
+      {
+        operationId: crypto.randomUUID(),
+        expectedRevision: growth.revision,
+        paused: false,
+        confirmed: true,
+      },
+      owner,
+    );
+  const id = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      action: HouseholdAction.CREATE,
+      name: "Recovered identity household",
+    },
+    owner,
+  );
+  await invites.changeInvitation(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      recipientEmail: "recovered-member@example.invalid",
+      action: EmailInvitationAction.CREATE,
+      confirmed: true,
+    },
+    owner,
+  );
+  await mail.processQueue(
+    {},
+    { headers: { authorization: `Bearer ${"ef".repeat(32)}` } },
+  );
+  const inbox = (await (
+    await fetch("http://127.0.0.1:8793/messages", {
+      headers: { authorization: "Bearer local-email-only" },
+    })
+  ).json()) as { messages: { recipient: string; text: string }[] };
+  const token = inbox.messages
+    .find((m) => m.recipient === "recovered-member@example.invalid")!
+    .text.match(/#invite=([a-f0-9]{64})/)![1];
+  const verified = await invitationLogin(
+    token,
+    "development-recovered-member",
+    "recovered-member@example.invalid",
+  );
+  assert.equal(verified.status, 200);
+  const context = (await verified.json()) as { csrf: string };
+  const onboarding = {
+    headers: {
+      origin,
+      "x-csrf-token": context.csrf,
+      cookie: verified.headers
+        .getSetCookie()
+        .map((v) => v.split(";")[0])
+        .join("; "),
+    },
+  };
+  let cookie = "";
+  const accepted = await invites.acceptInvitation(
+    {
+      operationId: crypto.randomUUID(),
+      displayName: "Recovered member",
+      confirmed: true,
+    },
+    {
+      ...onboarding,
+      onHeader: (h) => {
+        cookie = h
+          .getSetCookie()
+          .map((v) => v.split(";")[0])
+          .join("; ");
+      },
+    },
+  );
+  const account = await households.getOverview(
+    {},
+    { headers: { origin, "x-csrf-token": accepted.csrf, cookie } },
+  );
+  assert.equal(account.identity!.id, "44".repeat(16));
+  const operator = createClient(
+    PilotOperatorService,
+    createConnectTransport({ baseUrl }),
+  );
+  const privateOperator = {
+    headers: { authorization: `Bearer ${"cd".repeat(32)}` },
+  };
+  const restore = {
+    operationId: crypto.randomUUID(),
+    subject: "development-recovered-blocked",
+    displayName: "Recovered suspended account",
+    createAccount: true,
+    approved: true,
+    plan: {},
+  };
+  assert.equal(
+    (await operator.previewAccountPolicy(restore, privateOperator)).allowed,
+    false,
+  );
+  const disabled = { ...restore, approved: false };
+  const preview = await operator.previewAccountPolicy(
+    disabled,
+    privateOperator,
+  );
+  assert.equal(preview.allowed, true);
+  const result = await operator.applyAccountPolicy(
+    { ...disabled, previewToken: preview.previewToken },
+    privateOperator,
+  );
+  assert.equal(result.publicId, "55".repeat(16));
+  const profile = (await admin.getOverview({}, owner)).accounts.find(
+    (a) => a.id === result.publicId,
+  )!;
+  assert.equal(profile.suspended, true);
+  await admin.setAccountAccess(
+    {
+      operationId: crypto.randomUUID(),
+      accountId: profile.id,
+      expectedRevision: profile.accessRevision,
+      suspended: false,
+      confirmed: true,
+    },
+    owner,
+  );
+  assert.ok((await login("development-recovered-blocked")).headers.cookie);
+});
+
+test("signed subscription confirmation validates its destination and acknowledges a retry once", async () => {
+  const topic = "arn:aws:sns:us-west-2:000000000000:local-email-feedback";
+  const token = "local-confirmation-token";
+  const url = new URL("http://127.0.0.1:8793/confirm");
+  url.search = new URLSearchParams({
+    Action: "ConfirmSubscription",
+    TopicArn: topic,
+    Token: token,
+  }).toString();
+  const post = (body: unknown) =>
+    fetch(`${baseUrl}/email/feedback`, {
+      method: "POST",
+      headers: { "content-type": "text/plain" },
+      body: JSON.stringify(body),
+    });
+  const overrides = {
+    Type: "SubscriptionConfirmation",
+    Token: token,
+    SubscribeURL: url.href,
+  };
+  const readCount = async () =>
+    (
+      (await (
+        await fetch("http://127.0.0.1:8793/confirmations", {
+          headers: { authorization: "Bearer local-email-only" },
+        })
+      ).json()) as { confirmations: number }
+    ).confirmations;
+  const prior = await readCount();
+  assert.equal(
+    (
+      await post(
+        await signedFeedback("Confirm local subscription", {
+          ...overrides,
+          SubscribeURL: "http://169.254.169.254/?Action=ConfirmSubscription",
+        }),
+      )
+    ).status,
+    403,
+  );
+  const mismatch = new URL(url);
+  mismatch.searchParams.set("Token", "wrong-token");
+  assert.equal(
+    (
+      await post(
+        await signedFeedback("Confirm local subscription", {
+          ...overrides,
+          SubscribeURL: mismatch.href,
+        }),
+      )
+    ).status,
+    403,
+  );
+  assert.equal(await readCount(), prior);
+  const envelope = await signedFeedback(
+    "Confirm local subscription",
+    overrides,
+  );
+  assert.equal((await post(envelope)).status, 204);
+  assert.equal((await post(envelope)).status, 204);
+  assert.equal(await readCount(), prior + 1);
+});
+
+test("uncertain delivery retries reuse the link and early signed feedback survives send acknowledgment", async () => {
+  const owner = await login();
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const invites = createClient(
+    EmailInvitationService,
+    createConnectTransport({ baseUrl }),
+  );
+  const mail = createClient(
+    EmailOperationsService,
+    createConnectTransport({ baseUrl }),
+  );
+  const ops = { headers: { authorization: `Bearer ${"ef".repeat(32)}` } };
+  const provider = async (path: string, body?: unknown) => {
+    const r = await fetch(`http://127.0.0.1:8793/${path}`, {
+      method: body ? "POST" : "GET",
+      headers: {
+        authorization: "Bearer local-email-only",
+        "content-type": "application/json",
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+    assert.equal(r.status, 200);
+    return r.json() as Promise<{
+      messages: { recipient: string; text: string }[];
+    }>;
+  };
+  const id = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      action: HouseholdAction.CREATE,
+      name: "Uncertain delivery",
+    },
+    owner,
+  );
+  // Drain unrelated pending work before targeting the next provider handoff.
+  await mail.processQueue({}, ops);
+  const invite = await invites.changeInvitation(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      action: EmailInvitationAction.CREATE,
+      recipientEmail: "uncertain@example.invalid",
+      confirmed: true,
+    },
+    owner,
+  );
+  await provider("fault", { fail_next: "after" });
+  const before = await admin.getEmailOperations({}, owner);
+  await mail.processQueue({}, ops);
+  const status = async () =>
+    (await invites.listInvitations({ id }, owner)).invitations.find(
+      (i) => i.id === invite.id,
+    )!;
+  assert.equal((await status()).deliveryStatus, "uncertain");
+  assert.equal(
+    (await admin.getEmailOperations({}, owner)).monthlyAttempts,
+    before.monthlyAttempts + 1n,
+  );
+  assert.equal((await mail.processQueue({}, ops)).attempted, 0n);
+  const futureBase = "http://127.0.0.1:8789";
+  const instance = start("target/debug/intrepion-server", [], {
+    env: {
+      ...localEnv,
+      PORT: "8789",
+      APP_TEST_NOW: String(Math.floor(Date.now() / 1000) + 65),
+    },
+  });
+  try {
+    await ready(`${futureBase}/health/live`);
+    const futureMail = createClient(
+      EmailOperationsService,
+      createConnectTransport({ baseUrl: futureBase }),
+    );
+    assert.equal((await futureMail.processQueue({}, ops)).attempted, 1n);
+    const messages = (await provider("messages")).messages.filter(
+      (m) => m.recipient === "uncertain@example.invalid",
+    );
+    assert.equal(messages.length, 2);
+    assert.equal(messages[0]!.text, messages[1]!.text);
+    assert.equal((await status()).deliveryStatus, "submitted");
+  } finally {
+    await stop(instance);
+  }
+  const early = await invites.changeInvitation(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      action: EmailInvitationAction.CREATE,
+      recipientEmail: "early-feedback@example.invalid",
+      confirmed: true,
+    },
+    owner,
+  );
+  await provider("fault", { fail_next: "feedback" });
+  assert.equal((await mail.processQueue({}, ops)).attempted, 1n);
+  const visible = (
+    await invites.listInvitations({ id }, owner)
+  ).invitations.find((i) => i.id === early.id)!;
+  assert.equal(visible.deliveryStatus, "failed");
+  assert.ok(
+    (await admin.getEmailOperations({}, owner)).suppressions.some(
+      (s) => s.recipientEmail === "early-feedback@example.invalid",
+    ),
+  );
 });

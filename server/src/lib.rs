@@ -1,12 +1,18 @@
+mod accounts;
 pub mod auth;
 mod capacity;
 pub mod config;
 pub mod db;
 pub mod erasure_ledger;
+mod feedback;
 mod households;
+mod invitations;
 mod lists;
 mod login_limit;
+pub mod mail;
 mod operator;
+mod retention;
+mod security;
 mod tasks;
 pub mod proto {
     connectrpc::include_generated!();
@@ -44,6 +50,7 @@ pub fn app(auth: SharedAuth) -> Router {
         ]);
     let router = Router::new()
         .route("/health/live", get(|| async { "ok" }))
+        .route("/email/feedback", post(feedback::receive))
         .route("/auth/config", get(auth::configuration))
         .route("/auth/challenge", post(auth::challenge))
         .route("/auth/google", post(auth::login))
@@ -55,6 +62,9 @@ pub fn app(auth: SharedAuth) -> Router {
         .add_service(Arc::new(households::Households(auth.clone())))
         .add_service(Arc::new(households::Maintenance(auth.clone())))
         .add_service(Arc::new(operator::Operator(auth.clone())))
+        .add_service(Arc::new(accounts::Administration(auth.clone())))
+        .add_service(Arc::new(invitations::Invitations(auth.clone())))
+        .add_service(Arc::new(mail::Delivery(auth.clone())))
         .add_service(Arc::new(tasks::Tasks(auth.clone())))
         .add_service(Arc::new(lists::Lists(auth.clone(), Default::default())));
     for method in [
@@ -115,11 +125,57 @@ pub fn app(auth: SharedAuth) -> Router {
         .merge(rpc.into_axum_router())
         .layer(DefaultBodyLimit::max(64 * 1024))
         .layer(middleware::from_fn_with_state(
+            auth.clone(),
+            resource_feedback,
+        ))
+        .layer(middleware::from_fn_with_state(
             auth.config.customer_writes_frozen,
             customer_write_freeze,
         ))
         .layer(cors)
         .layer(middleware::from_fn(observe))
+}
+
+// Keep resource enforcement detailed internally while normal-account clients
+// receive actionable, non-numerical unsaved-change feedback.
+async fn resource_feedback(
+    State(auth): State<SharedAuth>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let ordinary_rpc = request.uri().path().starts_with("/life.v1.")
+        && !request
+            .uri()
+            .path()
+            .starts_with("/life.v1.AccountAdminService/")
+        && !request
+            .uri()
+            .path()
+            .starts_with("/life.v1.PilotOperatorService/");
+    let response = next.run(request).await;
+    if !ordinary_rpc
+        || response.status() != StatusCode::TOO_MANY_REQUESTS
+        || !capacity::normal_accounts(&auth.db).await.unwrap_or(true)
+    {
+        return response;
+    }
+    let (mut parts, body) = response.into_parts();
+    let bytes = axum::body::to_bytes(body, 16 * 1024)
+        .await
+        .unwrap_or_default();
+    let body = match serde_json::from_slice::<serde_json::Value>(&bytes) {
+        Ok(mut error)
+            if error.get("code").and_then(|v| v.as_str()) == Some("resource_exhausted") =>
+        {
+            error["message"] = serde_json::Value::String(
+                "Your change was not saved. Please try again later or contact support.".into(),
+            );
+            axum::body::Body::from(serde_json::to_vec(&error).expect("serializable RPC error"))
+        }
+        _ => axum::body::Body::from(bytes),
+    };
+    parts.headers.remove(header::CONTENT_LENGTH);
+    Response::from_parts(parts, body)
 }
 
 // Default-deny during cutover: new routes must be reviewed before becoming
@@ -174,6 +230,9 @@ mod tests {
     async fn one_caller_cannot_exhaust_another_callers_login_allowance() {
         for trust_render_proxy in [false, true] {
             let config = crate::config::Config {
+                invitation_signing_key: None,
+                mail: None,
+                email_operations_token: None,
                 bind: "127.0.0.1:8788".parse().unwrap(),
                 web_origin: "https://intrepion.com".into(),
                 db_url: "http://127.0.0.1:1/query".into(),
@@ -246,6 +305,9 @@ mod tests {
     #[tokio::test]
     async fn normal_build_does_not_expose_development_login() {
         let config = crate::config::Config {
+            invitation_signing_key: None,
+            mail: None,
+            email_operations_token: None,
             bind: "127.0.0.1:8788".parse().unwrap(),
             web_origin: "https://intrepion.com".into(),
             db_url: "http://127.0.0.1:1/query".into(),
@@ -301,6 +363,7 @@ async fn observe(request: Request, next: Next) -> Response {
         path if path.starts_with("/life.v1.PilotOperatorService/") => "operator_policy",
         "/health/live" => "health",
         path if path.starts_with("/auth/") => "auth",
+        path if path.starts_with("/life.v1.AccountAdminService/") => "site_administration",
         _ => "other",
     };
     let mut response = next.run(request).await;

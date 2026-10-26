@@ -43,6 +43,7 @@ message AccountOverview {
   bool plan_configured = 6;
   uint64 max_items_per_collection = 7;
   uint64 max_sections_per_collection = 8;
+  bool normal_accounts = 9;
 }
 message HouseholdHead { PilotIdentity identity = 1; ResourceAmounts ceilings = 2; ResourceAmounts usage = 3; }
 message HouseholdContribution { PilotIdentity identity = 1; ResourceAmounts capacity = 2; bool is_head = 3; }

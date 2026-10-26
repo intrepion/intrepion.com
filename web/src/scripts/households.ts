@@ -1,3 +1,9 @@
+import {
+  EmailInvitationAction,
+  EmailInvitationChangeSchema,
+  type EmailInvitation,
+  type EmailInvitationChange,
+} from "../gen/life/v1/accounts_pb";
 import { create } from "@bufbuild/protobuf";
 import { Code, ConnectError } from "@connectrpc/connect";
 import {
@@ -60,6 +66,9 @@ export class Households {
   private activity: HouseholdActivityEntry[] = [];
   private activityCursor = 0n;
   private invitationToken = "";
+  private malformedInvitation = false;
+  private emailInvitations: EmailInvitation[] = [];
+  private pendingEmail?: EmailInvitationChange;
   private deliveredLink = "";
   private closureRetries = new Map<string, HouseholdChange>();
   private pending?: HouseholdChange;
@@ -78,11 +87,12 @@ export class Households {
     });
   }
   private captureInvitation() {
-    const token = new URLSearchParams(location.hash.slice(1)).get("invite");
-    if (!token) return false;
+    const params = new URLSearchParams(location.hash.slice(1));
+    if (!params.has("invite")) return false;
+    const token = params.get("invite") ?? "";
     history.replaceState(null, "", location.pathname + location.search);
-    if (!/^[0-9a-f]{64}$/.test(token)) return false;
-    this.invitationToken = token;
+    this.malformedInvitation = !/^[0-9a-f]{64}$/.test(token);
+    this.invitationToken = this.malformedInvitation ? "" : token;
     return true;
   }
   reset() {
@@ -95,13 +105,15 @@ export class Households {
     this.closureRetries.clear();
     this.pending = undefined;
     this.pendingCopy = undefined;
+    this.pendingEmail = undefined;
+    this.emailInvitations = [];
     this.message = "";
     this.capacityMode = "capacity";
     this.root.replaceChildren();
     this.toolbar.replaceChildren();
   }
   hasPending() {
-    return !!this.pending || !!this.pendingCopy;
+    return !!this.pending || !!this.pendingCopy || !!this.pendingEmail;
   }
   dirty() {
     return (
@@ -124,6 +136,7 @@ export class Households {
       {},
       { timeoutMs: 90000 },
     );
+    this.api.normalAccounts = this.overview.normalAccounts;
     if (
       this.api.space !== "personal" &&
       !this.overview.households.some(
@@ -134,8 +147,9 @@ export class Households {
       this.hooks.clearContent();
       this.discardDraft();
       this.details = undefined;
-      this.message =
-        "Household access ended. Your personal space is open; retained allocations are in My capacity.";
+      this.message = this.overview?.normalAccounts
+        ? "Household access ended. Your personal space is open."
+        : "Household access ended. Your personal space is open; retained allocations are in My capacity.";
     }
     this.renderToolbar();
   }
@@ -165,7 +179,12 @@ export class Households {
       "Households",
       () => void this.openCapacity("households"),
     );
-    this.toolbar.replaceChildren(label, select, households, capacity);
+    this.toolbar.replaceChildren(
+      label,
+      select,
+      households,
+      ...(this.overview.normalAccounts ? [] : [capacity]),
+    );
     if (this.api.space !== "personal")
       this.toolbar.append(button("Household", () => void this.openHousehold()));
     this.hooks.syncBusyControls();
@@ -200,6 +219,7 @@ export class Households {
   }
   private renderCapacity() {
     if (!this.overview) return;
+    if (this.overview.normalAccounts) this.capacityMode = "households";
     this.hooks.show();
     if (this.capacityMode === "households") {
       this.root.replaceChildren(element("h1", "Households"));
@@ -210,7 +230,9 @@ export class Households {
           "Create a shared space or manage one you head. Your personal content stays private.",
         ),
         button("Create household", () => this.createForm()),
-        button("View my capacity", () => void this.openCapacity()),
+        ...(this.overview.normalAccounts
+          ? []
+          : [button("View my capacity", () => void this.openCapacity())]),
         button(
           "Refresh households",
           () => void this.openCapacity("households"),
@@ -292,7 +314,7 @@ export class Households {
             () => void this.manageHousehold(h.id),
           ),
         );
-      if (h.ownContribution)
+      if (!this.overview.normalAccounts && h.ownContribution)
         card.append(
           element(
             "p",
@@ -304,7 +326,11 @@ export class Households {
               .join(" · "),
           ),
         );
-      if (h.ownContribution && h.status === "active")
+      if (
+        !this.overview.normalAccounts &&
+        h.ownContribution &&
+        h.status === "active"
+      )
         card.append(
           button(`Manage my allocation for ${h.name}`, () =>
             this.allocationForm(h),
@@ -455,7 +481,310 @@ export class Households {
       this.hooks.busy(false);
     }
   }
+  private createNameForm() {
+    this.hooks.show();
+    this.root.replaceChildren(element("h1", "Create household"));
+    const form = element("form");
+    form.className = "editor";
+    const label = element("label", "Household name");
+    label.htmlFor = "household-name";
+    const name = element("input");
+    name.id = label.htmlFor;
+    name.required = true;
+    name.maxLength = 100;
+    const submit = element("button", "Review household");
+    submit.type = "submit";
+    form.append(
+      label,
+      name,
+      element(
+        "p",
+        "You will be the first head. Personal lists are not copied or shared.",
+      ),
+      submit,
+      button("Cancel", () => this.renderCapacity()),
+    );
+    form.onsubmit = (event) => {
+      event.preventDefault();
+      void (async () => {
+        try {
+          if (!this.pending) {
+            if (
+              !(await this.hooks.confirm(
+                "Create this household?",
+                "You will be its first head, with equal authority to any heads you later invite. Your personal lists stay private.",
+                "Create household",
+                "Keep editing",
+                name.value.trim(),
+              ))
+            )
+              return;
+            this.pending = create(HouseholdChangeSchema, {
+              action: HouseholdAction.CREATE,
+              operationId: crypto.randomUUID(),
+              householdId: crypto.randomUUID(),
+              name: name.value.trim(),
+            });
+          }
+          this.hooks.busy(true);
+          const id = this.pending.householdId;
+          await this.api.households.changeHousehold(this.pending, {
+            timeoutMs: 90000,
+          });
+          this.pending = undefined;
+          await this.refresh();
+          this.api.space = id;
+          await this.refresh();
+          this.message = "Household created. Your personal lists stay private.";
+          await this.reloadHousehold();
+        } catch (error) {
+          if (
+            error instanceof ConnectError &&
+            [
+              Code.FailedPrecondition,
+              Code.InvalidArgument,
+              Code.ResourceExhausted,
+            ].includes(error.code)
+          )
+            this.pending = undefined;
+          this.problem(error);
+          if (this.pending) {
+            name.readOnly = true;
+            submit.textContent = "Retry household creation";
+          }
+        } finally {
+          this.hooks.busy(false);
+        }
+      })();
+    };
+    this.root.append(form);
+    name.focus();
+  }
+  private renderNormalHousehold() {
+    const detail = this.details,
+      household = detail?.household;
+    if (!detail || !household) return;
+    this.hooks.show();
+    this.root.replaceChildren(
+      element("h1", household.name),
+      element(
+        "p",
+        "Shared household · Head. All heads have equal authority and access to retained household content and History.",
+      ),
+    );
+    if (this.message) this.root.append(element("p", this.message));
+    this.root.append(
+      button("Refresh household", () => void this.openHousehold()),
+      button("Invite a head", () => this.emailInviteForm()),
+      button("Leave household", () => void this.leaveHousehold()),
+      element("h2", "Heads"),
+    );
+    for (const head of detail.heads) {
+      const card = element("article");
+      card.className = "household-card";
+      card.append(
+        element("h3", head.identity?.name ?? "Head"),
+        element("p", "Equal head authority"),
+      );
+      if (head.identity?.id !== this.overview?.identity?.id)
+        card.append(
+          button(
+            `Remove head ${head.identity?.name ?? "Head"}`,
+            () => void this.removeHead(head.identity!.id, head.identity!.name),
+          ),
+        );
+      this.root.append(card);
+    }
+    this.root.append(element("h2", "Invitations"));
+    for (const invitation of this.emailInvitations) {
+      const card = element("article");
+      card.className = "household-card";
+      card.append(
+        element("h3", invitation.recipientEmail),
+        element(
+          "p",
+          invitation.status === "pending"
+            ? ({
+                queued: "Queued for sending",
+                submitted: "Submitted to email service",
+                delivered: "Delivered to receiving mail server",
+                uncertain: "Sending not yet confirmed",
+                failed: "Email could not be delivered. Contact support.",
+                sending: "Sending",
+              }[invitation.deliveryStatus] ?? "Pending")
+            : invitation.status,
+        ),
+        element(
+          "p",
+          `Expires ${new Date(Number(invitation.expiresAt) * 1000).toLocaleString()}`,
+        ),
+      );
+      if (invitation.status === "pending")
+        for (const [action, label] of [
+          [EmailInvitationAction.REPLACE, "Send again"],
+          [EmailInvitationAction.REVOKE, "Revoke"],
+        ] as const)
+          card.append(
+            button(
+              label,
+              () =>
+                void (async () => {
+                  if (
+                    !(await this.hooks.confirm(
+                      label + "?",
+                      action === EmailInvitationAction.REPLACE
+                        ? "The previous link will stop working. A replacement expires seven days from now."
+                        : "This pending link will stop working. Already accepted memberships remain unchanged.",
+                      label,
+                      "Cancel",
+                      invitation.recipientEmail,
+                    ))
+                  )
+                    return;
+                  await this.emailChange(
+                    create(EmailInvitationChangeSchema, {
+                      operationId: crypto.randomUUID(),
+                      householdId: household.id,
+                      invitationId: invitation.id,
+                      expectedRevision: invitation.revision,
+                      action,
+                      confirmed: true,
+                    }),
+                  );
+                })(),
+            ),
+          );
+      this.root.append(card);
+    }
+    if (!this.emailInvitations.length)
+      this.root.append(element("p", "No invitations yet."));
+    if (detail.pendingContentErasure) {
+      const pending = detail.pendingContentErasure;
+      this.root.append(
+        button(
+          "Resume confirmed shared-content erasure",
+          () =>
+            void this.change(
+              create(HouseholdChangeSchema, {
+                operationId: pending.operationId,
+                householdId: household.id,
+                expectedRevision: pending.expectedRevision,
+                action: HouseholdAction.ERASE_CONTENT,
+                confirmContentErasure: true,
+              }),
+              () => this.reloadHousehold(),
+            ),
+        ),
+      );
+    } else
+      this.root.append(
+        button(
+          "Erase all shared content",
+          () => void this.eraseSharedContent(),
+        ),
+      );
+    this.renderActivity();
+    this.hooks.syncBusyControls();
+  }
+  private emailInviteForm() {
+    const household = this.details?.household;
+    if (!household) return;
+    this.root.replaceChildren(
+      element("h1", "Invite a head"),
+      element("p", household.name),
+    );
+    const form = element("form");
+    form.className = "editor";
+    const label = element("label", "Google account email");
+    label.htmlFor = "email-invitation-recipient";
+    const email = element("input");
+    email.id = label.htmlFor;
+    email.type = "email";
+    email.required = true;
+    email.maxLength = 254;
+    const submit = element("button", "Review invitation");
+    submit.type = "submit";
+    form.append(
+      label,
+      email,
+      element(
+        "p",
+        "This person will have equal head authority and access to all retained household content and History, including earlier changes. Their personal lists stay private.",
+      ),
+      submit,
+      button("Cancel", () => this.renderNormalHousehold()),
+    );
+    form.onsubmit = (event) => {
+      event.preventDefault();
+      void (async () => {
+        if (!this.pendingEmail) {
+          if (
+            !(await this.hooks.confirm(
+              "Review invitation",
+              "Send this person an email invitation to become an equal head? Only the recipient receives the private link.",
+              "Send invitation",
+              "Keep editing",
+              `${email.value} · ${household.name}`,
+            ))
+          )
+            return;
+          this.pendingEmail = create(EmailInvitationChangeSchema, {
+            operationId: crypto.randomUUID(),
+            householdId: household.id,
+            recipientEmail: email.value,
+            action: EmailInvitationAction.CREATE,
+            confirmed: true,
+          });
+        }
+        await this.emailChange(this.pendingEmail);
+        if (this.pendingEmail) {
+          email.readOnly = true;
+          submit.textContent = "Retry invitation";
+        }
+      })();
+    };
+    this.root.append(form);
+    email.focus();
+  }
+  private async emailChange(request: EmailInvitationChange) {
+    this.pendingEmail = request;
+    this.hooks.busy(true);
+    try {
+      await this.api.invitations.changeInvitation(request, {
+        timeoutMs: 90000,
+      });
+      this.pendingEmail = undefined;
+      this.message =
+        "Invitation updated. Only the recipient receives its private link.";
+      await this.reloadHousehold();
+    } catch (error) {
+      if (
+        error instanceof ConnectError &&
+        [
+          Code.InvalidArgument,
+          Code.FailedPrecondition,
+          Code.PermissionDenied,
+          Code.NotFound,
+        ].includes(error.code)
+      )
+        this.pendingEmail = undefined;
+      this.problem(error);
+      if (this.pendingEmail)
+        this.root.append(
+          button(
+            "Retry invitation action",
+            () => void this.emailChange(request),
+          ),
+        );
+    } finally {
+      this.hooks.busy(false);
+    }
+  }
   private createForm() {
+    if (this.overview?.normalAccounts) {
+      this.createNameForm();
+      return;
+    }
     this.root.replaceChildren(element("h1", "Create household"));
     const form = element("form");
     form.className = "editor";
@@ -656,7 +985,9 @@ export class Households {
       if (
         !(await this.hooks.confirm(
           "Create this independent copy?",
-          `${required}. Current destination usage and your own ceilings are rechecked when saving. Either the whole copy is saved or nothing is added. The original and its previous History stay private.`,
+          this.api.normalAccounts
+            ? "Every current household head can view and change the new copy. Either the whole copy is saved or nothing is added. The original and its previous History stay private."
+            : `${required}. Current destination usage and your own ceilings are rechecked when saving. Either the whole copy is saved or nothing is added. The original and its previous History stay private.`,
           "Create independent copy",
           "Cancel",
           `${source.title} · Personal → ${name} · Shared`,
@@ -713,6 +1044,16 @@ export class Households {
             control.disabled = true;
         }
     }
+  }
+  takeInvitation() {
+    const token = this.invitationToken;
+    this.invitationToken = "";
+    return token;
+  }
+  takeMalformedInvitation() {
+    const malformed = this.malformedInvitation;
+    this.malformedInvitation = false;
+    return malformed;
   }
   hasInvitation() {
     return !!this.invitationToken;
@@ -809,11 +1150,22 @@ export class Households {
       { householdId: this.api.space },
       { timeoutMs: 90000 },
     );
+    if (this.overview?.normalAccounts)
+      this.emailInvitations = (
+        await this.api.invitations.listInvitations(
+          { id: this.api.space },
+          { timeoutMs: 90000 },
+        )
+      ).invitations;
     this.activity = page.entries;
     this.activityCursor = page.nextBeforeSequence;
     this.renderHousehold();
   }
   private renderHousehold() {
+    if (this.overview?.normalAccounts) {
+      this.renderNormalHousehold();
+      return;
+    }
     if (!this.details?.household) return;
     const detail = this.details;
     const household = detail.household!;
@@ -1164,7 +1516,10 @@ export class Households {
     if (
       !(await this.hooks.confirm(
         "Erase all shared content permanently?",
-        "This permanently erases the household's retained tasks, lists, templates, runs, child items, sections and associated content History, including Archive and Trash, present when this action starts. Shared writes pause while protection is pending. Independent copies in other spaces remain. The household name, heads and contributions remain; allocated capacity stays reserved until you explicitly withdraw it.",
+        "This permanently erases the household's retained tasks, lists, templates, runs, child items, sections and associated content History, including Archive and Trash, present when this action starts. Shared writes pause while protection is pending. Independent copies in other spaces remain. " +
+          (this.overview?.normalAccounts
+            ? "The household name and heads remain."
+            : "The household name, heads and contributions remain; allocated capacity stays reserved until you explicitly withdraw it."),
         "Erase shared content permanently",
         "Cancel",
         household.name,
@@ -1189,8 +1544,10 @@ export class Households {
     const closing = detail.heads.length === 1;
     const due = new Date(Number(detail.closureEraseDueAt) * 1000);
     const description = closing
-      ? `Closure is final: no reopening or rejoining. Pending invitations will be revoked and content erased at ${due.toISOString()} UTC (${due.toLocaleString()} local). Your capacity remains reserved until protected erasure succeeds. No successor or cleanup is required before leaving.`
-      : "Access ends immediately. Shared content and creator attribution remain. Your contribution stays reserved when needed; manage only your own retained allocation from My capacity. Other heads retain equal authority.";
+      ? `Closure is final: no reopening or rejoining. Pending invitations will be revoked and content erased at ${due.toISOString()} UTC (${due.toLocaleString()} local). Shared content remains retained until protected erasure succeeds. No successor or cleanup is required before leaving.`
+      : this.overview?.normalAccounts
+        ? "Access ends immediately. Your pending invitations are revoked. Shared content and History remain; your personal account and private data remain available."
+        : "Access ends immediately. Shared content and creator attribution remain. Your contribution stays reserved when needed; manage only your own retained allocation from My capacity. Other heads retain equal authority.";
     if (
       !(await this.hooks.confirm(
         closing ? "Leave and close this household?" : "Leave this household?",
@@ -1215,8 +1572,12 @@ export class Households {
         this.details = undefined;
         this.api.space = "personal";
         this.message = closing
-          ? "Household closed. Closure is final; retained capacity waits for protected erasure."
-          : "You left the household. Retained contributions are managed here.";
+          ? this.overview?.normalAccounts
+            ? "Household closed. Closure is final; retained data awaits protected erasure."
+            : "Household closed. Closure is final; retained capacity waits for protected erasure."
+          : this.overview?.normalAccounts
+            ? "You left the household. Your personal lists remain private and available."
+            : "You left the household. Retained contributions are managed here.";
         this.renderCapacity();
       },
     );
@@ -1226,7 +1587,9 @@ export class Households {
     if (
       !(await this.hooks.confirm(
         "Remove this head?",
-        "Access ends on the next request. Their shared content and attribution remain; needed contributed capacity stays reserved. This does not affect their private account.",
+        this.overview?.normalAccounts
+          ? "Household access ends. Their pending invitations are revoked; shared content, History and their personal account remain."
+          : "Access ends on the next request. Their shared content and attribution remain; needed contributed capacity stays reserved. This does not affect their private account.",
         "Remove head",
         "Cancel",
         `${name} · ${this.details.household.name}`,
@@ -1298,7 +1661,9 @@ export class Households {
               this.closureRetries.set(closed.id, request);
             else this.closureRetries.delete(closed.id);
             this.message = closed.closureProtectionPending
-              ? "Household closed. Recovery protection is pending; retained capacity stays reserved."
+              ? this.overview?.normalAccounts
+                ? "Household closed. Recovery protection is pending; retained data awaits protected erasure."
+                : "Household closed. Recovery protection is pending; retained capacity stays reserved."
               : "Household closure is confirmed.";
             this.renderCapacity();
             return;

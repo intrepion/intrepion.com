@@ -5,6 +5,7 @@ A personal task app as the first MVP of a future Life OS. The initial delivery i
 - [Agreed MVP plan and delivery gates](docs/mvp-plan.md)
 - [MVP 2 Everyday lists scope](docs/mvp-2-plan.md), [approved designs](design/mvp-2/README.md), and [approved standalone prototype](design/mvp-2/PROTOTYPE.md)
 - [MVP 3 Household foundation scope](docs/mvp-3-plan.md), [designs](design/mvp-3/README.md), [standalone prototype](design/mvp-3/PROTOTYPE.md), and [implementation checks](docs/mvp-3-implementation.md)
+- [MVP 3.1 normal invitations scope](docs/mvp-3-1-plan.md), [implementation checks](docs/mvp-3-1-implementation.md), and [release preparation](docs/mvp-3-1-release.md)
 - [Measured MVP 3 usage and approved pilot limits](docs/mvp-3-sizing.md), [release preparation](docs/mvp-3-release.md), [hosted rehearsal evidence](docs/mvp-3-rehearsal.md)
 - [Pilot operator tools](docs/mvp-3-operator.md) and [household retention](docs/mvp-3-retention.md)
 - [Domain glossary](GLOSSARY.md)
@@ -25,5 +26,7 @@ Wireframes (Q35), mockups (Q36), and prototype interactions (Q37) are approved. 
 MVP 2 Everyday lists is live at [intrepion.com](https://intrepion.com): shopping lists, reusable checklist templates, independent runs, History, Archive, Trash and erasure-aware recovery. See the [implementation checks](docs/mvp-2-implementation.md), [review record](docs/mvp-2-review.md), and [hosted release procedure](docs/mvp-2-release.md). The maintenance upgrade, hosted workflow checks, and isolated encrypted recovery drill passed.
 
 For the production application's local development stack, install Rust, Node and `protoc`, run `npm ci` and `npm --prefix web ci` once, then `npm run dev` and open <http://127.0.0.1:4322>. The server uses local D1 and two approved development identities; local data survives restarts. Finite development plans are illustrative and preserve configured local policy. They are not production limits.
+
+For local MVP 3.1 review, use `npm run dev:normal` and the same app URL. It uses separate persistent local state, name-only households, owner Admin controls, and a fake mailbox at <http://127.0.0.1:8793/mailbox>. Invite only `@example.invalid` development addresses; no real email is sent. Illustrative local safety values do not set production thresholds. Stop development before integration or browser tests, which share its ports.
 
 The separate prototype remains server-free: run `npm --prefix prototype ci` once, then `npm --prefix prototype run dev` and open <http://127.0.0.1:4321>. Its synthetic data resets on reload. Prototype application code is not shared with production. Themes, AI, other login methods, and the reserved Android/iOS/CLI/desktop clients remain later-MVP work.

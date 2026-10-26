@@ -10,6 +10,9 @@ pub struct Config {
     pub google_client_id: String,
     pub owner_sub: String,
     pub local: bool,
+    pub invitation_signing_key: Option<String>,
+    pub mail: Option<crate::mail::Settings>,
+    pub email_operations_token: Option<String>,
     pub customer_writes_frozen: bool,
     pub trust_render_proxy: bool,
     pub household_maintenance_token: Option<String>,
@@ -108,7 +111,43 @@ impl Config {
         if pilot_operator_token.is_some() && pilot_operator_token == household_maintenance_token {
             return Err("Operator and maintenance credentials must be different".into());
         }
+        let invitation_signing_key = if local {
+            Some("de".repeat(32))
+        } else {
+            env::var("INVITATION_SIGNING_KEY").ok()
+        };
+        if invitation_signing_key
+            .as_ref()
+            .is_some_and(|v| v.len() != 64 || !v.bytes().all(|b| b.is_ascii_hexdigit()))
+        {
+            return Err("INVITATION_SIGNING_KEY must be 32 random bytes encoded as hex".into());
+        }
+        let mail = crate::mail::Settings::from_env(local)?;
+        let email_operations_token = env::var("EMAIL_OPERATIONS_TOKEN")
+            .ok()
+            .or_else(|| local.then(|| "ef".repeat(32)));
+        if email_operations_token
+            .as_ref()
+            .is_some_and(|v| v.len() != 64 || !v.bytes().all(|b| b.is_ascii_hexdigit()))
+        {
+            return Err("EMAIL_OPERATIONS_TOKEN must be 32 random bytes encoded as hex".into());
+        }
+        if mail.is_some() && (invitation_signing_key.is_none() || email_operations_token.is_none())
+        {
+            return Err(
+                "Configure invitation signing and email operations credentials with SES".into(),
+            );
+        }
+        if email_operations_token.is_some()
+            && (email_operations_token == pilot_operator_token
+                || email_operations_token == household_maintenance_token)
+        {
+            return Err("Email operations credentials must be separate".into());
+        }
         Ok(Self {
+            mail,
+            email_operations_token,
+            invitation_signing_key,
             customer_writes_frozen,
             pilot_operator_token,
             household_maintenance_token,

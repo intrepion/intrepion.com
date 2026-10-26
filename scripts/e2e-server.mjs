@@ -72,10 +72,27 @@ try {
       },
     }),
   );
+  if (process.env.NORMAL_ACCOUNTS_TEST) {
+    children.push(
+      start("node", ["scripts/local-email.mjs"], { env: localEnv }),
+    );
+    await ready("http://127.0.0.1:8793/health");
+  }
   await ready("http://127.0.0.1:8792/health");
   await bridgeReady();
-  children.push(start("target/debug/intrepion-server", [], { env: localEnv }));
+  children.push(
+    start("target/debug/intrepion-server", [], {
+      env: {
+        ...localEnv,
+        LOCAL_EMAIL_AUTOMATIC: process.env.NORMAL_ACCOUNTS_TEST ? "1" : "0",
+      },
+    }),
+  );
   await ready("http://127.0.0.1:8788/health/live");
+  if (process.env.NORMAL_ACCOUNTS_TEST)
+    await (
+      await import("./local-normal-accounts.mjs")
+    ).seedLocalNormalAccounts();
   children.push(
     start(
       "node",

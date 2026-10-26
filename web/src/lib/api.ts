@@ -1,3 +1,7 @@
+import {
+  AccountAdminService,
+  EmailInvitationService,
+} from "../gen/life/v1/accounts_pb";
 import { Code, ConnectError, createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import { ListService } from "../gen/life/v1/lists_pb";
@@ -21,6 +25,10 @@ export function needsLogin(error: unknown): boolean {
 export class ContextChanged extends Error {}
 export class Api {
   csrf = "";
+  normalAccounts = false;
+  isAdmin = false;
+  onboarding = false;
+  supportEmail = "";
   private contextEpoch = 0;
   private currentIdentity = "";
   private currentSpace = "personal";
@@ -42,6 +50,8 @@ export class Api {
   displayName = "";
   spaceLabel = "Personal · Private";
   readonly households;
+  readonly administration;
+  readonly invitations;
   readonly tasks;
   readonly lists;
   constructor(readonly origin: string) {
@@ -61,9 +71,11 @@ export class Api {
           } catch (error) {
             if (epoch !== this.contextEpoch) throw new ContextChanged();
             const scoped =
-              ["life.v1.TaskService", "life.v1.ListService"].includes(
-                request.service.typeName,
-              ) ||
+              [
+                "life.v1.TaskService",
+                "life.v1.ListService",
+                "life.v1.EmailInvitationService",
+              ].includes(request.service.typeName) ||
               (request.service.typeName === "life.v1.HouseholdService" &&
                 [
                   "GetHousehold",
@@ -86,6 +98,8 @@ export class Api {
       ],
     });
     this.households = createClient(HouseholdService, transport);
+    this.administration = createClient(AccountAdminService, transport);
+    this.invitations = createClient(EmailInvitationService, transport);
     this.tasks = createClient(TaskService, transport);
     this.lists = createClient(ListService, transport);
   }
@@ -119,20 +133,43 @@ export class Api {
       csrf: string;
       user_sub: string;
       display_name: string;
+      is_admin?: boolean;
+      onboarding?: boolean;
     }>("/auth/session");
+    if (this.onboarding !== !!session.onboarding) this.contextEpoch++;
+    this.onboarding = !!session.onboarding;
+    this.isAdmin = !!session.is_admin;
     this.csrf = session.csrf;
     this.identity = session.user_sub;
     this.displayName = session.display_name;
   }
-  async login(path: string, nonce: string, credential = "") {
+  async login(
+    path: string,
+    nonce: string,
+    credential = "",
+    invitationToken = "",
+    development?: { email: string; name: string },
+  ) {
     const session = await this.request<{
       csrf: string;
       user_sub: string;
       display_name: string;
+      is_admin?: boolean;
+      onboarding?: boolean;
     }>(path, {
       nonce,
       credential,
+      ...(invitationToken ? { invitation_token: invitationToken } : {}),
+      ...(development
+        ? {
+            development_email: development.email,
+            development_name: development.name,
+          }
+        : {}),
     });
+    if (this.onboarding !== !!session.onboarding) this.contextEpoch++;
+    this.onboarding = !!session.onboarding;
+    this.isAdmin = !!session.is_admin;
     this.csrf = session.csrf;
     this.identity = session.user_sub;
     this.displayName = session.display_name;

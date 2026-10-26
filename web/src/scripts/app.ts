@@ -1,3 +1,5 @@
+import { Onboarding } from "./onboarding";
+import { Administration } from "./administration";
 import { create } from "@bufbuild/protobuf";
 import { Code, ConnectError } from "@connectrpc/connect";
 import { TaskSchema, type Task } from "../gen/life/v1/tasks_pb";
@@ -17,6 +19,13 @@ function text(id: string, value: string) {
 function show(id: string, visible: boolean) {
   get(id).hidden = !visible;
 }
+function supportContact(address: string) {
+  api.supportEmail = address;
+  const link = get<HTMLAnchorElement>("contact-support");
+  if (address) link.href = `mailto:${encodeURIComponent(address)}`;
+  else link.removeAttribute("href");
+  show("support-contact", !!address);
+}
 function focus(id: string) {
   get(id).focus();
 }
@@ -25,7 +34,13 @@ let tasks: Task[] = [];
 let authenticated = false;
 let lastIdentity = "";
 let busy = false;
-let config: { google_client_id: string; development: boolean };
+type Configuration = {
+  google_client_id: string;
+  development: boolean;
+  normal_accounts: boolean;
+  support_email: string;
+};
+let config: Configuration | undefined;
 type Editor = { id: string; original?: Task; fields: Fields };
 let editor: Editor | undefined;
 type Action =
@@ -77,10 +92,28 @@ function setBusy(value: boolean) {
       }
     });
 }
-function view(name: "status" | "list" | "editor" | "everyday" | "household") {
+function view(
+  name:
+    | "status"
+    | "list"
+    | "editor"
+    | "everyday"
+    | "household"
+    | "admin"
+    | "onboarding",
+) {
   if (name !== "status") spaces.active = name === "household";
-  for (const candidate of ["status", "list", "editor", "everyday", "household"])
+  for (const candidate of [
+    "status",
+    "list",
+    "editor",
+    "everyday",
+    "household",
+    "admin",
+    "onboarding",
+  ])
     show(`${candidate}-view`, candidate === name);
+  show("nav-admin", authenticated && api.isAdmin);
   show("account", authenticated);
   show("space-controls", authenticated);
   show("main-nav", authenticated);
@@ -93,6 +126,8 @@ function status(title: string, description: string, loading = false) {
   show("google-button", false);
   show("development-login", false);
   show("development-morgan", false);
+  show("development-another", false);
+  show("development-identity-form", false);
   show("retry-load", !loading);
 }
 function errorMessage(error: unknown): string {
@@ -366,7 +401,25 @@ async function loadTasks() {
   setBusy(true);
   status("Opening your list", "The server may take a minute to wake up.", true);
   try {
+    config ??= await api.request<Configuration>("/auth/config");
+    api.normalAccounts = !!config.normal_accounts;
+    supportContact(config.support_email ?? "");
+    if (showMalformedInvitation()) return;
+    if (api.normalAccounts && spaces.hasInvitation())
+      onboarding.setToken(spaces.takeInvitation());
+    if (onboarding.token()) {
+      authenticated = false;
+      await signInView();
+      return;
+    }
     await api.session();
+    if (api.onboarding) {
+      authenticated = false;
+      clearContent();
+      spaces.reset();
+      await onboarding.open();
+      return;
+    }
     if (lastIdentity && lastIdentity !== api.identity) {
       clearContent();
       spaces.reset();
@@ -375,7 +428,10 @@ async function loadTasks() {
     lastIdentity = api.identity;
     authenticated = true;
     await spaces.refresh();
-    text("account-identity", `${api.displayName} · Approved Google account`);
+    text(
+      "account-identity",
+      `${api.displayName} · ${api.normalAccounts ? "Google account" : "Approved Google account"}`,
+    );
     text(
       "task-privacy",
       api.space === "personal"
@@ -387,6 +443,8 @@ async function loadTasks() {
     );
     if (spaces.hasInvitation()) {
       await spaces.openInvitation();
+    } else if (admin.active) {
+      await admin.open(true);
     } else if (spaces.active) {
       spaces.resume();
     } else if (everyday.active) {
@@ -437,14 +495,50 @@ async function signInView() {
   );
   show("retry-load", false);
   try {
-    config = await api.request("/auth/config");
+    config = await api.request<Configuration>("/auth/config");
+    api.normalAccounts = !!config.normal_accounts;
+    supportContact(config.support_email ?? "");
+    if (showMalformedInvitation()) return;
+    if (api.normalAccounts && spaces.hasInvitation())
+      onboarding.setToken(spaces.takeInvitation());
+    if (api.normalAccounts && !editor) {
+      text(
+        "status-title",
+        onboarding.token()
+          ? "You have a household invitation"
+          : "A little clarity for your day",
+      );
+      text(
+        "status-description",
+        onboarding.token()
+          ? "Sign in with the Google account for the address that received the email. Review before joining; opening the link does not create an account."
+          : "Your personal lists and shared households. New here? Open a household invitation email to create your account.",
+      );
+    }
     const { nonce } = await api.request<{ nonce: string }>(
       "/auth/challenge",
       {},
     );
     if (config.development) {
       show("development-login", true);
-      show("development-morgan", true);
+      show("development-morgan", !api.normalAccounts);
+      show("development-another", api.normalAccounts);
+      get("development-another").onclick = () => {
+        show("development-identity-form", true);
+        get("development-email").focus();
+      };
+      get<HTMLFormElement>("development-identity-form").onsubmit = (event) => {
+        event.preventDefault();
+        const email = get<HTMLInputElement>("development-email")
+          .value.trim()
+          .toLowerCase();
+        void authenticate(
+          "/auth/development",
+          nonce,
+          `development-email:${email}`,
+          { email, name: get<HTMLInputElement>("development-name").value },
+        );
+      };
       get("development-morgan").onclick = () =>
         void authenticate("/auth/development", nonce, "development-second");
       get("development-login").onclick = () =>
@@ -475,25 +569,73 @@ async function signInView() {
     text("retry-load", "Try again");
   }
 }
-async function authenticate(path: string, nonce: string, credential = "") {
+function showMalformedInvitation() {
+  if (!spaces.takeMalformedInvitation()) return false;
+  onboarding.setToken("");
+  authenticated = false;
+  status(
+    "This invitation is unavailable",
+    "Open the newest invitation email or ask a household head for a new invitation. Your account and tasks have not been changed.",
+  );
+  text("retry-load", "Back to sign-in");
+  return true;
+}
+async function authenticate(
+  path: string,
+  nonce: string,
+  credential = "",
+  development?: { email: string; name: string },
+) {
   if (busy) return;
   setBusy(true);
   try {
-    await api.login(path, nonce, credential);
+    const token = onboarding.token();
+    await api.login(
+      path,
+      nonce,
+      credential,
+      token,
+      token
+        ? (development ?? {
+            email: "development-owner@example.invalid",
+            name: "Owner",
+          })
+        : undefined,
+    );
+    onboarding.verified();
+    if (api.onboarding) {
+      authenticated = false;
+      clearContent();
+      spaces.reset();
+      await onboarding.open();
+      return;
+    }
     authenticated = true;
     await loadTasks();
   } catch (error) {
     if (error instanceof ContextChanged) return;
     const accessDenied = error instanceof HttpError && error.status === 403;
+    const invitationUnavailable =
+      error instanceof HttpError && error.status === 410;
     status(
-      accessDenied
-        ? "This account does not have access"
-        : "Sign-in could not be completed",
-      accessDenied
-        ? "Try signing in with your approved Google account."
-        : error instanceof HttpError
-          ? error.message
-          : "Please check your connection and try again.",
+      invitationUnavailable
+        ? "This invitation is unavailable"
+        : accessDenied
+          ? onboarding.token()
+            ? "Choose another Google account"
+            : "This account does not have access"
+          : "Sign-in could not be completed",
+      invitationUnavailable
+        ? "Open the newest invitation email or ask a household head for a new invitation. Your account and tasks have not been changed."
+        : accessDenied
+          ? onboarding.token()
+            ? "Use the Google address that received the invitation email. The invitation has not been consumed."
+            : api.normalAccounts
+              ? "Use an available account. New accounts need a household invitation email."
+              : "Try signing in with your approved Google account."
+          : error instanceof HttpError
+            ? error.message
+            : "Please check your connection and try again.",
     );
     text("retry-load", "Try signing in again");
   } finally {
@@ -556,10 +698,18 @@ get("task-form").addEventListener("submit", (event) => {
 get("sign-out").addEventListener("click", async () => {
   if (busy) return;
   if (
-    (dirty() || everyday.dirty() || spaces.dirty() || spaces.hasPending()) &&
+    (dirty() ||
+      everyday.dirty() ||
+      spaces.dirty() ||
+      spaces.hasPending() ||
+      admin.dirty() ||
+      admin.hasPending()) &&
     !(await confirm(
       "Discard your changes?",
-      spaces.hasPending() || everyday.hasPending() || pending
+      spaces.hasPending() ||
+        everyday.hasPending() ||
+        admin.hasPending() ||
+        pending
         ? "A pending action may already have been saved. Signing out discards this tab's retry state and unsaved drafts; review saved state after signing in again."
         : "Signing out discards this unsaved draft.",
       "Discard changes",
@@ -576,6 +726,7 @@ get("sign-out").addEventListener("click", async () => {
     pending = undefined;
     tasks = [];
     everyday.reset();
+    admin.reset();
     spaces.reset();
     api.space = "personal";
     lastIdentity = "";
@@ -638,6 +789,7 @@ function clearContent() {
   editor = undefined;
   pending = undefined;
   everyday.reset();
+  admin.reset();
   get("open-tasks").replaceChildren();
   get("completed-tasks").replaceChildren();
   get<HTMLInputElement>("title").value = "";
@@ -645,14 +797,19 @@ function clearContent() {
 }
 async function prepareNavigation() {
   if (busy) return false;
-  if (pending || everyday.hasPending() || spaces.hasPending()) {
+  if (
+    pending ||
+    everyday.hasPending() ||
+    spaces.hasPending() ||
+    admin.hasPending()
+  ) {
     announce(
       "Finish retrying the pending action before changing spaces or leaving this workflow.",
     );
     return false;
   }
   if (
-    (dirty() || spaces.dirty()) &&
+    (dirty() || spaces.dirty() || admin.dirty()) &&
     !(await confirm(
       "Discard your changes?",
       "Your unsaved changes will be lost.",
@@ -666,6 +823,8 @@ async function prepareNavigation() {
   pending = undefined;
   everyday.reset();
   spaces.discardDraft();
+  admin.discardDraft();
+  admin.active = false;
   return true;
 }
 const spaces = new Households(
@@ -677,6 +836,15 @@ const spaces = new Households(
     prepare: prepareNavigation,
     clearContent,
     invitationArrived: async () => {
+      if (api.normalAccounts) {
+        if (!(await prepareNavigation())) return;
+        onboarding.setToken(spaces.takeInvitation());
+        clearContent();
+        spaces.reset();
+        authenticated = false;
+        await signInView();
+        return;
+      }
       if (!authenticated || !(await prepareNavigation())) return;
       setBusy(true);
       try {
@@ -712,6 +880,28 @@ const spaces = new Households(
     confirm,
   },
 );
+const onboarding = new Onboarding(get("onboarding-view"), api, {
+  show: () => view("onboarding"),
+  busy: setBusy,
+  signIn: signInView,
+  complete: async (id) => {
+    clearContent();
+    spaces.reset();
+    onboarding.reset();
+    api.space = id;
+    authenticated = true;
+    await loadTasks();
+  },
+});
+const admin = new Administration(get("admin-view"), api, {
+  confirm,
+  show: () => view("admin"),
+  prepare: prepareNavigation,
+  busy: setBusy,
+  expired,
+  sync: () => setBusy(busy),
+});
+get("nav-admin").addEventListener("click", () => void admin.open());
 api.accessEnded = () => {
   clearContent();
   spaces.reset();

@@ -217,6 +217,86 @@ export function verifySql(sql) {
           "Backup contains invalid household relationships or reopened/erased data.",
         );
     }
+    if (
+      db
+        .prepare(
+          "SELECT 1 FROM sqlite_master WHERE type='table' AND name='site_safety_policy'",
+        )
+        .get()
+    ) {
+      for (const query of [
+        "SELECT revision,enabled,personal_soft_json,personal_hard_json,household_soft_json,household_hard_json,max_items_per_collection,max_sections_per_collection,last_operation FROM site_safety_policy LIMIT 1",
+        "SELECT operation_id,fingerprint,revision FROM site_admin_operations LIMIT 1",
+        "SELECT operation_id,actor_sub,action,occurred_at FROM site_audit LIMIT 1",
+        "SELECT revision,paused,last_operation FROM invitation_growth LIMIT 1",
+        "SELECT id,household_id,recipient_email,token_hash,generation,status,delivery_status,expires_at,created_by,accepted_by,claim_id,claim_until,attempts,next_attempt_at,delivery_event_at FROM email_invitations LIMIT 1",
+        "SELECT actor_sub,operation_id,fingerprint,invitation_id FROM email_invitation_operations LIMIT 1",
+        "SELECT month,attempted,accounting_state FROM email_monthly_attempts LIMIT 1",
+        "SELECT id,invitation_id,generation,recipient_email,outcome,provider_message_id,attempted_at,feedback_at FROM email_send_attempts LIMIT 1",
+        "SELECT recipient_email,reason,revision,last_event_at FROM email_suppressions LIMIT 1",
+        "SELECT recipient_hash,cleared_at,revision FROM email_suppression_reviews LIMIT 1",
+        "SELECT id,digest,claim_id,invitation_id,received_at FROM email_feedback_receipts LIMIT 1",
+        "SELECT token_hash,csrf,user_sub,email,display_name,invitation_id,generation,expires_at FROM onboarding_sessions LIMIT 1",
+        "SELECT user_sub,operation_id,fingerprint,invitation_id,household_id FROM invitation_acceptance_receipts LIMIT 1",
+        "SELECT access_revision,last_access_operation FROM pilot_accounts LIMIT 1",
+        "SELECT sequence,event_id,scope,subject,subject_hash,public_id,household_id,active,published FROM site_security_outbox LIMIT 1",
+        "SELECT subject_hash,public_id,active,security_revision FROM protected_account_access LIMIT 1",
+        "SELECT household_id,subject_hash,public_id,active,security_revision FROM protected_membership_state LIMIT 1",
+        "SELECT * FROM legacy_space_capacity LIMIT 1",
+        "SELECT * FROM content_space_usage LIMIT 1",
+        "SELECT day,sampled_at,normal_enabled,account_count,household_count,logical_bytes FROM site_usage_samples LIMIT 1",
+      ])
+        db.prepare(query).all();
+      for (const [name, table] of [
+        ["revoke_departed_issuer_email", "household_heads"],
+        ["revoke_suspended_issuer_email", "pilot_accounts"],
+        ["retire_legacy_invitation_writes", "household_invitations"],
+        ["retire_legacy_allocation_inserts", "household_allocations"],
+        ["retire_legacy_allocation_updates", "household_allocations"],
+        ["retire_legacy_ceiling_updates", "household_heads"],
+        ["record_account_access_change", "pilot_accounts"],
+        ["record_account_admission", "pilot_accounts"],
+        ["record_head_admission", "household_heads"],
+        ["record_head_access_change", "household_heads"],
+      ])
+        if (
+          !db
+            .prepare(
+              "SELECT 1 FROM sqlite_master WHERE type='trigger' AND name=? AND tbl_name=?",
+            )
+            .get(name, table)
+        )
+          throw new Error(
+            "Backup is missing normal-account security protection.",
+          );
+      if (
+        !db
+          .prepare(
+            "SELECT 1 FROM security_replay_control WHERE id=1 AND replaying=0",
+          )
+          .get() ||
+        !db.prepare("SELECT 1 FROM site_safety_policy WHERE id=1").get() ||
+        !db.prepare("SELECT 1 FROM invitation_growth WHERE id=1").get() ||
+        !db
+          .prepare(
+            "SELECT 1 FROM sqlite_master WHERE type='index' AND name='one_pending_email_invitation'",
+          )
+          .get() ||
+        !db
+          .prepare(
+            "SELECT 1 FROM sqlite_master WHERE type='index' AND name='email_accounting_review'",
+          )
+          .get() ||
+        db
+          .prepare(
+            "SELECT 1 FROM email_invitations i JOIN households h ON h.id=i.household_id WHERE h.status='erased' LIMIT 1",
+          )
+          .get()
+      )
+        throw new Error(
+          "Backup contains incomplete normal-account protection or erased household mail.",
+        );
+    }
   } finally {
     db.close();
   }

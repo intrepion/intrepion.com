@@ -151,6 +151,17 @@ impl Operator {
         if r.create_account != state.account.is_none() || r.expected_revision != revision {
             return Err(changed());
         }
+        let blocked_new_identity = state.account.is_none()
+            && r.approved
+            && !self
+                .0
+                .db
+                .query::<serde_json::Value>(
+                    "SELECT 1 FROM protected_account_access WHERE subject_hash=? AND active=0",
+                    &[crate::security::subject_hash(&r.subject)],
+                )
+                .await?
+                .is_empty();
         let current = state
             .account
             .as_ref()
@@ -239,8 +250,10 @@ impl Operator {
         clean.preview_token.clear();
         let token = hash(&(&clean, &state))?;
         let mut preview = PilotPolicyPreview {
-            allowed: after.is_ok() && !withdraws_required_capacity,
-            reason: if withdraws_required_capacity {
+            allowed: after.is_ok() && !withdraws_required_capacity && !blocked_new_identity,
+            reason: if blocked_new_identity {
+                "This recovered identity remains suspended. Reconstruct it with access disabled, then explicitly review account restoration.".into()
+            } else if withdraws_required_capacity {
                 "Voluntary withdrawals must leave retained household usage funded. Only a genuine reduction of the corresponding plan allowance permits an overage.".into()
             } else if after.is_err() {
                 "Existing household allocations exceed the proposed plan. Supply explicit replacements; closed allocations remain reserved.".into()
@@ -316,6 +329,9 @@ impl Operator {
         {
             return Err(changed());
         }
+        let public_id = crate::security::canonical_public_id(&self.0.db, &r.subject)
+            .await?
+            .unwrap_or_else(|| crate::auth::secret()[..32].into());
         let next = r.expected_revision.checked_add(1).ok_or_else(changed)?;
         let mut statements = vec![usage_guard(&r.subject, &state.usage)];
         statements.push(Statement::new("INSERT INTO invariant_guards(valid) SELECT (SELECT count(*) FROM household_heads m JOIN households h ON h.id=m.household_id WHERE m.subject=? AND m.active=1 AND h.status='active')=CAST(? AS INTEGER) AND (SELECT count(*) FROM household_allocations WHERE subject=?)=CAST(? AS INTEGER)",vec![r.subject.clone(),state.usage.households.to_string(),r.subject.clone(),state.rooms.len().to_string()]));
@@ -326,9 +342,9 @@ impl Operator {
         let amounts = Amounts::from(&*r.plan);
         let no_receipt = "NOT EXISTS(SELECT 1 FROM pilot_operator_operations WHERE operation_id=?)";
         if state.account.is_none() {
-            statements.push(Statement::new(&format!("INSERT INTO pilot_accounts(subject,display_name,approved,plan_json,plan_revision,public_id,last_policy_operation) SELECT ?,?,?,?,1,?,? WHERE {no_receipt} ON CONFLICT(subject) DO NOTHING"),vec![r.subject.clone(),r.display_name.clone(),i32::from(r.approved).to_string(),amounts.json(),crate::auth::secret()[..32].into(),r.operation_id.clone(),r.operation_id.clone()]));
+            statements.push(Statement::new(&format!("INSERT INTO pilot_accounts(subject,display_name,approved,plan_json,plan_revision,public_id,last_policy_operation) SELECT ?,?,?,?,1,?,? WHERE {no_receipt} ON CONFLICT(subject) DO NOTHING"),vec![r.subject.clone(),r.display_name.clone(),i32::from(r.approved).to_string(),amounts.json(),public_id.clone(),r.operation_id.clone(),r.operation_id.clone()]));
         } else {
-            statements.push(Statement::new(&format!("UPDATE pilot_accounts SET display_name=?,approved=?,plan_json=?,plan_revision=plan_revision+1,last_policy_operation=?,public_id=CASE WHEN public_id='' THEN lower(hex(randomblob(16))) ELSE public_id END WHERE subject=? AND plan_revision=? AND {no_receipt}"),vec![r.display_name.clone(),i32::from(r.approved).to_string(),amounts.json(),r.operation_id.clone(),r.subject.clone(),r.expected_revision.to_string(),r.operation_id.clone()]));
+            statements.push(Statement::new(&format!("UPDATE pilot_accounts SET display_name=?,approved=?,plan_json=?,plan_revision=plan_revision+1,last_policy_operation=?,public_id=CASE WHEN public_id='' THEN ? ELSE public_id END WHERE subject=? AND plan_revision=? AND {no_receipt}"),vec![r.display_name.clone(),i32::from(r.approved).to_string(),amounts.json(),r.operation_id.clone(),public_id,r.subject.clone(),r.expected_revision.to_string(),r.operation_id.clone()]));
         }
         if !r.approved {
             statements.push(Statement::new("DELETE FROM sessions WHERE owner_sub=? AND EXISTS(SELECT 1 FROM pilot_accounts WHERE subject=? AND approved=0 AND plan_revision=? AND last_policy_operation=?)",vec![r.subject.clone(),r.subject.clone(),next.to_string(),r.operation_id.clone()]));
@@ -437,6 +453,8 @@ impl PilotOperatorService for Operator {
         r: ServiceRequest<'_, PilotPolicyChange>,
     ) -> ServiceResult<PilotPolicyResult> {
         self.authorize(&ctx)?;
-        Response::ok(self.apply(&r.to_owned_message()).await?)
+        let result = self.apply(&r.to_owned_message()).await?;
+        crate::security::protect(&self.0).await?;
+        Response::ok(result)
     }
 }

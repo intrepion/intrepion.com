@@ -45,10 +45,10 @@ The end of a household's active participation when its last head leaves, with re
 A person belonging to a household.
 
 **Head of household**:
-A household member authorized to administer the household, including setting member allowances.
+A household member with equal authority to administer the household and access its retained shared content and History.
 
 **Member allowance**:
-The maximum usage an individual household member is permitted within that household, subject to the household's total capacity.
+A proposed limit on a dependent household member’s usage, reserved for a later family-access release.
 
 **Personal space**:
 A person's private lists and routines, separate from shared household content.
@@ -57,11 +57,31 @@ A person's private lists and routines, separate from shared household content.
 A household's shared lists and routines.
 
 **Storage allowance**:
-The maximum amount of retained content and History permitted in a personal or household space.
+A safety boundary on retained content and History in a personal or household space.
 
 **Subscription**:
-A user's plan providing capacity that they may allocate to households.
+A future paid arrangement through which a person may support one or more households.
 
 **Capacity allocation**:
-A reserved portion of a user's subscription-provided capacity assigned to one household and unavailable for use elsewhere while allocated.
+A legacy reservation of a person’s capacity for a household, retained as historical information.
 _Avoid_: Funds, when referring to capacity rather than money
+
+**Account**:
+A person’s enduring identity and private personal space, independent of any household membership.
+_Avoid_: Pilot account, approved person, when describing ordinary account use
+
+**Household invitation**:
+An offer delivered privately to a recipient’s email address to join a household as an equal head, requiring that recipient’s matching Google identity and explicit acceptance.
+
+**Safety threshold**:
+An owner-managed review or hard boundary on retained resource usage in a personal or household space, separate from household authority or subscription funding.
+
+**Site owner**:
+The person authorized to review site-wide usage metadata and manage safety policy, growth and account access.
+_Avoid_: Head, when describing site-wide authority
+
+**Growth pause**:
+A temporary hold on new invitations, queued sending, replacement invitations and joining, while existing accounts and lists remain available.
+
+**Account suspension**:
+A reversible denial of account access that preserves the person’s data and household memberships.

@@ -14,6 +14,13 @@ pub enum LedgerSettings {
     },
 }
 #[derive(Serialize)]
+pub struct SecurityChange {
+    pub subject_hash: String,
+    pub public_id: String,
+    pub revision: u64,
+    pub active: bool,
+}
+#[derive(Serialize)]
 pub struct ErasureRecord {
     pub version: u32,
     pub database_id: String,
@@ -25,6 +32,8 @@ pub struct ErasureRecord {
     pub erase_due_at: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub collection_ids: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub security: Option<SecurityChange>,
 }
 impl ErasureRecord {
     // Client action IDs belong to a data scope. Publication IDs must be unique
