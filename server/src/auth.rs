@@ -311,21 +311,6 @@ impl Auth {
         {
             return Err(forbidden());
         }
-        if subject == self.config.owner_sub {
-            let public_id = crate::security::canonical_public_id(&self.db, subject)
-                .await
-                .map_err(|_| {
-                    AuthError(
-                        StatusCode::SERVICE_UNAVAILABLE,
-                        "Identity recovery is temporarily unavailable.",
-                    )
-                })?
-                .unwrap_or_else(|| secret()[..32].into());
-            self.db.query::<serde_json::Value>(
-                "INSERT INTO pilot_accounts(subject,display_name,public_id) VALUES(?,'Owner',?) ON CONFLICT(subject) DO NOTHING",
-                &[subject.into(),public_id],
-            ).await?;
-        }
         let public_id = crate::security::canonical_public_id(&self.db, subject)
             .await
             .map_err(|_| {
@@ -335,6 +320,12 @@ impl Auth {
                 )
             })?
             .unwrap_or_else(|| secret()[..32].into());
+        if subject == self.config.owner_sub {
+            self.db.query::<serde_json::Value>(
+                "INSERT INTO pilot_accounts(subject,display_name,public_id) VALUES(?,'Owner',?) ON CONFLICT(subject) DO NOTHING",
+                &[subject.into(),public_id.clone()],
+            ).await?;
+        }
         self.db.query::<serde_json::Value>("UPDATE pilot_accounts SET public_id=? WHERE subject=? AND public_id='' AND approved=1", &[public_id,subject.into()]).await?;
         #[derive(Deserialize)]
         struct Account {

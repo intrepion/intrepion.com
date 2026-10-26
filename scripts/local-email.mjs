@@ -76,7 +76,7 @@ createServer(async (request, response) => {
   try {
     const body = JSON.parse(bytes);
     if (request.url === "/fault" && request.method === "POST") {
-      if (!["", "before", "after", "feedback"].includes(body.fail_next))
+      if (!["", "before", "after", "feedback", "hold"].includes(body.fail_next))
         return reply(400);
       fault = body.fail_next;
       if (body.reset) messages = [];
@@ -103,6 +103,10 @@ createServer(async (request, response) => {
       html,
       tags: body.EmailTags ?? [],
     });
+    if (failure === "hold") {
+      setTimeout(() => reply(503), 15000);
+      return;
+    }
     if (failure === "feedback") {
       // Provider callback deliberately races the still-pending send acknowledgment.
       const envelope = {

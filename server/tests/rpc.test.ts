@@ -3588,6 +3588,86 @@ test("normal-account safety rejection is generic and concurrent increases preser
     (r) => r.status === "fulfilled",
   ) as PromiseFulfilledResult<(typeof saved)[number]>;
   assert.equal(saved[0]!.id, winning.value.id);
+  const diagnostics = (await admin.listAudit({}, owner)).entries.filter((e) =>
+    e.action.includes("Blocked resource write"),
+  );
+  assert.ok(
+    diagnostics.some(
+      (e) =>
+        e.action.includes("space_items_allowance") && e.action.includes(id),
+    ),
+  );
+  assert.equal(
+    JSON.stringify(diagnostics, (_, v: unknown) =>
+      typeof v === "bigint" ? v.toString() : v,
+    ).includes("First contender"),
+    false,
+  );
+  const current = await admin.getPolicy({}, owner);
+  const structural = {
+    operationId: crypto.randomUUID(),
+    expectedRevision: current.revision,
+    policy: { ...current, maxItemsPerCollection: 1n },
+    confirmed: true,
+  };
+  const structuralReview = await admin.previewPolicy(structural, owner);
+  await admin.applyPolicy(
+    { ...structural, previewToken: structuralReview.previewToken },
+    owner,
+  );
+  let collection = await shopping(owner);
+  collection = (
+    await lists.applyChange(
+      changeRequest(collection, ChangeAction.CREATE_ITEM, {
+        item: { id: crypto.randomUUID(), title: "Private structural canary" },
+      }),
+      owner,
+    )
+  ).collection!;
+  await assert.rejects(
+    lists.applyChange(
+      changeRequest(collection, ChangeAction.CREATE_ITEM, {
+        item: { id: crypto.randomUUID(), title: "Private rejected canary" },
+      }),
+      owner,
+    ),
+    (e: unknown) =>
+      e instanceof ConnectError &&
+      e.code === Code.ResourceExhausted &&
+      e.rawMessage ===
+        "Your change was not saved. Please try again later or contact support.",
+  );
+  const latest = (await admin.listAudit({}, owner)).entries.filter((e) =>
+    e.action.includes("Blocked resource write"),
+  );
+  const ownerId = (await households.getOverview({}, owner)).identity!.id;
+  assert.equal(latest.filter((e) => e.actorId === ownerId).length, 1);
+  assert.ok(
+    latest.some(
+      (e) =>
+        e.actorId === ownerId &&
+        e.action.includes("collection_items_allowance") &&
+        e.action.includes("personal"),
+    ),
+  );
+  assert.equal(
+    JSON.stringify(latest, (_, v: unknown) =>
+      typeof v === "bigint" ? v.toString() : v,
+    ).includes("canary"),
+    false,
+  );
+  await assert.rejects(admin.listAudit({}, await login("development-second")));
+  const restore = {
+    operationId: crypto.randomUUID(),
+    expectedRevision: (await admin.getPolicy({}, owner)).revision,
+    policy: current,
+    confirmed: true,
+  };
+  const restoration = await admin.previewPolicy(restore, owner);
+  await admin.applyPolicy(
+    { ...restore, previewToken: restoration.previewToken },
+    owner,
+  );
 });
 
 test("emailed invitations expose delivery metadata without secrets and pause prevents invitation growth", async () => {
@@ -4163,6 +4243,15 @@ test("site account suspension and restoration preserve data, end old sessions an
   );
   const otherId = (await households.getOverview({}, other)).identity!.id;
   const ownerId = (await households.getOverview({}, owner)).identity!.id;
+  await households.changeHousehold(
+    {
+      action: HouseholdAction.CREATE,
+      householdId: crypto.randomUUID(),
+      operationId: crypto.randomUUID(),
+      name: "Account access usage projection",
+    },
+    other,
+  );
   const before = (await client.listTasks({}, other)).tasks
     .map((t) => t.id)
     .sort();
@@ -4203,6 +4292,7 @@ test("site account suspension and restoration preserve data, end old sessions an
   assert.equal(suspended.suspended, true);
   assert.equal(suspended.accessRevision, metadata.accessRevision + 1n);
   assert.equal(suspended.protectionPending, false);
+  assert.deepEqual(suspended.personalUsage, metadata.personalUsage);
   assert.equal(
     (await admin.setAccountAccess(change, owner)).accessRevision,
     suspended.accessRevision,
@@ -5131,4 +5221,110 @@ test("uncertain delivery retries reuse the link and early signed feedback surviv
       (s) => s.recipientEmail === "early-feedback@example.invalid",
     ),
   );
+});
+
+test("an interrupted final email attempt becomes terminal after its claim expires without another send", async () => {
+  const owner = await login();
+  const invites = createClient(
+    EmailInvitationService,
+    createConnectTransport({ baseUrl }),
+  );
+  const ops = { headers: { authorization: `Bearer ${"ef".repeat(32)}` } };
+  const mail = createClient(
+    EmailOperationsService,
+    createConnectTransport({ baseUrl }),
+  );
+  const provider = async (path: string, body?: unknown) => {
+    const r = await fetch(`http://127.0.0.1:8793/${path}`, {
+      method: body ? "POST" : "GET",
+      headers: {
+        authorization: "Bearer local-email-only",
+        "content-type": "application/json",
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+    assert.equal(r.status, 200);
+    return r.json() as Promise<{ messages: { recipient: string }[] }>;
+  };
+  await mail.processQueue({}, ops);
+  const id = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      action: HouseholdAction.CREATE,
+      name: "Interrupted final attempt",
+    },
+    owner,
+  );
+  const invite = await invites.changeInvitation(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      action: EmailInvitationAction.CREATE,
+      recipientEmail: "interrupted@example.invalid",
+      confirmed: true,
+    },
+    owner,
+  );
+  await provider("fault", { fail_next: "after" });
+  await mail.processQueue({}, ops);
+  const epoch = Math.floor(Date.now() / 1000);
+  const futureBase = "http://127.0.0.1:8789";
+  const futureMail = createClient(
+    EmailOperationsService,
+    createConnectTransport({ baseUrl: futureBase }),
+  );
+  const status = async () =>
+    (await invites.listInvitations({ id }, owner)).invitations.find(
+      (i) => i.id === invite.id,
+    )!;
+  let instance: ChildProcess | undefined;
+  try {
+    for (const seconds of [65, 370, 410]) {
+      instance = start("target/debug/intrepion-server", [], {
+        env: {
+          ...localEnv,
+          PORT: "8789",
+          APP_TEST_NOW: String(epoch + seconds),
+        },
+      });
+      await ready(`${futureBase}/health/live`);
+      if (seconds === 65) {
+        await provider("fault", { fail_next: "after" });
+        assert.equal((await futureMail.processQueue({}, ops)).attempted, 1n);
+      } else if (seconds === 370) {
+        await provider("fault", { fail_next: "hold" });
+        const sending = futureMail.processQueue({}, ops).catch(() => undefined);
+        const deadline = Date.now() + 5000;
+        while (
+          (await provider("messages")).messages.filter(
+            (m) => m.recipient === "interrupted@example.invalid",
+          ).length < 3
+        ) {
+          if (Date.now() > deadline)
+            throw new Error(
+              "Third attempt was not handed to the local provider",
+            );
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+        assert.equal((await status()).deliveryStatus, "sending");
+        await stop(instance);
+        await sending;
+      } else {
+        assert.equal((await futureMail.processQueue({}, ops)).attempted, 0n);
+        assert.equal((await status()).deliveryStatus, "failed");
+        assert.equal(
+          (await provider("messages")).messages.filter(
+            (m) => m.recipient === "interrupted@example.invalid",
+          ).length,
+          3,
+        );
+      }
+      await stop(instance);
+      instance = undefined;
+    }
+  } finally {
+    await stop(instance);
+  }
 });

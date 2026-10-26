@@ -133,6 +133,10 @@ impl Delivery {
             ConnectError::failed_precondition("Email delivery is not configured.")
         })?;
         let now = auth::now().to_string();
+        // A stopped process can leave the last bounded attempt unacknowledged.
+        // Its expired claim permits reconciliation, never another provider call.
+        // Keep the attempt's conservative uncertainty and monthly charge count.
+        self.0.db.query::<serde_json::Value>("UPDATE email_invitations SET delivery_status='failed',claim_id='',claim_until=0 WHERE status='pending' AND delivery_status='sending' AND attempts>=3 AND claim_until<=CAST(? AS INTEGER)",std::slice::from_ref(&now)).await?;
         // All eligibility checks are repeated in the transaction claiming the attempt.
         let eligible = "i.status='pending' AND i.delivery_status IN('queued','uncertain','sending') AND i.expires_at>CAST(? AS INTEGER) AND i.attempts<3 AND i.claim_until<=CAST(? AS INTEGER) AND i.next_attempt_at<=CAST(? AS INTEGER) AND EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND EXISTS(SELECT 1 FROM site_safety_policy WHERE id=1 AND enabled=1) AND EXISTS(SELECT 1 FROM households h JOIN household_heads m ON m.household_id=h.id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=i.household_id AND h.status='active' AND m.subject=i.created_by AND m.active=1 AND a.approved=1) AND NOT EXISTS(SELECT 1 FROM email_suppressions x WHERE x.recipient_email=i.recipient_email)";
         let pending=self.0.db.query::<Pending>(&format!("SELECT i.id,i.household_id,i.recipient_email,i.generation,i.attempts FROM email_invitations i WHERE {eligible} ORDER BY i.created_at,i.id LIMIT 3"),&[now.clone(),now.clone(),now.clone()]).await?;

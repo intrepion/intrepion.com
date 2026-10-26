@@ -1,4 +1,40 @@
 use super::*;
+// One latest diagnostic per account bounds storage even if a client repeatedly
+// retries a rejected write. Only fixed server reasons and public scope IDs enter
+// this owner-only view; request content and unknown error strings never do.
+pub(crate) async fn record_resource_rejection(
+    auth: &SharedAuth,
+    headers: &axum::http::HeaderMap,
+    message: &str,
+) -> Result<(), ConnectError> {
+    let Ok(session) = auth.session(headers, true).await else {
+        return Ok(());
+    };
+    let reason = capacity::LIMIT_ERRORS
+        .iter()
+        .find_map(|(code, text)| (*text == message).then_some(*code))
+        .or_else(|| capacity::RESOURCES.iter().enumerate().find_map(|(index, resource)| {
+            (message == format!("This complete copy would exceed the destination's {resource} allowance. Trash and History remain counted.")).then_some(capacity::LIMIT_ERRORS[index].0)
+        }))
+        .unwrap_or(match message {
+            "A change exceeds the database value budget." => "database_value_budget",
+            "Combined capacity exceeds the supported integer range." => "capacity_integer_range",
+            "The source exceeds a per-collection structural cap." => "copy_collection_structure",
+            _ => "resource_safety_guard",
+        });
+    let scope = headers
+        .get("x-space-id")
+        .and_then(|h| h.to_str().ok())
+        .filter(|s| crate::lists::valid_id(s))
+        .unwrap_or("personal");
+    let account = capacity::account(&auth.db, &session.user_sub).await?;
+    let operation = format!("resource-rejection:{}", account.public_id);
+    auth.db.batch(&[
+        crate::db::Statement::new("DELETE FROM site_audit WHERE operation_id=?",vec![operation.clone()]),
+        crate::db::Statement::new("INSERT INTO site_audit(operation_id,actor_sub,action) SELECT ?,?,? WHERE EXISTS(SELECT 1 FROM pilot_accounts WHERE subject=? AND approved=1) AND (?='personal' OR EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id WHERE m.household_id=? AND m.subject=? AND m.active=1 AND h.status='active'))",vec![operation,session.user_sub.clone(),format!("Blocked resource write: {reason}; scope {scope}. Latest rejection for this account."),session.user_sub.clone(),scope.into(),scope.into(),session.user_sub]),
+    ]).await?;
+    Ok(())
+}
 impl Administration {
     pub(super) async fn audit(&self, r: &AdminAuditQuery) -> Result<AdminAuditPage, ConnectError> {
         if r.page_size > 100 || r.before_sequence > 9_007_199_254_740_991 {

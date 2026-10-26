@@ -152,6 +152,7 @@ async fn resource_feedback(
             .uri()
             .path()
             .starts_with("/life.v1.PilotOperatorService/");
+    let diagnostic_headers = ordinary_rpc.then(|| request.headers().clone());
     let response = next.run(request).await;
     if !ordinary_rpc
         || response.status() != StatusCode::TOO_MANY_REQUESTS
@@ -167,6 +168,17 @@ async fn resource_feedback(
         Ok(mut error)
             if error.get("code").and_then(|v| v.as_str()) == Some("resource_exhausted") =>
         {
+            if let Some(headers) = diagnostic_headers.as_ref()
+                && accounts::record_resource_rejection(
+                    &auth,
+                    headers,
+                    error.get("message").and_then(|v| v.as_str()).unwrap_or(""),
+                )
+                .await
+                .is_err()
+            {
+                eprintln!("{{\"event\":\"resource_diagnostic\",\"ok\":false}}");
+            }
             error["message"] = serde_json::Value::String(
                 "Your change was not saved. Please try again later or contact support.".into(),
             );

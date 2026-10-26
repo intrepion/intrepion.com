@@ -1,6 +1,7 @@
 //! Site-wide metadata is separate from household authority and private content.
 mod access;
 mod audit;
+pub(crate) use audit::record_resource_rejection;
 mod email;
 mod growth;
 mod policy;
@@ -19,6 +20,30 @@ struct AccountRow {
     access_revision: u64,
     protection_pending: i32,
     usage_json: String,
+}
+const USAGE_JSON_SQL: &str = "json_object('items',coalesce(u.items,0),'shopping',coalesce(u.shopping,0),'templates',coalesce(u.templates,0),'runs',coalesce(u.runs,0),'bytes',coalesce(u.bytes,0),'households',coalesce(u.households,0)) AS usage_json";
+fn account_projection() -> String {
+    let usage = USAGE_JSON_SQL.replace("coalesce(u.households,0)", capacity::NORMAL_HOUSEHOLDS_SQL);
+    format!(
+        "SELECT a.subject,a.public_id,a.display_name,a.approved,a.access_revision,{usage},EXISTS(SELECT 1 FROM site_security_outbox x WHERE x.public_id=a.public_id AND x.scope='account_access' AND x.published=0) AS protection_pending,(SELECT count(*) FROM household_heads m JOIN households h ON h.id=m.household_id WHERE m.subject=a.subject AND m.active=1 AND h.status='active') AS active_households FROM pilot_accounts a LEFT JOIN space_usage u ON u.owner_sub=a.subject"
+    )
+}
+impl AccountRow {
+    fn into_admin(self, owner: &str) -> Result<AdminAccount, ConnectError> {
+        let usage = serde_json::from_str::<capacity::Amounts>(&self.usage_json)
+            .map_err(|_| ConnectError::internal("Usage measurements are unavailable."))?;
+        Ok(AdminAccount {
+            id: self.public_id,
+            display_name: self.display_name,
+            suspended: self.approved == 0,
+            personal_usage: usage.into(),
+            active_households: self.active_households,
+            access_revision: self.access_revision,
+            protection_pending: self.protection_pending != 0,
+            site_owner: self.subject == owner,
+            ..Default::default()
+        })
+    }
 }
 #[derive(Deserialize)]
 struct HouseholdRow {
@@ -133,10 +158,18 @@ impl AccountAdminService for Administration {
         } else {
             r.page_size as usize
         };
-        let usage_json = "json_object('items',coalesce(u.items,0),'shopping',coalesce(u.shopping,0),'templates',coalesce(u.templates,0),'runs',coalesce(u.runs,0),'bytes',coalesce(u.bytes,0),'households',coalesce(u.households,0)) AS usage_json";
-        let account_usage_json =
-            usage_json.replace("coalesce(u.households,0)", capacity::NORMAL_HOUSEHOLDS_SQL);
-        let mut rows = self.0.db.query::<AccountRow>(&format!("SELECT a.subject,a.public_id,a.display_name,a.approved,a.access_revision,{account_usage_json},EXISTS(SELECT 1 FROM site_security_outbox x WHERE x.public_id=a.public_id AND x.scope='account_access' AND x.published=0) AS protection_pending,(SELECT count(*) FROM household_heads m JOIN households h ON h.id=m.household_id WHERE m.subject=a.subject AND m.active=1 AND h.status='active') AS active_households FROM pilot_accounts a LEFT JOIN space_usage u ON u.owner_sub=a.subject WHERE a.public_id>? ORDER BY a.public_id LIMIT ?"), &[r.after_account,(size+1).to_string()]).await?;
+        let usage_json = USAGE_JSON_SQL;
+        let mut rows = self
+            .0
+            .db
+            .query::<AccountRow>(
+                &format!(
+                    "{} WHERE a.public_id>? ORDER BY a.public_id LIMIT ?",
+                    account_projection()
+                ),
+                &[r.after_account, (size + 1).to_string()],
+            )
+            .await?;
         let more = rows.len() > size;
         rows.truncate(size);
         let next_account = if more {
@@ -148,20 +181,10 @@ impl AccountAdminService for Administration {
             serde_json::from_str::<capacity::Amounts>(json)
                 .map_err(|_| ConnectError::internal("Usage measurements are unavailable."))
         };
-        let mut accounts = Vec::new();
-        for row in rows {
-            accounts.push(AdminAccount {
-                id: row.public_id,
-                display_name: row.display_name,
-                suspended: row.approved == 0,
-                personal_usage: parse_usage(&row.usage_json)?.into(),
-                active_households: row.active_households,
-                access_revision: row.access_revision,
-                protection_pending: row.protection_pending != 0,
-                site_owner: row.subject == self.0.config.owner_sub,
-                ..Default::default()
-            });
-        }
+        let accounts = rows
+            .into_iter()
+            .map(|row| row.into_admin(&self.0.config.owner_sub))
+            .collect::<Result<Vec<_>, _>>()?;
         let mut rows = self.0.db.query::<HouseholdRow>(&format!("SELECT h.id,h.name,h.status,{usage_json},(SELECT count(*) FROM household_heads m WHERE m.household_id=h.id AND m.active=1) AS active_heads FROM households h LEFT JOIN space_usage u ON u.owner_sub=h.scope_sub WHERE h.status<>'erased' AND h.id>? ORDER BY h.id LIMIT ?"), &[r.after_household,(size+1).to_string()]).await?;
         let more = rows.len() > size;
         rows.truncate(size);

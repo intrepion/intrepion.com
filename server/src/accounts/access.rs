@@ -3,28 +3,18 @@ use crate::{db::Statement, lists::valid_id, security};
 use sha2::{Digest, Sha256};
 impl Administration {
     async fn access_account(&self, id: &str) -> Result<AdminAccount, ConnectError> {
-        #[derive(Deserialize)]
-        struct Row {
-            subject: String,
-            display_name: String,
-            approved: i32,
-            access_revision: u64,
-            heads: u64,
-            pending: i32,
-        }
-        let row=self.0.db.query::<Row>("SELECT a.subject,a.display_name,a.approved,a.access_revision,(SELECT count(*) FROM household_heads m JOIN households h ON h.id=m.household_id WHERE m.subject=a.subject AND m.active=1 AND h.status='active') AS heads,EXISTS(SELECT 1 FROM site_security_outbox x WHERE x.public_id=a.public_id AND x.scope='account_access' AND x.published=0) AS pending FROM pilot_accounts a WHERE a.public_id=?",&[id.into()]).await?.pop().ok_or_else(||ConnectError::not_found("Account unavailable."))?;
-        Ok(AdminAccount {
-            id: id.into(),
-            display_name: row.display_name,
-            suspended: row.approved == 0,
-            personal_usage: capacity::usage(&self.0.db, &row.subject).await?.into(),
-            active_households: row.heads,
-            access_revision: row.access_revision,
-            protection_pending: row.pending != 0,
-            site_owner: row.subject == self.0.config.owner_sub,
-            ..Default::default()
-        })
+        self.0
+            .db
+            .query::<AccountRow>(
+                &format!("{} WHERE a.public_id=?", account_projection()),
+                &[id.into()],
+            )
+            .await?
+            .pop()
+            .ok_or_else(|| ConnectError::not_found("Account unavailable."))?
+            .into_admin(&self.0.config.owner_sub)
     }
+
     pub(super) async fn change_access(
         &self,
         actor: &str,

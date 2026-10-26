@@ -1,6 +1,6 @@
 # MVP 3.1: Normal household invitations
 
-Status: **scope confirmed by the owner at Q24; wireframes and visual mockups approved; standalone prototype approved; production implementation in progress**. Review the [wireframe guide](../design/mvp-3-1/README.md). The interview history below records amendments. This scope does not waive the wireframe, mockup, standalone-prototype, implementation-verification or production-launch gates. No MVP 3.1 application code, AWS resources, credentials, DNS or outbound messages have been changed.
+Status: **scope confirmed by the owner at Q24; wireframes and visual mockups approved; standalone prototype approved; production implementation in progress**. Review the [wireframe guide](../design/mvp-3-1/README.md). The interview history below records amendments. This scope does not waive the wireframe, mockup, standalone-prototype, implementation-verification or production-launch gates. MVP 3.1 application code is implemented and undergoing final review. No AWS resources, credentials, DNS, real outbound messages or production deployment have been changed.
 
 ## Confirmed scope
 

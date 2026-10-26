@@ -171,18 +171,12 @@ impl Lists {
             result.destination_usage = usage.clone().into();
             result.destination_capacity = capacity.clone().into();
         }
-        let blocked = "Your copy was not saved. Please try again later or contact support.";
         let limits = capacity::structural_limits(&self.0.db).await?;
         if p.copied.items.len() as u64 > limits.max_items_per_collection
             || p.copied.sections.len() as u64 > limits.max_sections_per_collection
         {
             result.allowed = false;
-            result.reason = if normal {
-                blocked
-            } else {
-                "The source exceeds a per-collection structural cap."
-            }
-            .into();
+            result.reason = "The source exceeds a per-collection structural cap.".into();
             return Ok(result);
         }
         for (index, key) in capacity::RESOURCES.iter().enumerate() {
@@ -191,13 +185,9 @@ impl Lists {
                 .is_none_or(|new| new > capacity.values()[index])
             {
                 result.allowed = false;
-                result.reason = if normal {
-                    blocked.into()
-                } else {
-                    format!(
-                        "This complete copy would exceed the destination's {key} allowance. Trash and History remain counted."
-                    )
-                };
+                result.reason = format!(
+                    "This complete copy would exceed the destination's {key} allowance. Trash and History remain counted."
+                );
                 return Ok(result);
             }
         }
@@ -230,7 +220,12 @@ impl Lists {
         r: &CopyRequest,
     ) -> Result<CopyPreview, ConnectError> {
         let prepared = self.prepare_copy(r).await?;
-        self.prepared_preview(&prepared).await
+        let mut preview = self.prepared_preview(&prepared).await?;
+        if !preview.allowed && capacity::normal_accounts(&self.0.db).await? {
+            preview.reason =
+                "Your copy was not saved. Please try again later or contact support.".into();
+        }
+        Ok(preview)
     }
     pub(crate) async fn copy_personal(
         &self,
