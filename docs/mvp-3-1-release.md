@@ -1,6 +1,6 @@
 # MVP 3.1 release and recovery procedure
 
-Status: implementation and local verification are in progress. This document does not authorize a deployment, real email, DNS changes, AWS resources or credentials. Finish the fixed-baseline code review before preparing the live cutover.
+Status: implementation, local verification and fixed-baseline two-axis review are complete; see [the review record](mvp-3-1-review.md). This document does not authorize a deployment, real email, DNS changes, AWS resources or credentials. Provider readiness, measured launch values and hosted checks remain prerequisites for the live cutover.
 
 ## Local review
 
@@ -55,3 +55,5 @@ A backup can omit attempts handed off after capture. Recovery therefore holds th
 If a protected identity is newer than the profile snapshot, preserve its known public ID. An ordinary fresh invitation cannot bypass a protected ban. For a missing suspended profile, privately verify the person's Google subject, reconstruct the profile with access disabled through the existing operator recovery tool, then explicitly restore access in Admin. Keep raw subjects and proof tokens out of chat, Git and routine logs. Conflicting identity/protection records require investigation before reconnecting the restored database.
 
 Detailed email logs/callback receipts expire after 30 days and site-admin audit after one year. Current blocks and minimal replay protection outlive log expiry. Household erasure also removes its invitation and delivery metadata; mail suppression is an independent current restriction. Follow the existing encrypted-backup retention and independently protected erasure rules.
+
+Owner-only Site audit retains the latest rejected-resource reason per account. Reasons are fixed resource/structural codes, without private content. The selected request context is the current space header; it can differ from an explicit copy destination. Exhausted email claims left by a stopped process reconcile to failed after claim expiry without another provider call or resetting attempt accounting.

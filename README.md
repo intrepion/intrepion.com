@@ -5,7 +5,7 @@ A personal task app as the first MVP of a future Life OS. The initial delivery i
 - [Agreed MVP plan and delivery gates](docs/mvp-plan.md)
 - [MVP 2 Everyday lists scope](docs/mvp-2-plan.md), [approved designs](design/mvp-2/README.md), and [approved standalone prototype](design/mvp-2/PROTOTYPE.md)
 - [MVP 3 Household foundation scope](docs/mvp-3-plan.md), [designs](design/mvp-3/README.md), [standalone prototype](design/mvp-3/PROTOTYPE.md), and [implementation checks](docs/mvp-3-implementation.md)
-- [MVP 3.1 normal invitations scope](docs/mvp-3-1-plan.md), [implementation checks](docs/mvp-3-1-implementation.md), and [release preparation](docs/mvp-3-1-release.md)
+- [MVP 3.1 normal invitations scope](docs/mvp-3-1-plan.md), [implementation checks](docs/mvp-3-1-implementation.md), [final review](docs/mvp-3-1-review.md), and [release preparation](docs/mvp-3-1-release.md)
 - [Measured MVP 3 usage and approved pilot limits](docs/mvp-3-sizing.md), [release preparation](docs/mvp-3-release.md), [hosted rehearsal evidence](docs/mvp-3-rehearsal.md)
 - [Pilot operator tools](docs/mvp-3-operator.md) and [household retention](docs/mvp-3-retention.md)
 - [Domain glossary](GLOSSARY.md)

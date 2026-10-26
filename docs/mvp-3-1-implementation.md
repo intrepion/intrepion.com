@@ -1,8 +1,8 @@
 # MVP 3.1 implementation record
 
-Status: scope, wireframes, visual mockups and the standalone prototype are approved. Production implementation is in progress. No MVP 3.1 provider resources, credentials, DNS, real email or deployment have been changed.
+Status: scope, wireframes, visual mockups and the standalone prototype are approved. Production implementation, local verification and fixed-baseline two-axis review are complete. Provider setup and live launch remain pending. No MVP 3.1 provider resources, credentials, DNS, real email or deployment have been changed.
 
-Specification: [approved MVP 3.1 scope](mvp-3-1-plan.md). At the owner’s request, approved design was committed separately as `b4b5589`; that commit is the fixed review baseline. Production changes are excluded from it. This is not a claim that final review has occurred.
+Specification: [approved MVP 3.1 scope](mvp-3-1-plan.md). At the owner’s request, approved design was committed separately as `b4b5589`; that commit is the fixed review baseline. Production changes are excluded from it. The completed [final review](mvp-3-1-review.md) records independent findings, corrections and reinspection.
 
 ## Agreed test boundaries
 
@@ -48,24 +48,31 @@ Numeric launch safety thresholds, actual sender/support mailboxes, AWS productio
 - Household erasure removes its invitation records, delivery attempts, callback receipts and invitation/acceptance receipts using the same policy in live maintenance and recovery. Current email suppression remains independent. All six encrypted-recovery regressions pass.
 - Conservative recovery mail accounting: a restored snapshot may omit later sends, so recovery holds the current UTC month's counter at least at the existing 10,000-attempt ceiling and labels it `recovery_hold`. This is a conservative floor, not a measurement of actual sends. Growth pause and the email hold are independent; ordinary account/list use remains available. A new UTC month starts its own allowance. The size estimator includes the hold, and all six recovery regressions pass with migration 0021.
 
-These are partial implementation results, not final MVP 3.1 acceptance. The full local validation below is complete; the independent final review and Docker verification are still pending.
+Implementation verification and independent review are complete. Production acceptance still requires the separate measured-policy, provider/mailbox and hosted launch gates.
 
 ## Current slice
 
-Production implementation is ready for fixed-baseline two-axis review. Keep growth paused by default and real outbound sending unconfigured until the provider/setup gates. The Docker build still requires the owner’s terminal because Docker socket access is denied and sudo requires a password.
+The next gate is provider and measured launch preparation in the [release procedure](mvp-3-1-release.md). Keep growth paused by default and real outbound sending unconfigured until that review. The owner reports completing the requested Docker build; agent-side socket/image inspection remains unavailable because sudo requires a password.
 
 ## Prototype record
 
 The owner approved the nine-walkthrough [standalone prototype](../design/mvp-3-1/PROTOTYPE.md). Its disposable HTML/model will not be promoted into production. The approved primary source is captured on `prototype/mvp-3-1-invitations` at `6c403502bd1f23da837155a34fcbce87347e97bb`; only validated decisions belong in production.
 
-## Local verification before final review
+## Completed local verification
 
-- All 61 generated-client/local-D1 integration cases pass, including signed subscription confirmation, forged/replayed feedback, uncertain-send retry with the same private link, and callback-before-send-acknowledgment suppression.
-- The same run upgrades from MVP 1 through migration 0024, exports actual local D1, encrypts with age, restores with 56 independent protection records, and verifies current public identities/access and the original task canary. The synthetic restored export measured 9,334,123 bytes; this is a test workload, not a measurement of live data or production headroom.
+- All 62 generated-client/local-D1 integration cases pass after the principal review corrections, including signed subscription confirmation, forged/replayed feedback, uncertain-send retry with the same private link, and callback-before-send-acknowledgment suppression.
+- The same run upgrades from MVP 1 through migration 0024, exports actual local D1, encrypts with age, restores with 58 independent protection records, and verifies current public identities/access and the original task canary. The synthetic restored export measured 9,342,808 bytes; this is a test workload, not a measurement of live data or production headroom.
 - All 32 legacy browser cases and all three normal-account browser cases pass locally. Empty/malformed invitation fragments are removed and offer a recovery screen. Prototype code remains separate.
 - All 22 backup/recovery/probe checks pass. Recovery preserves later access restrictions, rejects conflicting protected identities and applies the conservative current-month mail hold.
 - Rust formatting, production/development Clippy, six Rust unit tests and release build pass. Generated TypeScript, ESLint, Prettier, TypeScript and Astro checks pass; Astro reports zero errors/warnings/hints. Two client model tests pass. Local model coverage: 83.33% statements/lines, 78.57% branches, 100% functions; this does not measure whole-application coverage.
-- Root and web production npm audits report zero vulnerabilities. Native production build succeeds. Docker verification is pending owner execution, not claimed as passed.
+- Root and web production npm audits report zero vulnerabilities. Native production build succeeds. The owner reports completing the requested Docker build in their terminal. Agent-side build output/image inspection is unavailable; no captured digest is asserted.
 - `npm run dev:normal` starts isolated persistent local D1 and the fake mailbox successfully. No provider resources, DNS, credentials, real messages or production deployment were changed.
 
 Initial policy activation now independently preserves existing account/head states before acknowledgment. All subsequent account admissions use the same protection journal. Retained household slots and metadata/history/invitation payload storage are accounted for, while ordinary capacity figures remain hidden. Owner audit and recovery review, paginated usage/growth metadata and confirmed suppression review are implemented.
+
+
+## Final review resolution
+
+Initial implementation commit: `5f6124b`; principal fixes: `642d03a`; final diagnostic wording and cross-space regression: `0d0701f`. Both independent reviewers confirmed no outstanding findings at `0d0701f`. The [review record](mvp-3-1-review.md) keeps Standards and Spec separate: three addressed heuristic findings, no hard standards violations, two corrected P2 spec findings and the corrected diagnostic-label follow-up.
+
+Owner authentication now resolves canonical identity once, and account overview/access responses share their set-based usage projection. Owner-only Site audit retains a bounded latest resource/structural rejection reason per account, excluding private content; its space header is accurately labeled selected request context, which can differ from a copy destination. Exhausted email claims reconcile after interruption without another handoff or lowering conservative attempt accounting. These regressions reproduced the original failures and pass. Full integration and actual encrypted export/recovery passed after the principal corrections; the final copy/context regression passed separately. All three normal-account browser cases passed again after those corrections. Production/development Clippy, lint/type/format checks and release build pass.
