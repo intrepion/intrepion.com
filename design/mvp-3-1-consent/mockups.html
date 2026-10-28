@@ -1,0 +1,1754 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Consent-based invitations — visual mockups</title>
+    <style>
+      :root {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+        color: #1b302c;
+        background: #f4f5f1;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        line-height: 1.55;
+      }
+      a {
+        color: #185e52;
+        text-underline-offset: 3px;
+      }
+      header,
+      main,
+      footer {
+        max-width: 1450px;
+        margin: auto;
+        padding: 32px;
+      }
+      h1 {
+        font-size: 40px;
+        letter-spacing: -0.04em;
+        margin: 12px 0;
+      }
+      h2 {
+        font-size: 16px;
+        margin: 0 0 10px;
+      }
+      h3 {
+        font-size: 27px;
+        line-height: 1.2;
+        letter-spacing: -0.035em;
+        margin: 0 0 12px;
+      }
+      p {
+        margin: 10px 0;
+      }
+      .eyebrow {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #596b65;
+      }
+      .intro {
+        max-width: 72ch;
+        color: #52665d;
+      }
+      .review-note {
+        background: white;
+        border: 1px solid #dce4de;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 24px 0;
+      }
+      .index {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px 20px;
+      }
+      .index a {
+        font-size: 13px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 32px 24px;
+      }
+      .board {
+        min-width: 0;
+        scroll-margin-top: 16px;
+      }
+      .screen {
+        border: 1px solid #dce4de;
+        border-radius: 18px;
+        background: #fff;
+        min-height: 590px;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+        box-shadow: 0 8px 32px #213b2f09;
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 19px 24px;
+        border-bottom: 1px solid #dce4de;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 17px;
+        font-weight: 750;
+        letter-spacing: -0.035em;
+      }
+      .mark {
+        width: 30px;
+        height: 30px;
+        display: grid;
+        place-items: center;
+        border-radius: 9px;
+        background: #185e52;
+        color: white;
+        font-size: 16px;
+      }
+      .bar-label {
+        font-size: 12px;
+        color: #65756f;
+      }
+      .space {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        background: #fafbf9;
+        padding: 12px 24px;
+        border-bottom: 1px solid #dce4de;
+      }
+      .space small {
+        display: block;
+        color: #66766f;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .badge {
+        background: #eaf3ee;
+        color: #185e52;
+        border-radius: 6px;
+        padding: 4px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .content {
+        padding: 28px 24px;
+        max-width: 700px;
+      }
+      .content > p {
+        color: #596b65;
+      }
+      .kicker {
+        font-size: 11px;
+        color: #185e52;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 750;
+        margin-bottom: 9px;
+      }
+      .card {
+        border: 1px solid #dce4de;
+        border-radius: 12px;
+        padding: 15px 16px;
+        margin: 12px 0;
+        background: #fff;
+      }
+      .card p {
+        margin: 0;
+        color: #52665d;
+        font-size: 14px;
+      }
+      .card strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 13px;
+      }
+      .card.soft {
+        background: #eef6f0;
+        border-color: #c8ded0;
+      }
+      .card.warning {
+        background: #fff8ea;
+        border-color: #eed4a7;
+      }
+      .card.danger {
+        background: #fff5f3;
+        border-color: #e6c3bc;
+      }
+      .card + .card {
+        margin-top: 9px;
+      }
+      .info-list {
+        margin-top: 18px;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 22px 0 4px;
+      }
+      button {
+        min-height: 44px;
+        max-width: 100%;
+        font: 600 14px inherit;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        border: 1px solid #97aaa0;
+        color: #1b302c;
+        background: #fff;
+        padding: 10px 15px;
+        border-radius: 9px;
+        overflow-wrap: anywhere;
+        opacity: 1;
+      }
+      button.primary {
+        background: #185e52;
+        border-color: #185e52;
+        color: #fff;
+      }
+      button.danger {
+        background: #a52f2b;
+        border-color: #a52f2b;
+        color: #fff;
+      }
+      .divider {
+        height: 1px;
+        background: #e4eae5;
+        margin: 22px 0;
+      }
+      .email-wrap {
+        background: #e8ede8;
+        padding: 24px;
+      }
+      .email {
+        background: #fff;
+        border: 1px solid #dce4de;
+        border-radius: 14px;
+        max-width: 560px;
+        margin: auto;
+        padding: 24px;
+      }
+      .mail-meta {
+        font-size: 12px;
+        color: #66766f;
+        margin-bottom: 24px;
+      }
+      .caption {
+        font-size: 12px;
+        color: #65756f;
+        margin-top: 15px;
+      }
+      .setting {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        border: 1px solid #dce4de;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 16px 0;
+      }
+      .toggle {
+        display: inline-flex;
+        width: 38px;
+        height: 22px;
+        flex: none;
+        border-radius: 20px;
+        background: #9daaa3;
+        padding: 3px;
+      }
+      .toggle::after {
+        content: "";
+        background: #fff;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+      }
+      .setting span:last-child {
+        font-size: 14px;
+      }
+      .setting small {
+        display: block;
+        color: #65756f;
+      }
+      .identity {
+        border: 1px solid #c9d6ce;
+        background: #f8faf8;
+        border-radius: 9px;
+        padding: 12px 14px;
+        margin: 18px 0;
+        font-size: 14px;
+      }
+      .identity small {
+        display: block;
+        color: #65756f;
+        font-weight: 700;
+      }
+      .meta {
+        color: #687970;
+        font-size: 12px;
+      }
+      .link-preview {
+        border: 1px solid #c9d6ce;
+        background: #f8faf8;
+        border-radius: 9px;
+        padding: 12px;
+        font: 13px monospace;
+        overflow-wrap: anywhere;
+      }
+      .steps {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 18px 0;
+        color: #65756f;
+        font-size: 12px;
+      }
+      .step {
+        background: #f1f4f1;
+        border-radius: 20px;
+        padding: 5px 10px;
+      }
+      .step.active {
+        background: #eaf3ee;
+        color: #185e52;
+        font-weight: 700;
+      }
+      footer {
+        font-size: 13px;
+        color: #65756f;
+      }
+      @media (max-width: 850px) {
+        header,
+        main,
+        footer {
+          padding: 20px 16px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .index {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .screen {
+          min-height: 0;
+        }
+      }
+      @media (max-width: 450px) {
+        h1 {
+          font-size: 30px;
+        }
+        h3 {
+          font-size: 24px;
+        }
+        .index {
+          grid-template-columns: 1fr;
+        }
+        .content {
+          padding: 22px 18px;
+        }
+        .bar,
+        .space {
+          padding-left: 18px;
+          padding-right: 18px;
+        }
+        .email-wrap {
+          padding: 14px;
+        }
+        .email {
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <p class="eyebrow">Approved wireframes · visual review</p>
+      <h1>Consent-based invitations</h1>
+      <p class="intro">
+        A visual walkthrough of requesting an invitation, reviewing it as a
+        household head, and joining by email.
+      </p>
+      <p class="review-note">
+        These are static visual mockups using synthetic data. Buttons are
+        disabled. Review the visual direction and wording before the separate
+        interactive prototype.
+      </p>
+      <nav class="index" aria-label="Mockup index">
+        <a href="#mockup-1">01. Household overview</a>
+        <a href="#mockup-2">02. Create a request link</a>
+        <a href="#mockup-3">03. Copy and share</a>
+        <a href="#mockup-4">04. Manage links</a>
+        <a href="#mockup-5">05. Revoke link confirmation</a>
+        <a href="#mockup-6">06. Request link before sign-in</a>
+        <a href="#mockup-7">07. Request invitation email</a>
+        <a href="#mockup-8">08. Verified email unavailable</a>
+        <a href="#mockup-9">09. Request submitted</a>
+        <a href="#mockup-10">10. Duplicate request</a>
+        <a href="#mockup-11">11. Already a head</a>
+        <a href="#mockup-12">12. Expired or revoked request link</a>
+        <a href="#mockup-13">13. My invitation requests</a>
+        <a href="#mockup-14">14. Withdraw confirmation</a>
+        <a href="#mockup-15">15. Head notification opt-in</a>
+        <a href="#mockup-16">16. Confirm a changed address</a>
+        <a href="#mockup-17">17. Notification email</a>
+        <a href="#mockup-18">18. Pending requests</a>
+        <a href="#mockup-19">19. Review request</a>
+        <a href="#mockup-20">20. Decline confirmation</a>
+        <a href="#mockup-21">21. Approval complete</a>
+        <a href="#mockup-22">22. Sending temporarily blocked</a>
+        <a href="#mockup-23">23. Another decision won</a>
+        <a href="#mockup-24">24. Recipient invitation email</a>
+        <a href="#mockup-25">25. Wrong Google account</a>
+        <a href="#mockup-26">26. Review and accept</a>
+        <a href="#mockup-27">27. Declined or expired</a>
+        <a href="#mockup-28">28. Notification delivery status</a>
+        <a href="#mockup-29">29. Turn notifications off</a>
+        <a href="#mockup-30">30. Growth paused</a>
+        <a href="#mockup-31">31. Owner administration</a>
+        <a href="#mockup-32">32. Recovery review</a>
+        <a href="#mockup-33">33. Retained History</a>
+        <a href="#mockup-34">34. Link creator leaves</a>
+        <a href="#mockup-35">35. Consent window ended</a>
+      </nav>
+    </header>
+    <main>
+      <div class="grid">
+        <section class="board" id="mockup-1">
+          <h2>01. Household overview</h2>
+          <p class="eyebrow">Head · signed in</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Everyday family</h3>
+              <p>Shared · You are a head</p>
+              <div class="info-list">
+                <div class="card"><p>Heads: Alex, Morgan</p></div>
+                <div class="card"><p>Invitation requests: 2 pending</p></div>
+                <div class="card"><p>Request links: 1 active</p></div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Review requests
+                </button>
+                <button type="button" disabled class="">
+                  Manage request links
+                </button>
+                <button type="button" disabled class="">
+                  Notification settings
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-2">
+          <h2>02. Create a request link</h2>
+          <p class="eyebrow">Head · link creation</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Invite someone to request access</h3>
+              <p>
+                Anyone with this link can request an invitation. Each request
+                needs a head’s approval.
+              </p>
+              <div class="info-list">
+                <div class="card">
+                  <p>Link works for seven days. You can revoke it early.</p>
+                </div>
+                <div class="card">
+                  <p>Your request notification emails: Off</p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Create request link
+                </button>
+                <button type="button" disabled class="">
+                  Notification settings
+                </button>
+                <button type="button" disabled class="">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-3">
+          <h2>03. Copy and share</h2>
+          <p class="eyebrow">Head · link created</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Request link ready</h3>
+              <p>
+                Share this link directly with someone you want to invite. They
+                can pass it to someone else.
+              </p>
+              <div class="info-list">
+                <div class="link-preview">
+                  https://intrepion.com/#request=••••••••
+                </div>
+                <div class="card">
+                  <p>Expires: November 14, 2026 · 3:00 PM</p>
+                </div>
+                <div class="card">
+                  <p>Opening the link does not send email or grant access.</p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Copy request link
+                </button>
+                <button type="button" disabled class="">Done</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-4">
+          <h2>04. Manage links</h2>
+          <p class="eyebrow">Head · shared household controls</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Request links</h3>
+              <p>Links created by any head are shown here.</p>
+              <div class="info-list">
+                <div class="card">
+                  <p>Alex’s link · Active · expires Nov 14</p>
+                </div>
+                <div class="card">
+                  <p>Morgan’s link · Active · expires Nov 16</p>
+                </div>
+                <div class="card"><p>Any head can revoke a link.</p></div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Revoke Alex’s link
+                </button>
+                <button type="button" disabled class="">
+                  Create request link
+                </button>
+                <button type="button" disabled class="">
+                  Back to household
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-5">
+          <h2>05. Revoke link confirmation</h2>
+          <p class="eyebrow">Head · destructive confirmation</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Revoke this request link?</h3>
+              <p>
+                New people can no longer use it. Pending requests made through
+                it will be canceled.
+              </p>
+              <div class="info-list">
+                <div class="card danger">
+                  <p>
+                    Already emailed invitations and accepted memberships stay
+                    valid.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="danger">
+                  Revoke link
+                </button>
+                <button type="button" disabled class="">Keep link</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-6">
+          <h2>06. Request link before sign-in</h2>
+          <p class="eyebrow">Visitor · no account required</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Household invitation</div>
+              <h3>Household invitation request</h3>
+              <p>
+                Sign in with Google to review the household and request an
+                invitation email.
+              </p>
+              <div class="info-list">
+                <div class="card">
+                  <p>
+                    Opening this page does not submit a request or create an
+                    account.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Continue with Google
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-7">
+          <h2>07. Request invitation email</h2>
+          <p class="eyebrow">Visitor · verified Google identity</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="content">
+              <div class="steps">
+                <span class="step active">1 · Request</span
+                ><span class="step">2 · Invitation</span
+                ><span class="step">3 · Join</span>
+              </div>
+              <div class="kicker">Household invitation</div>
+              <h3>Request an invitation to Everyday family</h3>
+              <div class="identity">
+                <small>Verified Google email</small>jordan@example.invalid
+              </div>
+              <div class="info-list">
+                <div class="card soft">
+                  <p>
+                    A current head can approve your request. We may send your
+                    invitation here, including technical retries or a head’s
+                    resend within 30 days.
+                  </p>
+                </div>
+                <div class="card">
+                  <p>This does not subscribe you to marketing emails.</p>
+                </div>
+                <div class="card">
+                  <p>
+                    No household access is granted until you accept the emailed
+                    invitation.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Request invitation email
+                </button>
+                <button type="button" disabled class="">
+                  Use another Google account
+                </button>
+                <button type="button" disabled class="">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-8">
+          <h2>08. Verified email unavailable</h2>
+          <p class="eyebrow">Visitor · identity recovery</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Household invitation</div>
+              <h3>A verified email is needed</h3>
+              <p>
+                Use a Google account with a verified email address to request an
+                invitation.
+              </p>
+              <div class="info-list">
+                <div class="card warning"><p>No request was submitted.</p></div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Use another Google account
+                </button>
+                <button type="button" disabled class="">Back</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-9">
+          <h2>09. Request submitted</h2>
+          <p class="eyebrow">Visitor · confirmed request</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="content">
+              <div class="steps">
+                <span class="step active">1 · Request</span
+                ><span class="step">2 · Invitation</span
+                ><span class="step">3 · Join</span>
+              </div>
+              <div class="kicker">Household invitation</div>
+              <h3>Invitation requested</h3>
+              <p>Your request is waiting for a household head to review it.</p>
+              <div class="info-list">
+                <div class="card soft"><p>Household: Everyday family</p></div>
+                <div class="card">
+                  <p>Requested: Nov 7 · Expires: Nov 14</p>
+                </div>
+                <div class="card">
+                  <p>Your email: jordan@example.invalid</p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  My invitation requests
+                </button>
+                <button type="button" disabled class="">
+                  Withdraw request
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-10">
+          <h2>10. Duplicate request</h2>
+          <p class="eyebrow">Visitor · another link, same household</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Household invitation</div>
+              <h3>You already have a pending request</h3>
+              <p>Your existing request is waiting for a head to review it.</p>
+              <div class="info-list">
+                <div class="card"><p>Everyday family · expires Nov 14</p></div>
+                <div class="card">
+                  <p>No additional notification was sent.</p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  View my requests
+                </button>
+                <button type="button" disabled class="">
+                  Withdraw request
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-11">
+          <h2>11. Already a head</h2>
+          <p class="eyebrow">Existing account · link opened</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Household invitation</div>
+              <h3>You’re already a head</h3>
+              <p>You already have access to Everyday family.</p>
+              <div class="info-list">
+                <div class="card">
+                  <p>No request or notification was created.</p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Open household
+                </button>
+                <button type="button" disabled class="">Back to tasks</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-12">
+          <h2>12. Expired or revoked request link</h2>
+          <p class="eyebrow">Visitor · unavailable</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Household invitation</div>
+              <h3>This request link is unavailable</h3>
+              <p>Ask a household head for a new request link.</p>
+              <div class="info-list">
+                <div class="card warning">
+                  <p>Your existing account and tasks have not changed.</p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  My invitation requests
+                </button>
+                <button type="button" disabled class="">Back to sign-in</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-13">
+          <h2>13. My invitation requests</h2>
+          <p class="eyebrow">Visitor · fresh Google sign-in</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="content">
+              <div class="steps">
+                <span class="step active">1 · Request</span
+                ><span class="step">2 · Invitation</span
+                ><span class="step">3 · Join</span>
+              </div>
+              <div class="kicker">Household invitation</div>
+              <h3>My invitation requests</h3>
+              <p>Signed in as jordan@example.invalid</p>
+              <div class="info-list">
+                <div class="card">
+                  <p>Everyday family · Pending · expires Nov 14</p>
+                </div>
+                <div class="card">
+                  <p>Weekend home · Invitation sent · expires Nov 12</p>
+                </div>
+                <div class="card"><p>Family kitchen · Declined</p></div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  View pending request
+                </button>
+                <button type="button" disabled class="">
+                  Withdraw invitation
+                </button>
+                <button type="button" disabled class="">Sign out</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-14">
+          <h2>14. Withdraw confirmation</h2>
+          <p class="eyebrow">Visitor · explicit decision</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Household invitation</div>
+              <h3>Withdraw your request?</h3>
+              <p>The head will no longer be able to approve this request.</p>
+              <div class="info-list">
+                <div class="card danger">
+                  <p>
+                    If an invitation has already been issued, withdrawal revokes
+                    it and cancels unsent email.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="danger">Withdraw</button>
+                <button type="button" disabled class="">Keep request</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-15">
+          <h2>15. Head notification opt-in</h2>
+          <p class="eyebrow">Head · per household</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Request email notifications</h3>
+              <p>Household: Everyday family</p>
+              <div class="setting">
+                <span class="toggle" aria-hidden="true"></span
+                ><span
+                  ><strong>Request emails are off</strong
+                  ><small
+                    >Choose whether to receive notices for this
+                    household.</small
+                  ></span
+                >
+              </div>
+              <div class="info-list">
+                <div class="card">
+                  <p>
+                    Send notifications to: alex@example.invalid (verified Google
+                    email)
+                  </p>
+                </div>
+                <div class="card">
+                  <p>
+                    Off · Receive an email when a new invitation request arrives
+                  </p>
+                </div>
+                <div class="card">
+                  <p>
+                    Existing pending requests will not generate a new
+                    notification.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Turn on notifications
+                </button>
+                <button type="button" disabled class="">
+                  Back to household
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-16">
+          <h2>16. Confirm a changed address</h2>
+          <p class="eyebrow">Head · notification address changed</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Confirm your notification address</h3>
+              <p>
+                Notifications are paused because your verified Google email
+                changed.
+              </p>
+              <div class="info-list">
+                <div class="card warning">
+                  <p>New address: alex.new@example.invalid</p>
+                </div>
+                <div class="card">
+                  <p>
+                    Confirm before receiving new request notifications here.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Confirm address
+                </button>
+                <button type="button" disabled class="">
+                  Leave notifications paused
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-17">
+          <h2>17. Notification email</h2>
+          <p class="eyebrow">Head · example email</p>
+          <div class="screen">
+            <div class="email-wrap">
+              <div class="email">
+                <div class="brand"><span class="mark">✓</span> intrepion</div>
+                <p class="mail-meta">
+                  To: alex@example.invalid · From:
+                  invitations@notify.example.invalid
+                </p>
+                <div class="kicker">Invitation email</div>
+                <h3>New invitation request</h3>
+                <p>Someone requested an invitation to Everyday family.</p>
+                <div class="info-list">
+                  <div class="card soft">
+                    <p>Sign in to review the request.</p>
+                  </div>
+                  <div class="card">
+                    <p>
+                      You receive this because you opted in for this household.
+                    </p>
+                  </div>
+                </div>
+                <div class="actions">
+                  <button type="button" disabled class="primary">
+                    Review request
+                  </button>
+                  <button type="button" disabled class="">
+                    Notification settings
+                  </button>
+                </div>
+                <p class="caption">Questions? Contact support@intrepion.com.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-18">
+          <h2>18. Pending requests</h2>
+          <p class="eyebrow">Head · household management</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Invitation requests</h3>
+              <p>Everyday family · 2 pending</p>
+              <div class="info-list">
+                <div class="card">
+                  <p>Jordan · jordan@example.invalid · requested Nov 7</p>
+                </div>
+                <div class="card">
+                  <p>Taylor · taylor@example.invalid · requested Nov 8</p>
+                </div>
+                <div class="card">
+                  <p>
+                    Requesters cannot access household content until they accept
+                    an invitation.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Review Jordan
+                </button>
+                <button type="button" disabled class="">Review Taylor</button>
+                <button type="button" disabled class="">Request links</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-19">
+          <h2>19. Review request</h2>
+          <p class="eyebrow">Head · approval decision</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Review Jordan’s request</h3>
+              <p>Jordan · jordan@example.invalid</p>
+              <div class="info-list">
+                <div class="card"><p>Requested Nov 7 · expires Nov 14</p></div>
+                <div class="card">
+                  <p>
+                    Approving sends a private invitation email. They must accept
+                    it to become an equal head.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Approve and send invitation
+                </button>
+                <button type="button" disabled class="">Decline</button>
+                <button type="button" disabled class="">Back</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-20">
+          <h2>20. Decline confirmation</h2>
+          <p class="eyebrow">Head · explicit decision</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Decline this request?</h3>
+              <p>Jordan can see the decision in My invitation requests.</p>
+              <div class="info-list">
+                <div class="card danger">
+                  <p>The app won’t send a decline email.</p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="danger">
+                  Decline request
+                </button>
+                <button type="button" disabled class="">Keep pending</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-21">
+          <h2>21. Approval complete</h2>
+          <p class="eyebrow">Head · confirmed</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Invitation issued</h3>
+              <p>An invitation is queued for jordan@example.invalid.</p>
+              <div class="info-list">
+                <div class="card soft">
+                  <p>Delivery status: not confirmed</p>
+                </div>
+                <div class="card">
+                  <p>The person becomes a head only after accepting.</p>
+                </div>
+                <div class="card">
+                  <p>
+                    Automatic retries and Send again follow the request’s 30-day
+                    consent window.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  View invitations
+                </button>
+                <button type="button" disabled class="">
+                  Back to requests
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-22">
+          <h2>22. Sending temporarily blocked</h2>
+          <p class="eyebrow">Head · ceiling or safety control</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Your action was not completed</h3>
+              <p>
+                The request is still pending. Please try again later or contact
+                support.
+              </p>
+              <div class="info-list">
+                <div class="card warning">
+                  <p>No approval or invitation was recorded.</p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Try again
+                </button>
+                <button type="button" disabled class="">
+                  Back to requests
+                </button>
+                <button type="button" disabled class="">Contact support</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-23">
+          <h2>23. Another decision won</h2>
+          <p class="eyebrow">Head · concurrent change</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>This request has changed</h3>
+              <p>
+                Another head decided this request, or the requester withdrew it.
+              </p>
+              <div class="info-list">
+                <div class="card warning">
+                  <p>No additional invitation was issued.</p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Review latest
+                </button>
+                <button type="button" disabled class="">
+                  Back to requests
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-24">
+          <h2>24. Recipient invitation email</h2>
+          <p class="eyebrow">Recipient · private email</p>
+          <div class="screen">
+            <div class="email-wrap">
+              <div class="email">
+                <div class="brand"><span class="mark">✓</span> intrepion</div>
+                <p class="mail-meta">
+                  To: jordan@example.invalid · From:
+                  invitations@notify.example.invalid
+                </p>
+                <div class="steps">
+                  <span class="step">1 · Request</span
+                  ><span class="step active">2 · Invitation</span
+                  ><span class="step">3 · Join</span>
+                </div>
+                <div class="kicker">Invitation email</div>
+                <h3>You’re invited to Everyday family</h3>
+                <p>A household head approved your request.</p>
+                <div class="info-list">
+                  <div class="card soft">
+                    <p>
+                      Use the same Google identity and verified email you used
+                      to request this invitation.
+                    </p>
+                  </div>
+                  <div class="card">
+                    <p>The invitation link is valid for seven days.</p>
+                  </div>
+                </div>
+                <div class="actions">
+                  <button type="button" disabled class="primary">
+                    Review invitation
+                  </button>
+                </div>
+                <p class="caption">Questions? Contact support@intrepion.com.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-25">
+          <h2>25. Wrong Google account</h2>
+          <p class="eyebrow">Recipient · recovery</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="content">
+              <div class="steps">
+                <span class="step">1 · Request</span
+                ><span class="step active">2 · Invitation</span
+                ><span class="step">3 · Join</span>
+              </div>
+              <div class="kicker">Household invitation</div>
+              <h3>Choose the Google account you used</h3>
+              <p>
+                This invitation is bound to the account and verified email that
+                requested it.
+              </p>
+              <div class="info-list">
+                <div class="card warning">
+                  <p>The invitation has not been consumed.</p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Choose another Google account
+                </button>
+                <button type="button" disabled class="">Back</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-26">
+          <h2>26. Review and accept</h2>
+          <p class="eyebrow">Recipient · explicit join</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="content">
+              <div class="steps">
+                <span class="step">1 · Request</span
+                ><span class="step">2 · Invitation</span
+                ><span class="step active">3 · Join</span>
+              </div>
+              <div class="kicker">Household invitation</div>
+              <h3>Join Everyday family as a head?</h3>
+              <p>
+                Every head can view and change shared household content and its
+                retained History.
+              </p>
+              <div class="info-list">
+                <div class="card soft">
+                  <p>Your personal lists remain private.</p>
+                </div>
+                <div class="card"><p>Display name: Jordan</p></div>
+                <div class="card">
+                  <p>
+                    Signing in or opening this page has not joined the
+                    household.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Accept and join
+                </button>
+                <button type="button" disabled class="">Not now</button>
+                <button type="button" disabled class="">
+                  Withdraw invitation
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-27">
+          <h2>27. Declined or expired</h2>
+          <p class="eyebrow">Visitor · terminal status</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Household invitation</div>
+              <h3>This request is no longer pending</h3>
+              <p>The request was declined or reached its deadline.</p>
+              <div class="info-list">
+                <div class="card warning">
+                  <p>A head can share a new link if you should try again.</p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Back to my requests
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-28">
+          <h2>28. Notification delivery status</h2>
+          <p class="eyebrow">Head · own settings</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Request notification status</h3>
+              <p>Household: Everyday family</p>
+              <div class="info-list">
+                <div class="card">
+                  <p>Notifications: On · alex@example.invalid</p>
+                </div>
+                <div class="card">
+                  <p>Latest notice: Delivery not confirmed</p>
+                </div>
+                <div class="card">
+                  <p>
+                    A delivery failure is shown only when confirmed. Requests
+                    remain in the app.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Turn off notifications
+                </button>
+                <button type="button" disabled class="">Review requests</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-29">
+          <h2>29. Turn notifications off</h2>
+          <p class="eyebrow">Head · explicit setting</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Turn off request emails?</h3>
+              <p>New notices and queued retries for you will stop.</p>
+              <div class="info-list">
+                <div class="card danger">
+                  <p>Pending requests remain available in the app.</p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="danger">
+                  Turn off emails
+                </button>
+                <button type="button" disabled class="">Keep on</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-30">
+          <h2>30. Growth paused</h2>
+          <p class="eyebrow">Visitor and head · operational state</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Invitation requests are temporarily paused</h3>
+              <p>
+                Existing requests remain visible. You can withdraw a request,
+                revoke a link, or turn off notifications.
+              </p>
+              <div class="info-list">
+                <div class="card warning">
+                  <p>
+                    New request links, requests, approvals, and invitation
+                    sending are paused.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  My invitation requests
+                </button>
+                <button type="button" disabled class="">
+                  Back to household
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-31">
+          <h2>31. Owner administration</h2>
+          <p class="eyebrow">Site owner · metadata only</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div><small>Site-wide</small><strong>Administration</strong></div>
+              <span class="badge">Site owner</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Site owner</div>
+              <h3>Invitation request activity</h3>
+              <p>Review operational health and abuse flags.</p>
+              <div class="info-list">
+                <div class="card">
+                  <p>Request links: 4 active · Requests: 2 pending</p>
+                </div>
+                <div class="card">
+                  <p>
+                    Notification attempts this UTC month: 3 · Delivery failures:
+                    0
+                  </p>
+                </div>
+                <div class="card">
+                  <p>Account and household usage flags are visible here.</p>
+                </div>
+                <div class="card">
+                  <p>
+                    Private link secrets and household content are not shown.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Review email operations
+                </button>
+                <button type="button" disabled class="">
+                  Review safety settings
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-32">
+          <h2>32. Recovery review</h2>
+          <p class="eyebrow">Site owner · restored backup</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div><small>Site-wide</small><strong>Administration</strong></div>
+              <span class="badge">Site owner</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Site owner</div>
+              <h3>Review after recovery</h3>
+              <p>
+                Request links were revoked, pending requests and unsent
+                notifications canceled, and head notification opt-ins turned
+                off.
+              </p>
+              <div class="info-list">
+                <div class="card warning">
+                  <p>Heads can create new links and opt in again.</p>
+                </div>
+                <div class="card">
+                  <p>
+                    Expired identifiable request details are removed before the
+                    restored database is used.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Review recovery
+                </button>
+                <button type="button" disabled class="">Back to Admin</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-33">
+          <h2>33. Retained History</h2>
+          <p class="eyebrow">Head · household History</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Household History</h3>
+              <p>Invitation request and decision</p>
+              <div class="info-list">
+                <div class="card"><p>Nov 7 · Invitation requested</p></div>
+                <div class="card">
+                  <p>Nov 8 · A head approved an invitation</p>
+                </div>
+                <div class="card">
+                  <p>
+                    Identifying request details are removed 30 days after the
+                    final state.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Back to household
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-34">
+          <h2>34. Link creator leaves</h2>
+          <p class="eyebrow">Head · link lifecycle</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>Request link revoked</h3>
+              <p>
+                Alex is no longer a current head. Their request link was
+                revoked.
+              </p>
+              <div class="info-list">
+                <div class="card warning">
+                  <p>Pending requests through that link were canceled.</p>
+                </div>
+                <div class="card">
+                  <p>Other heads can create new request links.</p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Create request link
+                </button>
+                <button type="button" disabled class="">
+                  Back to household
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="board" id="mockup-35">
+          <h2>35. Consent window ended</h2>
+          <p class="eyebrow">Head · invitation management</p>
+          <div class="screen">
+            <div class="bar">
+              <div class="brand"><span class="mark">✓</span> intrepion</div>
+              <span class="bar-label">Everyday lists</span>
+            </div>
+            <div class="space">
+              <div>
+                <small>Household</small><strong>Everyday family</strong>
+              </div>
+              <span class="badge">Head</span>
+            </div>
+            <div class="content">
+              <div class="kicker">Your household</div>
+              <h3>A new request is needed</h3>
+              <p>The 30-day period for sending invitation emails has ended.</p>
+              <div class="info-list">
+                <div class="card warning">
+                  <p>
+                    Ask the person to open a current request link and request
+                    another invitation.
+                  </p>
+                </div>
+                <div class="card">
+                  <p>
+                    An invitation already sent in time remains valid until its
+                    own expiration.
+                  </p>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" disabled class="primary">
+                  Manage request links
+                </button>
+                <button type="button" disabled class="">
+                  Back to invitations
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <footer>Visual mockups · synthetic examples · no live actions</footer>
+  </body>
+</html>

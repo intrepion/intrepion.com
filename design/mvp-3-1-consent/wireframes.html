@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Consent-based invitations — wireframes</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #ededed;
+        color: #222;
+        font:
+          15px/1.5 system-ui,
+          sans-serif;
+      }
+      header,
+      main,
+      footer {
+        max-width: 1400px;
+        margin: auto;
+        padding: 24px;
+      }
+      h1 {
+        font-size: 30px;
+      }
+      h2 {
+        font-size: 18px;
+      }
+      h3 {
+        font-size: 23px;
+        margin: 0 0 12px;
+      }
+      a {
+        color: #222;
+      }
+      .notice {
+        border: 1px dashed #777;
+        padding: 14px;
+        background: #fafafa;
+      }
+      .index {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px 20px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 20px;
+      }
+      .panel {
+        min-width: 0;
+        background: #fff;
+        border: 1px solid #777;
+        padding: 16px;
+        scroll-margin-top: 12px;
+      }
+      .frame {
+        border: 2px solid #444;
+        padding: 18px;
+        min-height: 320px;
+        overflow-wrap: anywhere;
+      }
+      .eyebrow {
+        font: 12px monospace;
+        color: #444;
+        text-transform: uppercase;
+      }
+      .appbar strong {
+        flex: none;
+      }
+      .appbar {
+        border-bottom: 1px solid #999;
+        padding-bottom: 8px;
+        margin-bottom: 18px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .note {
+        background: #f1f1f1;
+        border: 1px solid #aaa;
+        padding: 10px;
+        margin: 8px 0;
+      }
+      .buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 18px;
+      }
+      button {
+        background: #eee;
+        border: 1px solid #555;
+        color: #333;
+        padding: 9px 12px;
+        font: inherit;
+        border-radius: 2px;
+        opacity: 1;
+      }
+      .foot {
+        color: #555;
+      }
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .index {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 600px) {
+        header,
+        main,
+        footer {
+          padding: 14px;
+        }
+        .grid,
+        .index {
+          grid-template-columns: 1fr;
+        }
+        .frame {
+          min-height: 0;
+        }
+        h1 {
+          font-size: 25px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Consent-based household invitations</h1>
+      <p class="eyebrow">
+        MVP 3.1 amendment · static wireframes · draft for review
+      </p>
+      <p class="notice">
+        These are layout sketches with synthetic names and addresses. Buttons
+        are disabled. Review the content and decisions before visual mockups;
+        nothing here sends email or changes data.
+      </p>
+      <nav aria-label="Wireframe index" class="index">
+        <a href="#screen-1">01. Household overview</a>
+        <a href="#screen-2">02. Create a request link</a>
+        <a href="#screen-3">03. Copy and share</a>
+        <a href="#screen-4">04. Manage links</a>
+        <a href="#screen-5">05. Revoke link confirmation</a>
+        <a href="#screen-6">06. Request link before sign-in</a>
+        <a href="#screen-7">07. Request invitation email</a>
+        <a href="#screen-8">08. Verified email unavailable</a>
+        <a href="#screen-9">09. Request submitted</a>
+        <a href="#screen-10">10. Duplicate request</a>
+        <a href="#screen-11">11. Already a head</a>
+        <a href="#screen-12">12. Expired or revoked request link</a>
+        <a href="#screen-13">13. My invitation requests</a>
+        <a href="#screen-14">14. Withdraw confirmation</a>
+        <a href="#screen-15">15. Head notification opt-in</a>
+        <a href="#screen-16">16. Confirm a changed address</a>
+        <a href="#screen-17">17. Notification email</a>
+        <a href="#screen-18">18. Pending requests</a>
+        <a href="#screen-19">19. Review request</a>
+        <a href="#screen-20">20. Decline confirmation</a>
+        <a href="#screen-21">21. Approval complete</a>
+        <a href="#screen-22">22. Sending temporarily blocked</a>
+        <a href="#screen-23">23. Another decision won</a>
+        <a href="#screen-24">24. Recipient invitation email</a>
+        <a href="#screen-25">25. Wrong Google account</a>
+        <a href="#screen-26">26. Review and accept</a>
+        <a href="#screen-27">27. Declined or expired</a>
+        <a href="#screen-28">28. Notification delivery status</a>
+        <a href="#screen-29">29. Turn notifications off</a>
+        <a href="#screen-30">30. Growth paused</a>
+        <a href="#screen-31">31. Owner administration</a>
+        <a href="#screen-32">32. Recovery review</a>
+        <a href="#screen-33">33. Retained History</a>
+        <a href="#screen-34">34. Link creator leaves</a>
+        <a href="#screen-35">35. Consent window ended</a>
+      </nav>
+    </header>
+    <main>
+      <div class="grid">
+        <section class="panel" id="screen-1">
+          <h2>01. Household overview</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · signed in</span>
+            </div>
+            <h3>Everyday family</h3>
+            <p>Shared · You are a head</p>
+            <div class="note">Heads: Alex, Morgan</div>
+            <div class="note">Invitation requests: 2 pending</div>
+            <div class="note">Request links: 1 active</div>
+            <div class="buttons">
+              <button type="button" disabled>Review requests</button
+              ><button type="button" disabled>Manage request links</button
+              ><button type="button" disabled>Notification settings</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-2">
+          <h2>02. Create a request link</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · link creation</span>
+            </div>
+            <h3>Invite someone to request access</h3>
+            <p>
+              Anyone with this link can request an invitation. Each request
+              needs a head’s approval.
+            </p>
+            <div class="note">
+              Link works for seven days. You can revoke it early.
+            </div>
+            <div class="note">Your request notification emails: Off</div>
+            <div class="buttons">
+              <button type="button" disabled>Create request link</button
+              ><button type="button" disabled>Notification settings</button
+              ><button type="button" disabled>Cancel</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-3">
+          <h2>03. Copy and share</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · link created</span>
+            </div>
+            <h3>Request link ready</h3>
+            <p>
+              Share this link directly with someone you want to invite. They can
+              pass it to someone else.
+            </p>
+            <div class="note">
+              Request link: https://intrepion.com/#request=••••••••
+            </div>
+            <div class="note">Expires: November 14, 2026 · 3:00 PM</div>
+            <div class="note">
+              Opening the link does not send email or grant access.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Copy request link</button
+              ><button type="button" disabled>Done</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-4">
+          <h2>04. Manage links</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · shared household controls</span>
+            </div>
+            <h3>Request links</h3>
+            <p>Links created by any head are shown here.</p>
+            <div class="note">Alex’s link · Active · expires Nov 14</div>
+            <div class="note">Morgan’s link · Active · expires Nov 16</div>
+            <div class="note">Any head can revoke a link.</div>
+            <div class="buttons">
+              <button type="button" disabled>Revoke Alex’s link</button
+              ><button type="button" disabled>Create request link</button
+              ><button type="button" disabled>Back to household</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-5">
+          <h2>05. Revoke link confirmation</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · destructive confirmation</span>
+            </div>
+            <h3>Revoke this request link?</h3>
+            <p>
+              New people can no longer use it. Pending requests made through it
+              will be canceled.
+            </p>
+            <div class="note">
+              Already emailed invitations and accepted memberships stay valid.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Revoke link</button
+              ><button type="button" disabled>Keep link</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-6">
+          <h2>06. Request link before sign-in</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Visitor · no account required</span>
+            </div>
+            <h3>Household invitation request</h3>
+            <p>
+              Sign in with Google to review the household and request an
+              invitation email.
+            </p>
+            <div class="note">
+              Opening this page does not submit a request or create an account.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Continue with Google</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-7">
+          <h2>07. Request invitation email</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Visitor · verified Google identity</span>
+            </div>
+            <h3>Request an invitation to Everyday family</h3>
+            <p>Your verified Google email: jordan@example.invalid</p>
+            <div class="note">
+              A current head can approve your request. We may send your
+              invitation here, including technical retries or a head’s resend
+              within 30 days.
+            </div>
+            <div class="note">
+              This does not subscribe you to marketing emails.
+            </div>
+            <div class="note">
+              No household access is granted until you accept the emailed
+              invitation.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Request invitation email</button
+              ><button type="button" disabled>Use another Google account</button
+              ><button type="button" disabled>Cancel</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-8">
+          <h2>08. Verified email unavailable</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Visitor · identity recovery</span>
+            </div>
+            <h3>A verified email is needed</h3>
+            <p>
+              Use a Google account with a verified email address to request an
+              invitation.
+            </p>
+            <div class="note">No request was submitted.</div>
+            <div class="buttons">
+              <button type="button" disabled>Use another Google account</button
+              ><button type="button" disabled>Back</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-9">
+          <h2>09. Request submitted</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Visitor · confirmed request</span>
+            </div>
+            <h3>Invitation requested</h3>
+            <p>Your request is waiting for a household head to review it.</p>
+            <div class="note">Household: Everyday family</div>
+            <div class="note">Requested: Nov 7 · Expires: Nov 14</div>
+            <div class="note">Your email: jordan@example.invalid</div>
+            <div class="buttons">
+              <button type="button" disabled>My invitation requests</button
+              ><button type="button" disabled>Withdraw request</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-10">
+          <h2>10. Duplicate request</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow"
+                >Visitor · another link, same household</span
+              >
+            </div>
+            <h3>You already have a pending request</h3>
+            <p>Your existing request is waiting for a head to review it.</p>
+            <div class="note">Everyday family · expires Nov 14</div>
+            <div class="note">No additional notification was sent.</div>
+            <div class="buttons">
+              <button type="button" disabled>View my requests</button
+              ><button type="button" disabled>Withdraw request</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-11">
+          <h2>11. Already a head</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Existing account · link opened</span>
+            </div>
+            <h3>You’re already a head</h3>
+            <p>You already have access to Everyday family.</p>
+            <div class="note">No request or notification was created.</div>
+            <div class="buttons">
+              <button type="button" disabled>Open household</button
+              ><button type="button" disabled>Back to tasks</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-12">
+          <h2>12. Expired or revoked request link</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Visitor · unavailable</span>
+            </div>
+            <h3>This request link is unavailable</h3>
+            <p>Ask a household head for a new request link.</p>
+            <div class="note">
+              Your existing account and tasks have not changed.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>My invitation requests</button
+              ><button type="button" disabled>Back to sign-in</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-13">
+          <h2>13. My invitation requests</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Visitor · fresh Google sign-in</span>
+            </div>
+            <h3>My invitation requests</h3>
+            <p>Signed in as jordan@example.invalid</p>
+            <div class="note">Everyday family · Pending · expires Nov 14</div>
+            <div class="note">
+              Weekend home · Invitation sent · expires Nov 12
+            </div>
+            <div class="note">Family kitchen · Declined</div>
+            <div class="buttons">
+              <button type="button" disabled>View pending request</button
+              ><button type="button" disabled>Withdraw invitation</button
+              ><button type="button" disabled>Sign out</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-14">
+          <h2>14. Withdraw confirmation</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Visitor · explicit decision</span>
+            </div>
+            <h3>Withdraw your request?</h3>
+            <p>The head will no longer be able to approve this request.</p>
+            <div class="note">
+              If an invitation has already been issued, withdrawal revokes it
+              and cancels unsent email.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Withdraw</button
+              ><button type="button" disabled>Keep request</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-15">
+          <h2>15. Head notification opt-in</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · per household</span>
+            </div>
+            <h3>Request email notifications</h3>
+            <p>Household: Everyday family</p>
+            <div class="note">
+              Send notifications to: alex@example.invalid (verified Google
+              email)
+            </div>
+            <div class="note">
+              Off · Receive an email when a new invitation request arrives
+            </div>
+            <div class="note">
+              Existing pending requests will not generate a new notification.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Turn on notifications</button
+              ><button type="button" disabled>Back to household</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-16">
+          <h2>16. Confirm a changed address</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · notification address changed</span>
+            </div>
+            <h3>Confirm your notification address</h3>
+            <p>
+              Notifications are paused because your verified Google email
+              changed.
+            </p>
+            <div class="note">New address: alex.new@example.invalid</div>
+            <div class="note">
+              Confirm before receiving new request notifications here.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Confirm address</button
+              ><button type="button" disabled>
+                Leave notifications paused
+              </button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-17">
+          <h2>17. Notification email</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · example email</span>
+            </div>
+            <h3>New invitation request</h3>
+            <p>Someone requested an invitation to Everyday family.</p>
+            <div class="note">Sign in to review the request.</div>
+            <div class="note">
+              You receive this because you opted in for this household.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Review request</button
+              ><button type="button" disabled>Notification settings</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-18">
+          <h2>18. Pending requests</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · household management</span>
+            </div>
+            <h3>Invitation requests</h3>
+            <p>Everyday family · 2 pending</p>
+            <div class="note">
+              Jordan · jordan@example.invalid · requested Nov 7
+            </div>
+            <div class="note">
+              Taylor · taylor@example.invalid · requested Nov 8
+            </div>
+            <div class="note">
+              Requesters cannot access household content until they accept an
+              invitation.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Review Jordan</button
+              ><button type="button" disabled>Review Taylor</button
+              ><button type="button" disabled>Request links</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-19">
+          <h2>19. Review request</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · approval decision</span>
+            </div>
+            <h3>Review Jordan’s request</h3>
+            <p>Jordan · jordan@example.invalid</p>
+            <div class="note">Requested Nov 7 · expires Nov 14</div>
+            <div class="note">
+              Approving sends a private invitation email. They must accept it to
+              become an equal head.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Approve and send invitation</button
+              ><button type="button" disabled>Decline</button
+              ><button type="button" disabled>Back</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-20">
+          <h2>20. Decline confirmation</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · explicit decision</span>
+            </div>
+            <h3>Decline this request?</h3>
+            <p>Jordan can see the decision in My invitation requests.</p>
+            <div class="note">The app won’t send a decline email.</div>
+            <div class="buttons">
+              <button type="button" disabled>Decline request</button
+              ><button type="button" disabled>Keep pending</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-21">
+          <h2>21. Approval complete</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · confirmed</span>
+            </div>
+            <h3>Invitation issued</h3>
+            <p>An invitation is queued for jordan@example.invalid.</p>
+            <div class="note">Delivery status: not confirmed</div>
+            <div class="note">
+              The person becomes a head only after accepting.
+            </div>
+            <div class="note">
+              Automatic retries and Send again follow the request’s 30-day
+              consent window.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>View invitations</button
+              ><button type="button" disabled>Back to requests</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-22">
+          <h2>22. Sending temporarily blocked</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · ceiling or safety control</span>
+            </div>
+            <h3>Your action was not completed</h3>
+            <p>
+              The request is still pending. Please try again later or contact
+              support.
+            </p>
+            <div class="note">No approval or invitation was recorded.</div>
+            <div class="buttons">
+              <button type="button" disabled>Try again</button
+              ><button type="button" disabled>Back to requests</button
+              ><button type="button" disabled>Contact support</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-23">
+          <h2>23. Another decision won</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · concurrent change</span>
+            </div>
+            <h3>This request has changed</h3>
+            <p>
+              Another head decided this request, or the requester withdrew it.
+            </p>
+            <div class="note">No additional invitation was issued.</div>
+            <div class="buttons">
+              <button type="button" disabled>Review latest</button
+              ><button type="button" disabled>Back to requests</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-24">
+          <h2>24. Recipient invitation email</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Recipient · private email</span>
+            </div>
+            <h3>You’re invited to Everyday family</h3>
+            <p>A household head approved your request.</p>
+            <div class="note">
+              Use the same Google identity and verified email you used to
+              request this invitation.
+            </div>
+            <div class="note">The invitation link is valid for seven days.</div>
+            <div class="buttons">
+              <button type="button" disabled>Review invitation</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-25">
+          <h2>25. Wrong Google account</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Recipient · recovery</span>
+            </div>
+            <h3>Choose the Google account you used</h3>
+            <p>
+              This invitation is bound to the account and verified email that
+              requested it.
+            </p>
+            <div class="note">The invitation has not been consumed.</div>
+            <div class="buttons">
+              <button type="button" disabled>
+                Choose another Google account</button
+              ><button type="button" disabled>Back</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-26">
+          <h2>26. Review and accept</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Recipient · explicit join</span>
+            </div>
+            <h3>Join Everyday family as a head?</h3>
+            <p>
+              Every head can view and change shared household content and its
+              retained History.
+            </p>
+            <div class="note">Your personal lists remain private.</div>
+            <div class="note">Display name: Jordan</div>
+            <div class="note">
+              Signing in or opening this page has not joined the household.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Accept and join</button
+              ><button type="button" disabled>Not now</button
+              ><button type="button" disabled>Withdraw invitation</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-27">
+          <h2>27. Declined or expired</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Visitor · terminal status</span>
+            </div>
+            <h3>This request is no longer pending</h3>
+            <p>The request was declined or reached its deadline.</p>
+            <div class="note">
+              A head can share a new link if you should try again.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Back to my requests</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-28">
+          <h2>28. Notification delivery status</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · own settings</span>
+            </div>
+            <h3>Request notification status</h3>
+            <p>Household: Everyday family</p>
+            <div class="note">Notifications: On · alex@example.invalid</div>
+            <div class="note">Latest notice: Delivery not confirmed</div>
+            <div class="note">
+              A delivery failure is shown only when confirmed. Requests remain
+              in the app.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Turn off notifications</button
+              ><button type="button" disabled>Review requests</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-29">
+          <h2>29. Turn notifications off</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · explicit setting</span>
+            </div>
+            <h3>Turn off request emails?</h3>
+            <p>New notices and queued retries for you will stop.</p>
+            <div class="note">
+              Pending requests remain available in the app.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Turn off emails</button
+              ><button type="button" disabled>Keep on</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-30">
+          <h2>30. Growth paused</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Visitor and head · operational state</span>
+            </div>
+            <h3>Invitation requests are temporarily paused</h3>
+            <p>
+              Existing requests remain visible. You can withdraw a request,
+              revoke a link, or turn off notifications.
+            </p>
+            <div class="note">
+              New request links, requests, approvals, and invitation sending are
+              paused.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>My invitation requests</button
+              ><button type="button" disabled>Back to household</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-31">
+          <h2>31. Owner administration</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Site owner · metadata only</span>
+            </div>
+            <h3>Invitation request activity</h3>
+            <p>Review operational health and abuse flags.</p>
+            <div class="note">
+              Request links: 4 active · Requests: 2 pending
+            </div>
+            <div class="note">
+              Notification attempts this UTC month: 3 · Delivery failures: 0
+            </div>
+            <div class="note">
+              Account and household usage flags are visible here.
+            </div>
+            <div class="note">
+              Private link secrets and household content are not shown.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Review email operations</button
+              ><button type="button" disabled>Review safety settings</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-32">
+          <h2>32. Recovery review</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Site owner · restored backup</span>
+            </div>
+            <h3>Review after recovery</h3>
+            <p>
+              Request links were revoked, pending requests and unsent
+              notifications canceled, and head notification opt-ins turned off.
+            </p>
+            <div class="note">Heads can create new links and opt in again.</div>
+            <div class="note">
+              Expired identifiable request details are removed before the
+              restored database is used.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Review recovery</button
+              ><button type="button" disabled>Back to Admin</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-33">
+          <h2>33. Retained History</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · household History</span>
+            </div>
+            <h3>Household History</h3>
+            <p>Invitation request and decision</p>
+            <div class="note">Nov 7 · Invitation requested</div>
+            <div class="note">Nov 8 · A head approved an invitation</div>
+            <div class="note">
+              Identifying request details are removed 30 days after the final
+              state.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Back to household</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-34">
+          <h2>34. Link creator leaves</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · link lifecycle</span>
+            </div>
+            <h3>Request link revoked</h3>
+            <p>
+              Alex is no longer a current head. Their request link was revoked.
+            </p>
+            <div class="note">
+              Pending requests through that link were canceled.
+            </div>
+            <div class="note">Other heads can create new request links.</div>
+            <div class="buttons">
+              <button type="button" disabled>Create request link</button
+              ><button type="button" disabled>Back to household</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="screen-35">
+          <h2>35. Consent window ended</h2>
+          <div class="frame">
+            <div class="appbar">
+              <strong>intrepion</strong
+              ><span class="eyebrow">Head · invitation management</span>
+            </div>
+            <h3>A new request is needed</h3>
+            <p>The 30-day period for sending invitation emails has ended.</p>
+            <div class="note">
+              Ask the person to open a current request link and request another
+              invitation.
+            </div>
+            <div class="note">
+              An invitation already sent in time remains valid until its own
+              expiration.
+            </div>
+            <div class="buttons">
+              <button type="button" disabled>Manage request links</button
+              ><button type="button" disabled>Back to invitations</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <footer>
+      <p class="foot">
+        Static wireframes · no live actions · scope and review guide are in this
+        folder.
+      </p>
+    </footer>
+  </body>
+</html>
