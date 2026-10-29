@@ -463,7 +463,7 @@ async function loadTasks() {
       notificationHousehold = "";
       if (spaces.canOpenHousehold(target)) {
         api.space = target;
-        await spaces.openHousehold();
+        await spaces.openHousehold(true);
         return;
       }
     }
@@ -603,7 +603,14 @@ async function signInView() {
       get("development-morgan").onclick = () =>
         void authenticate("/auth/development", nonce, "development-second");
       get("development-login").onclick = () =>
-        void authenticate("/auth/development", nonce);
+        void authenticate(
+          "/auth/development",
+          nonce,
+          "",
+          api.normalAccounts
+            ? { email: "development-owner@example.invalid", name: "Owner" }
+            : undefined,
+        );
       return;
     }
     await sdk();
@@ -658,12 +665,13 @@ async function authenticate(
       nonce,
       credential,
       token,
-      token || requestToken || requestLookup
-        ? (development ?? {
-            email: "development-owner@example.invalid",
-            name: "Owner",
-          })
-        : undefined,
+      development ??
+        (token || requestToken || requestLookup
+          ? {
+              email: "development-owner@example.invalid",
+              name: "Owner",
+            }
+          : undefined),
       { token: requestToken, lookup: requestLookup },
     );
     onboarding.verified();
@@ -982,7 +990,9 @@ get("requests-login").addEventListener("click", () => requests.startLookup());
 get("nav-requests").addEventListener("click", () => requests.startLookup());
 window.addEventListener("hashchange", () => {
   if (new URLSearchParams(location.hash.slice(1)).has("household"))
-    void loadTasks();
+    void (async () => {
+      if (await prepareNavigation()) await loadTasks();
+    })();
 });
 const admin = new Administration(get("admin-view"), api, {
   confirm,

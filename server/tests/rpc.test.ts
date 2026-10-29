@@ -143,6 +143,77 @@ async function login(credential = "") {
   return { headers: { ...session.headers } };
 }
 
+async function createConsentedInvitation(
+  householdId: string,
+  owner: RpcSession,
+  email: string,
+  subject = `request:${email}`,
+  endpoint = baseUrl,
+) {
+  // Each scenario starts with a fresh in-memory login limiter; the persisted
+  // database and sessions remain unchanged, and rate limiting is tested separately.
+  await stop(server);
+  server = start("target/debug/intrepion-server", [], { env: localEnv });
+  await ready(`${baseUrl}/health/live`);
+  const invitations = createClient(
+    EmailInvitationService,
+    createConnectTransport({ baseUrl: endpoint }),
+  );
+  const link = await invitations.createRequestLink(
+    { operationId: crypto.randomUUID(), householdId },
+    owner,
+  );
+  const challenge = await fetch(`${endpoint}/auth/challenge`, {
+    method: "POST",
+    headers: { origin },
+  });
+  assert.equal(challenge.status, 200);
+  const { nonce } = (await challenge.json()) as { nonce: string };
+  const response = await fetch(`${endpoint}/auth/development`, {
+    method: "POST",
+    headers: {
+      origin,
+      "content-type": "application/json",
+      cookie: challenge.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+    body: JSON.stringify({
+      nonce,
+      credential: subject,
+      request_token: link.token,
+      development_email: email,
+      development_name: "Requester",
+    }),
+  });
+  assert.equal(response.status, 200);
+  const session = (await response.json()) as { csrf: string };
+  const requester = {
+    headers: {
+      origin,
+      "x-csrf-token": session.csrf,
+      cookie: response.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+  };
+  const request = await invitations.submitInvitationRequest(
+    { operationId: crypto.randomUUID(), confirmed: true },
+    requester,
+  );
+  return invitations.approveInvitationRequest(
+    {
+      operationId: crypto.randomUUID(),
+      householdId,
+      requestId: request.id,
+      confirmed: true,
+    },
+    owner,
+  );
+}
+
 test("approved pilot users have separate personal tasks and cannot read each other's collections", async () => {
   const owner = await login();
   const other = await login("development-second");
@@ -3714,6 +3785,14 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     },
     owner,
   );
+  await assert.rejects(
+    invitations.changeInvitation(
+      { ...change, operationId: crypto.randomUUID() },
+      owner,
+    ),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.FailedPrecondition,
+  );
   const linkAction = { operationId: crypto.randomUUID(), householdId: id };
   const defaultNotifications = await invitations.getRequestNotifications(
     { id },
@@ -4345,10 +4424,17 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     (e: unknown) =>
       e instanceof ConnectError && e.code === Code.FailedPrecondition,
   );
-  const sent = await invitations.changeInvitation(change, owner);
+  await invitations.setRequestNotifications(
+    { householdId: id, enabled: false, confirmed: true },
+    changedSession,
+  );
+  const sent = await createConsentedInvitation(
+    id,
+    owner,
+    "morgan@example.invalid",
+  );
   assert.equal(sent.recipientEmail, "morgan@example.invalid");
   assert.equal(sent.deliveryStatus, "queued");
-  assert.equal((await invitations.changeInvitation(change, owner)).id, sent.id);
   assert.equal(
     (await invitations.listInvitations({ id }, owner)).invitations.length,
     3,
@@ -4428,15 +4514,10 @@ test("private email operations deliver the recipient link and count attempts wit
     },
     owner,
   );
-  const invitation = await invitations.changeInvitation(
-    {
-      action: EmailInvitationAction.CREATE,
-      operationId: crypto.randomUUID(),
-      householdId: id,
-      recipientEmail: "delivery@example.invalid",
-      confirmed: true,
-    },
+  const invitation = await createConsentedInvitation(
+    id,
     owner,
+    "delivery@example.invalid",
   );
   await assert.rejects(
     mail.processQueue({}, owner),
@@ -4549,15 +4630,11 @@ test("Google invitation onboarding creates an isolated normal account only on ex
     { id: crypto.randomUUID(), title: "Retained shared task" },
     { headers: { ...owner.headers, "x-space-id": id } },
   );
-  await invitations.changeInvitation(
-    {
-      action: EmailInvitationAction.CREATE,
-      operationId: crypto.randomUUID(),
-      householdId: id,
-      recipientEmail: "family@example.invalid",
-      confirmed: true,
-    },
+  await createConsentedInvitation(
+    id,
     owner,
+    "family@example.invalid",
+    "development-family",
   );
   await mail.processQueue(
     {},
@@ -4742,15 +4819,11 @@ test("onboarding respects growth pause and replacement, and sign-out invalidates
     },
     owner,
   );
-  const pending = await invitations.changeInvitation(
-    {
-      action: EmailInvitationAction.CREATE,
-      operationId: crypto.randomUUID(),
-      householdId: id,
-      recipientEmail: "session@example.invalid",
-      confirmed: true,
-    },
+  const pending = await createConsentedInvitation(
+    id,
     owner,
+    "session@example.invalid",
+    "development-invitation-session",
   );
   const ops = { headers: { authorization: `Bearer ${"ef".repeat(32)}` } };
   await mail.processQueue({}, ops);
@@ -5166,15 +5239,10 @@ test("signed SES feedback rejects forgeries and applies hard-bounce suppression 
     },
     owner,
   );
-  const invitation = await invitations.changeInvitation(
-    {
-      action: EmailInvitationAction.CREATE,
-      operationId: crypto.randomUUID(),
-      householdId: id,
-      recipientEmail: "bounce@example.invalid",
-      confirmed: true,
-    },
+  const invitation = await createConsentedInvitation(
+    id,
     owner,
+    "bounce@example.invalid",
   );
   const ops = { headers: { authorization: `Bearer ${"ef".repeat(32)}` } };
   await mail.processQueue({}, ops);
@@ -5504,6 +5572,84 @@ test("normal household closure remains visible and retains its household safety 
   }
 });
 
+test("an expired invitation can be sent again within the request's consent window", async () => {
+  const owner = await login();
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const growth = await admin.getGrowth({}, owner);
+  if (growth.paused)
+    await admin.changeGrowth(
+      {
+        operationId: crypto.randomUUID(),
+        expectedRevision: growth.revision,
+        paused: false,
+        confirmed: true,
+      },
+      owner,
+    );
+  const id = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      action: HouseholdAction.CREATE,
+      name: "Resend consent window",
+    },
+    owner,
+  );
+  const oldBase = "http://127.0.0.1:8789";
+  const oldServer = start("target/debug/intrepion-server", [], {
+    env: {
+      ...localEnv,
+      PORT: "8789",
+      APP_TEST_NOW: String(Math.floor(Date.now() / 1000) - 8 * 86400),
+    },
+  });
+  let invitation;
+  try {
+    await ready(`${oldBase}/health/live`);
+    invitation = await createConsentedInvitation(
+      id,
+      owner,
+      "resend@example.invalid",
+      "resend-requester",
+      oldBase,
+    );
+  } finally {
+    await stop(oldServer);
+  }
+  const mail = createClient(
+    EmailOperationsService,
+    createConnectTransport({ baseUrl }),
+  );
+  await mail.processQueue(
+    {},
+    { headers: { authorization: `Bearer ${"ef".repeat(32)}` } },
+  );
+  const invitations = createClient(
+    EmailInvitationService,
+    createConnectTransport({ baseUrl }),
+  );
+  const expired = (
+    await invitations.listInvitations({ id }, owner)
+  ).invitations.find((i) => i.id === invitation.id)!;
+  assert.equal(expired.status, "expired");
+  const replacement = await invitations.changeInvitation(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      invitationId: expired.id,
+      expectedRevision: expired.revision,
+      action: EmailInvitationAction.REPLACE,
+      confirmed: true,
+    },
+    owner,
+  );
+  assert.equal(replacement.status, "pending");
+});
+
 test("normal household invitation growth shares retained metadata storage guards while revocation remains possible when full", async () => {
   const owner = await login();
   const admin = createClient(
@@ -5560,9 +5706,6 @@ test("normal household invitation growth shares retained metadata storage guards
   const create = {
     operationId: crypto.randomUUID(),
     householdId: id,
-    recipientEmail: "metadata-storage@example.invalid",
-    action: EmailInvitationAction.CREATE,
-    confirmed: true,
   };
   try {
     const before = await usage();
@@ -5571,7 +5714,7 @@ test("normal household invitation growth shares retained metadata storage guards
     ).entries.length;
     await setBytes(before);
     await assert.rejects(
-      invites.changeInvitation(create, owner),
+      invites.createRequestLink(create, owner),
       (e: unknown) =>
         e instanceof ConnectError &&
         e.code === Code.ResourceExhausted &&
@@ -5588,7 +5731,11 @@ test("normal household invitation growth shares retained metadata storage guards
       historyBefore,
     );
     await setBytes(original.householdHard!.bytes);
-    const invitation = await invites.changeInvitation(create, owner);
+    const invitation = await createConsentedInvitation(
+      id,
+      owner,
+      "metadata-storage@example.invalid",
+    );
     await setBytes(await usage());
     const revoked = await invites.changeInvitation(
       {
@@ -5702,15 +5849,11 @@ test("post-backup identities keep their independent public identity when a missi
     },
     owner,
   );
-  await invites.changeInvitation(
-    {
-      operationId: crypto.randomUUID(),
-      householdId: id,
-      recipientEmail: "recovered-member@example.invalid",
-      action: EmailInvitationAction.CREATE,
-      confirmed: true,
-    },
+  await createConsentedInvitation(
+    id,
     owner,
+    "recovered-member@example.invalid",
+    "development-recovered-member",
   );
   await mail.processQueue(
     {},
@@ -5914,15 +6057,10 @@ test("uncertain delivery retries reuse the link and early signed feedback surviv
   );
   // Drain unrelated pending work before targeting the next provider handoff.
   await mail.processQueue({}, ops);
-  const invite = await invites.changeInvitation(
-    {
-      operationId: crypto.randomUUID(),
-      householdId: id,
-      action: EmailInvitationAction.CREATE,
-      recipientEmail: "uncertain@example.invalid",
-      confirmed: true,
-    },
+  const invite = await createConsentedInvitation(
+    id,
     owner,
+    "uncertain@example.invalid",
   );
   await provider("fault", { fail_next: "after" });
   const before = await admin.getEmailOperations({}, owner);
@@ -5961,15 +6099,10 @@ test("uncertain delivery retries reuse the link and early signed feedback surviv
   } finally {
     await stop(instance);
   }
-  const early = await invites.changeInvitation(
-    {
-      operationId: crypto.randomUUID(),
-      householdId: id,
-      action: EmailInvitationAction.CREATE,
-      recipientEmail: "early-feedback@example.invalid",
-      confirmed: true,
-    },
+  const early = await createConsentedInvitation(
+    id,
     owner,
+    "early-feedback@example.invalid",
   );
   await provider("fault", { fail_next: "feedback" });
   assert.equal((await mail.processQueue({}, ops)).attempted, 1n);
@@ -6018,15 +6151,10 @@ test("an interrupted final email attempt becomes terminal after its claim expire
     },
     owner,
   );
-  const invite = await invites.changeInvitation(
-    {
-      operationId: crypto.randomUUID(),
-      householdId: id,
-      action: EmailInvitationAction.CREATE,
-      recipientEmail: "interrupted@example.invalid",
-      confirmed: true,
-    },
+  const invite = await createConsentedInvitation(
+    id,
     owner,
+    "interrupted@example.invalid",
   );
   await provider("fault", { fail_next: "after" });
   await mail.processQueue({}, ops);

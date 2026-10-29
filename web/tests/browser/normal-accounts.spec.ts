@@ -1,4 +1,55 @@
 import { test, expect } from "@playwright/test";
+import type { Browser, Page } from "@playwright/test";
+
+async function requestAndApprove(page: Page, browser: Browser, email: string) {
+  await page
+    .getByRole("button", { name: "Create request link", exact: true })
+    .click();
+  const link = await page
+    .getByLabel("Request link", { exact: true })
+    .inputValue();
+  const context = await browser.newContext();
+  try {
+    const requester = await context.newPage();
+    await requester.goto(link);
+    await requester
+      .getByRole("button", {
+        name: "Use another development Google account",
+        exact: true,
+      })
+      .click();
+    await requester.getByLabel("Development Google email").fill(email);
+    await requester
+      .getByLabel("Development Google display name")
+      .fill("Requester");
+    await requester
+      .getByRole("button", {
+        name: "Continue development sign-in",
+        exact: true,
+      })
+      .click();
+    await requester
+      .getByRole("button", { name: "Request invitation email", exact: true })
+      .click();
+    await expect(
+      requester.getByRole("heading", {
+        name: "Your request is pending",
+        exact: true,
+      }),
+    ).toBeVisible();
+  } finally {
+    await context.close();
+  }
+  await page
+    .getByRole("button", { name: "Refresh household", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Approve request", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Approve and send", exact: true })
+    .click();
+}
 
 test("a person requests and accepts a household invitation without a pilot account", async ({
   page,
@@ -22,6 +73,16 @@ test("a person requests and accepts a household invitation without a pilot accou
   await page
     .getByRole("button", { name: "Create household", exact: true })
     .click();
+  await page
+    .getByRole("button", { name: "Turn notifications on", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Turn on", exact: true }).click();
+  await expect(
+    page.getByText(
+      "Notifications are on for development-owner@example.invalid.",
+      { exact: true },
+    ),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Create request link", exact: true })
     .click();
@@ -65,6 +126,30 @@ test("a person requests and accepts a household invitation without a pilot accou
       .click();
     await expect(
       recipient.getByText("Your request is pending", { exact: true }),
+    ).toBeVisible();
+    let reviewLink = "";
+    await expect
+      .poll(
+        async () => {
+          const inbox = (await (
+            await page.request.get("http://127.0.0.1:8793/messages", {
+              headers: { authorization: "Bearer local-email-only" },
+            })
+          ).json()) as { messages: { recipient: string; text: string }[] };
+          reviewLink =
+            inbox.messages
+              .find((m) => m.recipient === "development-owner@example.invalid")
+              ?.text.match(
+                /http:\/\/127\.0\.0\.1:4322\/#household=[a-f0-9-]{36}/,
+              )?.[0] ?? "";
+          return !!reviewLink;
+        },
+        { timeout: 15000 },
+      )
+      .toBeTruthy();
+    await page.goto(reviewLink);
+    await expect(
+      page.getByRole("heading", { name: "Consent family", exact: true }),
     ).toBeVisible();
     await recipient
       .getByRole("button", { name: "My invitation requests", exact: true })
@@ -195,6 +280,7 @@ test("malformed invitation fragments are removed and explain how to recover", as
 
 test("a normal owner creates a household by name and sends an email without exposing acceptance links", async ({
   page,
+  browser,
 }) => {
   await page.goto("/");
   await page
@@ -223,18 +309,7 @@ test("a normal owner creates a household by name and sends an email without expo
   await expect(
     page.getByRole("heading", { name: "Everyday email family", exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Invite a head", exact: true })
-    .click();
-  await page
-    .getByLabel("Google account email", { exact: true })
-    .fill("wife@example.invalid");
-  await page
-    .getByRole("button", { name: "Review invitation", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Send invitation", exact: true })
-    .click();
+  await requestAndApprove(page, browser, "wife@example.invalid");
   await expect(
     page.getByText("wife@example.invalid", { exact: true }),
   ).toBeVisible();
@@ -338,13 +413,15 @@ test("a normal owner creates a household by name and sends an email without expo
       .getByRole("button", { name: "Suspend account", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByText("Review recommended: storage bytes", { exact: true }),
+    page
+      .getByText("Review recommended: storage bytes", { exact: true })
+      .first(),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Email operations", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("1 / 10,000 attempts this UTC month", { exact: true }),
+    page.getByText(/^[1-9][0-9]* \/ 10,000 attempts this UTC month$/),
   ).toBeVisible();
   await page.getByRole("button", { name: "Site audit", exact: true }).click();
   await expect(
@@ -422,18 +499,7 @@ test("an emailed recipient creates a real account and shares household tasks whi
     page.getByText("Shared packing task", { exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Household", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Invite a head", exact: true })
-    .click();
-  await page
-    .getByLabel("Google account email", { exact: true })
-    .fill("wife-browser@example.invalid");
-  await page
-    .getByRole("button", { name: "Review invitation", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Send invitation", exact: true })
-    .click();
+  await requestAndApprove(page, browser, "wife-browser@example.invalid");
   let link = "";
   await expect
     .poll(

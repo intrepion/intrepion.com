@@ -29,17 +29,6 @@ fn unavailable() -> ConnectError {
         "Invitation changed or is unavailable. Refresh and review again.",
     )
 }
-fn new_id() -> String {
-    let h = auth::secret();
-    format!(
-        "{}-{}-4{}-a{}-{}",
-        &h[..8],
-        &h[8..12],
-        &h[13..16],
-        &h[17..20],
-        &h[20..32]
-    )
-}
 pub(crate) fn email(value: &str) -> Result<String, ConnectError> {
     let value = value.trim().to_ascii_lowercase();
     let Some((local, domain)) = value.split_once('@') else {
@@ -149,20 +138,9 @@ impl Invitations {
         let open_growth = "EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0)";
         match action {
             EmailInvitationAction::Create => {
-                if self.0.config.mail.is_none() {
-                    return Err(ConnectError::failed_precondition(
-                        "Email delivery is not configured.",
-                    ));
-                }
-                if r.expected_revision != 0 {
-                    return Err(unavailable());
-                }
-                let recipient = email(&r.recipient_email)?;
-                id = new_id();
-                let token = self.token(&id, 1)?;
-                let token_hash = format!("{:x}", Sha256::digest(token.as_bytes()));
-                statements.push(Statement::new("UPDATE email_invitations SET status='revoked',delivery_status='canceled',revision=revision+1 WHERE household_id=? AND recipient_email=? AND status='pending' AND expires_at<=?",vec![r.household_id.clone(),recipient.clone(),auth::now().to_string()]));
-                statements.push(Statement::new(&format!("INSERT INTO email_invitations(id,household_id,recipient_email,token_hash,expires_at,created_by,last_operation) SELECT ?,?,?,?,?,?,? WHERE {authority} AND {open_growth}"),vec![id.clone(),r.household_id.clone(),recipient,token_hash,(auth::now()+7*86400).to_string(),actor.into(),r.operation_id.clone(),r.household_id.clone(),actor.into()]));
+                return Err(ConnectError::failed_precondition(
+                    "Ask the person to request an invitation first.",
+                ));
             }
             EmailInvitationAction::Replace | EmailInvitationAction::Revoke => {
                 if !valid_id(&r.invitation_id) {

@@ -733,7 +733,7 @@ export class Households {
           `Expires ${new Date(Number(invitation.expiresAt) * 1000).toLocaleString()}`,
         ),
       );
-      if (invitation.status === "pending")
+      if (["pending", "expired"].includes(invitation.status))
         for (const [action, label] of [
           [EmailInvitationAction.REPLACE, "Send again"],
           [EmailInvitationAction.REVOKE, "Revoke"],
@@ -799,66 +799,6 @@ export class Households {
       );
     this.renderActivity();
     this.hooks.syncBusyControls();
-  }
-  private emailInviteForm() {
-    const household = this.details?.household;
-    if (!household) return;
-    this.root.replaceChildren(
-      element("h1", "Invite a head"),
-      element("p", household.name),
-    );
-    const form = element("form");
-    form.className = "editor";
-    const label = element("label", "Google account email");
-    label.htmlFor = "email-invitation-recipient";
-    const email = element("input");
-    email.id = label.htmlFor;
-    email.type = "email";
-    email.required = true;
-    email.maxLength = 254;
-    const submit = element("button", "Review invitation");
-    submit.type = "submit";
-    form.append(
-      label,
-      email,
-      element(
-        "p",
-        "This person will have equal head authority and access to all retained household content and History, including earlier changes. Their personal lists stay private.",
-      ),
-      submit,
-      button("Cancel", () => this.renderNormalHousehold()),
-    );
-    form.onsubmit = (event) => {
-      event.preventDefault();
-      void (async () => {
-        if (!this.pendingEmail) {
-          if (
-            !(await this.hooks.confirm(
-              "Review invitation",
-              "Send this person an email invitation to become an equal head? Only the recipient receives the private link.",
-              "Send invitation",
-              "Keep editing",
-              `${email.value} · ${household.name}`,
-            ))
-          )
-            return;
-          this.pendingEmail = create(EmailInvitationChangeSchema, {
-            operationId: crypto.randomUUID(),
-            householdId: household.id,
-            recipientEmail: email.value,
-            action: EmailInvitationAction.CREATE,
-            confirmed: true,
-          });
-        }
-        await this.emailChange(this.pendingEmail);
-        if (this.pendingEmail) {
-          email.readOnly = true;
-          submit.textContent = "Retry invitation";
-        }
-      })();
-    };
-    this.root.append(form);
-    email.focus();
   }
   private async createRequestLink() {
     const household = this.details?.household;
@@ -1363,8 +1303,8 @@ export class Households {
       await this.hooks.enterSpace(invitation.householdId);
     });
   }
-  async openHousehold() {
-    if (!(await this.hooks.prepare())) return;
+  async openHousehold(alreadyPrepared = false) {
+    if (!alreadyPrepared && !(await this.hooks.prepare())) return;
     this.hooks.busy(true);
     try {
       await this.reloadHousehold();
