@@ -1,4 +1,5 @@
 import { Onboarding } from "./onboarding";
+import { Requests } from "./requests";
 import { Administration } from "./administration";
 import { create } from "@bufbuild/protobuf";
 import { Code, ConnectError } from "@connectrpc/connect";
@@ -49,6 +50,7 @@ type Action =
 let pending: Action | undefined;
 let recoveryTaskId = "";
 let googleScript: Promise<void> | undefined;
+let notificationHousehold = "";
 
 type GoogleId = {
   initialize(options: {
@@ -100,7 +102,8 @@ function view(
     | "everyday"
     | "household"
     | "admin"
-    | "onboarding",
+    | "onboarding"
+    | "request",
 ) {
   if (name !== "status") spaces.active = name === "household";
   for (const candidate of [
@@ -111,9 +114,11 @@ function view(
     "household",
     "admin",
     "onboarding",
+    "request",
   ])
     show(`${candidate}-view`, candidate === name);
   show("nav-admin", authenticated && api.isAdmin);
+  show("nav-requests", authenticated && api.normalAccounts);
   show("account", authenticated);
   show("space-controls", authenticated);
   show("main-nav", authenticated);
@@ -401,10 +406,28 @@ async function loadTasks() {
   setBusy(true);
   status("Opening your list", "The server may take a minute to wake up.", true);
   try {
+    const deepLink = new URLSearchParams(location.hash.slice(1));
+    const household = deepLink.get("household");
+    if (household && /^[0-9a-f-]{36}$/i.test(household)) {
+      notificationHousehold = household;
+      history.replaceState(null, "", location.pathname + location.search);
+    }
     config ??= await api.request<Configuration>("/auth/config");
     api.normalAccounts = !!config.normal_accounts;
     supportContact(config.support_email ?? "");
     if (showMalformedInvitation()) return;
+    if (requests.malformed) {
+      status(
+        "This request link is unavailable",
+        "Ask a household head for a new request link.",
+      );
+      return;
+    }
+    if (requests.token || requests.lookup) {
+      authenticated = false;
+      await signInView();
+      return;
+    }
     if (api.normalAccounts && spaces.hasInvitation())
       onboarding.setToken(spaces.takeInvitation());
     if (onboarding.token()) {
@@ -413,6 +436,13 @@ async function loadTasks() {
       return;
     }
     await api.session();
+    if (api.requestSession || api.requestLookup) {
+      authenticated = false;
+      clearContent();
+      spaces.reset();
+      await requests.open();
+      return;
+    }
     if (api.onboarding) {
       authenticated = false;
       clearContent();
@@ -428,6 +458,15 @@ async function loadTasks() {
     lastIdentity = api.identity;
     authenticated = true;
     await spaces.refresh();
+    if (notificationHousehold) {
+      const target = notificationHousehold;
+      notificationHousehold = "";
+      if (spaces.canOpenHousehold(target)) {
+        api.space = target;
+        await spaces.openHousehold();
+        return;
+      }
+    }
     text(
       "account-identity",
       `${api.displayName} · ${api.normalAccounts ? "Google account" : "Approved Google account"}`,
@@ -498,7 +537,15 @@ async function signInView() {
     config = await api.request<Configuration>("/auth/config");
     api.normalAccounts = !!config.normal_accounts;
     supportContact(config.support_email ?? "");
+    show("requests-login", api.normalAccounts);
     if (showMalformedInvitation()) return;
+    if (requests.malformed) {
+      status(
+        "This request link is unavailable",
+        "Ask a household head for a new request link.",
+      );
+      return;
+    }
     if (api.normalAccounts && spaces.hasInvitation())
       onboarding.setToken(spaces.takeInvitation());
     if (api.normalAccounts && !editor) {
@@ -513,6 +560,20 @@ async function signInView() {
         onboarding.token()
           ? "Sign in with the Google account for the address that received the email. Review before joining; opening the link does not create an account."
           : "Your personal lists and shared households. New here? Open a household invitation email to create your account.",
+      );
+    }
+    if (requests.token || requests.lookup) {
+      text(
+        "status-title",
+        requests.lookup
+          ? "My invitation requests"
+          : "Request a household invitation",
+      );
+      text(
+        "status-description",
+        requests.lookup
+          ? "Sign in with the Google account you used for your request."
+          : "Sign in with Google to review the household and choose whether to request an invitation email.",
       );
     }
     const { nonce } = await api.request<{ nonce: string }>(
@@ -590,19 +651,30 @@ async function authenticate(
   setBusy(true);
   try {
     const token = onboarding.token();
+    const requestToken = requests.token;
+    const requestLookup = requests.lookup;
     await api.login(
       path,
       nonce,
       credential,
       token,
-      token
+      token || requestToken || requestLookup
         ? (development ?? {
             email: "development-owner@example.invalid",
             name: "Owner",
           })
         : undefined,
+      { token: requestToken, lookup: requestLookup },
     );
     onboarding.verified();
+    requests.verified();
+    if (api.requestSession || api.requestLookup) {
+      authenticated = false;
+      clearContent();
+      spaces.reset();
+      await requests.open();
+      return;
+    }
     if (api.onboarding) {
       authenticated = false;
       clearContent();
@@ -648,6 +720,7 @@ get("back-to-list").addEventListener("click", () => void leaveEditor());
 get("cancel-edit").addEventListener("click", () => void leaveEditor());
 get("editor-reload").addEventListener("click", () => void leaveEditor());
 get("retry-load").addEventListener("click", () => {
+  if (requests.malformed) requests.malformed = false;
   if (authenticated) void loadTasks();
   else {
     setBusy(true);
@@ -892,6 +965,24 @@ const onboarding = new Onboarding(get("onboarding-view"), api, {
     authenticated = true;
     await loadTasks();
   },
+});
+const requests = new Requests(
+  get("request-view"),
+  api,
+  () => view("request"),
+  setBusy,
+  async () => {
+    authenticated = false;
+    clearContent();
+    spaces.reset();
+    await signInView();
+  },
+);
+get("requests-login").addEventListener("click", () => requests.startLookup());
+get("nav-requests").addEventListener("click", () => requests.startLookup());
+window.addEventListener("hashchange", () => {
+  if (new URLSearchParams(location.hash.slice(1)).has("household"))
+    void loadTasks();
 });
 const admin = new Administration(get("admin-view"), api, {
   confirm,

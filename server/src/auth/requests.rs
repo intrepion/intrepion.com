@@ -38,7 +38,7 @@ impl Auth {
             .take(100)
             .collect::<String>();
         self.db.batch(&[Statement::new("DELETE FROM request_lookup_sessions WHERE expires_at<=?",vec![now().to_string()]),Statement::new("INSERT INTO request_lookup_sessions(token_hash,csrf,user_sub,email,display_name,expires_at) VALUES(?,?,?,?,?,?)",vec![hash(&token),csrf.clone(),subject.into(),address.clone(),name.clone(),expires.to_string()])]).await?;
-        let mut response=Json(serde_json::json!({"request_lookup":true,"csrf":csrf,"expires_at":expires,"email":address,"display_name":name})).into_response();
+        let mut response=Json(serde_json::json!({"request_lookup":true,"csrf":csrf,"expires_at":expires,"user_sub":subject,"email":address,"display_name":name})).into_response();
         for value in [
             self.set_cookie("request-lookup", &token, 900),
             self.set_cookie("request", "", 0),
@@ -120,7 +120,7 @@ impl Auth {
             Statement::new("DELETE FROM request_sessions WHERE expires_at<=?",vec![now().to_string()]),
             Statement::new("INSERT INTO request_sessions(token_hash,csrf,user_sub,email,display_name,link_id,expires_at) VALUES(?,?,?,?,?,?,?)",vec![hash(&token),csrf.clone(),subject.into(),address.clone(),name.clone(),link.id,expires.to_string()]),
         ]).await?;
-        let mut response=Json(serde_json::json!({"request_session":true,"csrf":csrf,"expires_at":expires,"email":address,"display_name":name})).into_response();
+        let mut response=Json(serde_json::json!({"request_session":true,"csrf":csrf,"expires_at":expires,"user_sub":subject,"email":address,"display_name":name})).into_response();
         for value in [
             self.set_cookie("request", &token, 900),
             self.set_cookie("request-lookup", "", 0),

@@ -97,6 +97,7 @@ message SitePolicyReview {
 service EmailInvitationService {
   rpc CreateRequestLink(RequestLinkCreate) returns (RequestLink);
   rpc RevokeRequestLink(RequestLinkRevoke) returns (Empty);
+  rpc ListRequestLinks(HouseholdKey) returns (RequestLinkPage);
   rpc GetRequestPreview(Empty) returns (RequestPreview);
   rpc SubmitInvitationRequest(InvitationRequestSubmit) returns (InvitationRequest);
   rpc ListInvitationRequests(HouseholdKey) returns (InvitationRequestPage);
@@ -114,6 +115,8 @@ service EmailInvitationService {
 message RequestLinkCreate { string operation_id = 1; string household_id = 2; }
 message RequestLinkRevoke { string household_id = 1; string link_id = 2; }
 message RequestLink { string id = 1; string token = 2; int64 expires_at = 3; }
+message RequestLinkSummary { string id = 1; int64 expires_at = 2; bool revoked = 3; }
+message RequestLinkPage { repeated RequestLinkSummary links = 1; }
 message RequestPreview { string household_name = 1; string email = 2; string display_name = 3; bool already_head = 4; }
 message InvitationRequestSubmit { string operation_id = 1; bool confirmed = 2; }
 message InvitationRequest { string id = 1; string display_name = 2; string email = 3; string status = 4; int64 requested_at = 5; }

@@ -3816,6 +3816,20 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     (h) => h.id === id,
   )!.usage!.bytes;
   const requestLink = await invitations.createRequestLink(linkAction, owner);
+  const managedLinks = await invitations.listRequestLinks({ id }, owner);
+  assert.equal(managedLinks.links.length, 1);
+  assert.equal(managedLinks.links[0]?.id, requestLink.id);
+  assert.equal(
+    JSON.stringify(managedLinks, (_, v: unknown) =>
+      typeof v === "bigint" ? v.toString() : v,
+    ).includes(requestLink.token),
+    false,
+  );
+  await assert.rejects(
+    invitations.listRequestLinks({ id }, other),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.PermissionDenied,
+  );
   assert.ok(
     (await admin.getOverview({}, owner)).households.find((h) => h.id === id)!
       .usage!.bytes > bytesBeforeLink,

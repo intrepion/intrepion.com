@@ -229,6 +229,35 @@ impl Invitations {
 }
 #[allow(refining_impl_trait)]
 impl EmailInvitationService for Invitations {
+    async fn list_request_links(
+        &self,
+        ctx: RequestContext,
+        r: ServiceRequest<'_, HouseholdKey>,
+    ) -> ServiceResult<RequestLinkPage> {
+        let session = self.0.authorize_rpc(&ctx).await?;
+        Households(self.0.clone())
+            .require_head(r.id, &session.user_sub)
+            .await?;
+        #[derive(Deserialize)]
+        struct Row {
+            id: String,
+            expires_at: i64,
+            revoked: i32,
+        }
+        let rows=self.0.db.query::<Row>("SELECT l.id,l.expires_at,l.revoked FROM household_request_links l WHERE l.household_id=? AND EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=l.household_id AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1) ORDER BY l.created_at DESC,l.id LIMIT 100",&[r.id.into(),session.user_sub]).await?;
+        Response::ok(RequestLinkPage {
+            links: rows
+                .into_iter()
+                .map(|r| RequestLinkSummary {
+                    id: r.id,
+                    expires_at: r.expires_at,
+                    revoked: r.revoked != 0,
+                    ..Default::default()
+                })
+                .collect(),
+            ..Default::default()
+        })
+    }
     async fn get_request_notifications(
         &self,
         ctx: RequestContext,

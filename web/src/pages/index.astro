@@ -36,9 +36,10 @@ if (
         ><button id="nav-checklists">Checklists</button><button
           id="nav-admin"
           hidden>Admin</button
-        >
+        ><button id="nav-requests">My invitation requests</button>
       </nav>
       <section id="onboarding-view" class="content" hidden></section>
+      <section id="request-view" class="content" hidden></section>
       <section id="admin-view" class="content" hidden></section>
       <section id="household-view" class="content" hidden></section>
       <section id="everyday-view" class="content" hidden></section>
@@ -58,7 +59,11 @@ if (
           >Sign in as development Morgan</button
         ><button id="development-another" hidden
           >Use another development Google account</button
-        ><form id="development-identity-form" class="editor" hidden>
+        ><button id="requests-login" hidden>My invitation requests</button><form
+          id="development-identity-form"
+          class="editor"
+          hidden
+        >
           <p class="muted">
             Development only: simulate a Google account. Use example.invalid
             addresses; no Google service is contacted.

@@ -3,6 +3,9 @@ import {
   EmailInvitationChangeSchema,
   type EmailInvitation,
   type EmailInvitationChange,
+  type InvitationRequest,
+  type RequestNotificationSettings,
+  type RequestLinkSummary,
 } from "../gen/life/v1/accounts_pb";
 import { create } from "@bufbuild/protobuf";
 import { Code, ConnectError } from "@connectrpc/connect";
@@ -68,6 +71,13 @@ export class Households {
   private invitationToken = "";
   private malformedInvitation = false;
   private emailInvitations: EmailInvitation[] = [];
+  private invitationRequests: InvitationRequest[] = [];
+  private requestNotifications?: RequestNotificationSettings;
+  private requestLinks: RequestLinkSummary[] = [];
+  private requestLink = "";
+  private requestLinkHousehold = "";
+  private requestLinkOperation = "";
+  private requestDecisions = new Map<string, string>();
   private pendingEmail?: EmailInvitationChange;
   private deliveredLink = "";
   private closureRetries = new Map<string, HouseholdChange>();
@@ -107,6 +117,13 @@ export class Households {
     this.pendingCopy = undefined;
     this.pendingEmail = undefined;
     this.emailInvitations = [];
+    this.invitationRequests = [];
+    this.requestNotifications = undefined;
+    this.requestLinks = [];
+    this.requestLink = "";
+    this.requestLinkHousehold = "";
+    this.requestLinkOperation = "";
+    this.requestDecisions.clear();
     this.message = "";
     this.capacityMode = "capacity";
     this.root.replaceChildren();
@@ -114,6 +131,11 @@ export class Households {
   }
   hasPending() {
     return !!this.pending || !!this.pendingCopy || !!this.pendingEmail;
+  }
+  canOpenHousehold(id: string) {
+    return !!this.overview?.households.some(
+      (h) => h.id === id && h.isHead && h.status === "active",
+    );
   }
   dirty() {
     return (
@@ -575,10 +597,102 @@ export class Households {
     if (this.message) this.root.append(element("p", this.message));
     this.root.append(
       button("Refresh household", () => void this.openHousehold()),
-      button("Invite a head", () => this.emailInviteForm()),
+      button("Create request link", () => void this.createRequestLink()),
       button("Leave household", () => void this.leaveHousehold()),
       element("h2", "Heads"),
     );
+    if (this.requestLink && this.requestLinkHousehold === household.id) {
+      const label = element("label", "Request link");
+      label.htmlFor = "household-request-link";
+      const input = element("input");
+      input.id = label.htmlFor;
+      input.readOnly = true;
+      input.value = this.requestLink;
+      this.root.append(
+        label,
+        input,
+        element(
+          "p",
+          "Anyone with this link can pass it along and request an invitation. It expires in seven days.",
+        ),
+        button("Copy request link", () => {
+          void navigator.clipboard.writeText(this.requestLink).catch(() => {
+            input.select();
+          });
+        }),
+      );
+    }
+    const activeLinks = this.requestLinks.filter(
+      (l) => !l.revoked && Number(l.expiresAt) * 1000 > Date.now(),
+    );
+    if (activeLinks.length) {
+      this.root.append(element("h2", "Active request links"));
+      for (const link of activeLinks) {
+        const row = element("div");
+        row.className = "household-card";
+        row.append(
+          element(
+            "p",
+            `Expires ${new Date(Number(link.expiresAt) * 1000).toLocaleString()}`,
+          ),
+          button(
+            "Revoke request link",
+            () => void this.revokeRequestLink(link.id),
+          ),
+        );
+        this.root.append(row);
+      }
+    }
+    const settings = this.requestNotifications;
+    if (settings) {
+      this.root.append(
+        element("h2", "Request notifications"),
+        element(
+          "p",
+          settings.confirmationRequired
+            ? "Confirm your new Google email to resume notifications."
+            : settings.enabled
+              ? `Notifications are on for ${settings.email}.`
+              : "Notifications are off.",
+        ),
+      );
+      this.root.append(
+        button(
+          settings.confirmationRequired
+            ? "Confirm notification address"
+            : settings.enabled
+              ? "Turn notifications off"
+              : "Turn notifications on",
+          () =>
+            void this.changeNotifications(
+              settings.confirmationRequired || !settings.enabled,
+            ),
+        ),
+      );
+    }
+    this.root.append(element("h2", "Invitation requests"));
+    for (const request of this.invitationRequests) {
+      const card = element("article");
+      card.className = "household-card";
+      card.append(
+        element("h3", request.displayName),
+        element("p", request.email),
+        element(
+          "p",
+          `Requested ${new Date(Number(request.requestedAt) * 1000).toLocaleString()}`,
+        ),
+      );
+      card.append(
+        button("Approve request", () => void this.decideRequest(request, true)),
+        button(
+          "Decline request",
+          () => void this.decideRequest(request, false),
+        ),
+      );
+      this.root.append(card);
+    }
+    if (!this.invitationRequests.length)
+      this.root.append(element("p", "No pending requests."));
     for (const head of detail.heads) {
       const card = element("article");
       card.className = "household-card";
@@ -745,6 +859,125 @@ export class Households {
     };
     this.root.append(form);
     email.focus();
+  }
+  private async createRequestLink() {
+    const household = this.details?.household;
+    if (!household) return;
+    this.requestLinkOperation ||= crypto.randomUUID();
+    this.hooks.busy(true);
+    try {
+      const link = await this.api.invitations.createRequestLink(
+        { householdId: household.id, operationId: this.requestLinkOperation },
+        { timeoutMs: 90000 },
+      );
+      this.requestLink = `${location.origin}${location.pathname}#request=${link.token}`;
+      this.requestLinkHousehold = household.id;
+      this.requestLinkOperation = "";
+      await this.reloadHousehold();
+    } catch (error) {
+      this.problem(error);
+    } finally {
+      this.hooks.busy(false);
+    }
+  }
+  private async revokeRequestLink(linkId: string) {
+    const household = this.details?.household;
+    if (!household) return;
+    if (
+      !(await this.hooks.confirm(
+        "Revoke request link?",
+        "Pending requests made through this link will be canceled. Issued invitations and accepted memberships remain unchanged.",
+        "Revoke link",
+        "Cancel",
+      ))
+    )
+      return;
+    this.hooks.busy(true);
+    try {
+      await this.api.invitations.revokeRequestLink(
+        { householdId: household.id, linkId },
+        { timeoutMs: 90000 },
+      );
+      this.requestLink = "";
+      this.requestLinkHousehold = "";
+      await this.reloadHousehold();
+    } catch (error) {
+      this.problem(error);
+    } finally {
+      this.hooks.busy(false);
+    }
+  }
+  private async changeNotifications(enabled: boolean) {
+    const household = this.details?.household;
+    if (!household) return;
+    if (
+      !(await this.hooks.confirm(
+        enabled
+          ? "Turn on request notifications?"
+          : "Turn off request notifications?",
+        enabled
+          ? "New requests will generate a notification to your verified Google email."
+          : "Queued notices and retries will stop.",
+        enabled ? "Turn on" : "Turn off",
+        "Cancel",
+      ))
+    )
+      return;
+    this.hooks.busy(true);
+    try {
+      await this.api.invitations.setRequestNotifications(
+        { householdId: household.id, enabled, confirmed: true },
+        { timeoutMs: 90000 },
+      );
+      await this.reloadHousehold();
+    } catch (error) {
+      this.problem(error);
+    } finally {
+      this.hooks.busy(false);
+    }
+  }
+  private async decideRequest(request: InvitationRequest, approve: boolean) {
+    const household = this.details?.household;
+    if (!household) return;
+    if (
+      !(await this.hooks.confirm(
+        approve ? "Approve this request?" : "Decline this request?",
+        approve
+          ? "An invitation email will be sent to the verified address. Accepting grants equal head access and access to household History."
+          : "No decline email will be sent.",
+        approve ? "Approve and send" : "Decline request",
+        "Cancel",
+        request.email,
+      ))
+    )
+      return;
+    const decisionKey = `${request.id}:${approve}`;
+    const operationId =
+      this.requestDecisions.get(decisionKey) ?? crypto.randomUUID();
+    this.requestDecisions.set(decisionKey, operationId);
+    const decision = {
+      householdId: household.id,
+      requestId: request.id,
+      operationId,
+      confirmed: true,
+    };
+    this.hooks.busy(true);
+    try {
+      if (approve)
+        await this.api.invitations.approveInvitationRequest(decision, {
+          timeoutMs: 90000,
+        });
+      else
+        await this.api.invitations.declineInvitationRequest(decision, {
+          timeoutMs: 90000,
+        });
+      this.requestDecisions.delete(decisionKey);
+      await this.reloadHousehold();
+    } catch (error) {
+      this.problem(error);
+    } finally {
+      this.hooks.busy(false);
+    }
   }
   private async emailChange(request: EmailInvitationChange) {
     this.pendingEmail = request;
@@ -1157,6 +1390,25 @@ export class Households {
           { timeoutMs: 90000 },
         )
       ).invitations;
+    if (this.overview?.normalAccounts) {
+      this.invitationRequests = (
+        await this.api.invitations.listInvitationRequests(
+          { id: this.api.space },
+          { timeoutMs: 90000 },
+        )
+      ).requests;
+      this.requestNotifications =
+        await this.api.invitations.getRequestNotifications(
+          { id: this.api.space },
+          { timeoutMs: 90000 },
+        );
+      this.requestLinks = (
+        await this.api.invitations.listRequestLinks(
+          { id: this.api.space },
+          { timeoutMs: 90000 },
+        )
+      ).links;
+    }
     this.activity = page.entries;
     this.activityCursor = page.nextBeforeSequence;
     this.renderHousehold();

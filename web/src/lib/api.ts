@@ -28,6 +28,8 @@ export class Api {
   normalAccounts = false;
   isAdmin = false;
   onboarding = false;
+  requestSession = false;
+  requestLookup = false;
   supportEmail = "";
   private contextEpoch = 0;
   private currentIdentity = "";
@@ -135,9 +137,13 @@ export class Api {
       display_name: string;
       is_admin?: boolean;
       onboarding?: boolean;
+      request_session?: boolean;
+      request_lookup?: boolean;
     }>("/auth/session");
     if (this.onboarding !== !!session.onboarding) this.contextEpoch++;
     this.onboarding = !!session.onboarding;
+    this.requestSession = !!session.request_session;
+    this.requestLookup = !!session.request_lookup;
     this.isAdmin = !!session.is_admin;
     this.csrf = session.csrf;
     this.identity = session.user_sub;
@@ -149,6 +155,7 @@ export class Api {
     credential = "",
     invitationToken = "",
     development?: { email: string; name: string },
+    request?: { token?: string; lookup?: boolean },
   ) {
     const session = await this.request<{
       csrf: string;
@@ -156,10 +163,14 @@ export class Api {
       display_name: string;
       is_admin?: boolean;
       onboarding?: boolean;
+      request_session?: boolean;
+      request_lookup?: boolean;
     }>(path, {
       nonce,
       credential,
       ...(invitationToken ? { invitation_token: invitationToken } : {}),
+      ...(request?.token ? { request_token: request.token } : {}),
+      ...(request?.lookup ? { request_lookup: true } : {}),
       ...(development
         ? {
             development_email: development.email,
@@ -169,6 +180,8 @@ export class Api {
     });
     if (this.onboarding !== !!session.onboarding) this.contextEpoch++;
     this.onboarding = !!session.onboarding;
+    this.requestSession = !!session.request_session;
+    this.requestLookup = !!session.request_lookup;
     this.isAdmin = !!session.is_admin;
     this.csrf = session.csrf;
     this.identity = session.user_sub;

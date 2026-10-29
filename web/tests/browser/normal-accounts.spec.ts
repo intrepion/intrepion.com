@@ -1,5 +1,168 @@
 import { test, expect } from "@playwright/test";
 
+test("a person requests and accepts a household invitation without a pilot account", async ({
+  page,
+  browser,
+}) => {
+  test.setTimeout(45000);
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Sign in as development owner", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Households", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Create household", exact: true })
+    .click();
+  await page
+    .getByLabel("Household name", { exact: true })
+    .fill("Consent family");
+  await page
+    .getByRole("button", { name: "Review household", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Create household", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Create request link", exact: true })
+    .click();
+  const link = await page
+    .getByLabel("Request link", { exact: true })
+    .inputValue();
+  expect(link).toContain("#request=");
+  const context = await browser.newContext();
+  try {
+    const recipient = await context.newPage();
+    await recipient.goto(link);
+    await expect(
+      recipient.getByText("Consent family", { exact: true }),
+    ).toHaveCount(0);
+    await recipient
+      .getByRole("button", {
+        name: "Use another development Google account",
+        exact: true,
+      })
+      .click();
+    await recipient
+      .getByLabel("Development Google email")
+      .fill("consent-wife@example.invalid");
+    await recipient
+      .getByLabel("Development Google display name")
+      .fill("Taylor");
+    await recipient
+      .getByRole("button", {
+        name: "Continue development sign-in",
+        exact: true,
+      })
+      .click();
+    await expect(
+      recipient.getByRole("heading", {
+        name: "Request an invitation to Consent family",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await recipient
+      .getByRole("button", { name: "Request invitation email", exact: true })
+      .click();
+    await expect(
+      recipient.getByText("Your request is pending", { exact: true }),
+    ).toBeVisible();
+    await recipient
+      .getByRole("button", { name: "My invitation requests", exact: true })
+      .click();
+    await recipient
+      .getByRole("button", {
+        name: "Use another development Google account",
+        exact: true,
+      })
+      .click();
+    await recipient
+      .getByLabel("Development Google email")
+      .fill("consent-wife@example.invalid");
+    await recipient
+      .getByLabel("Development Google display name")
+      .fill("Taylor");
+    await recipient
+      .getByRole("button", {
+        name: "Continue development sign-in",
+        exact: true,
+      })
+      .click();
+    await expect(
+      recipient.getByRole("heading", {
+        name: "My invitation requests",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      recipient.getByText("consent-wife@example.invalid · pending", {
+        exact: true,
+      }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Refresh household", exact: true })
+      .click();
+    await expect(
+      page.getByText("consent-wife@example.invalid", { exact: true }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Approve request", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Approve and send", exact: true })
+      .click();
+    let invitation = "";
+    await expect
+      .poll(
+        async () => {
+          const inbox = (await (
+            await page.request.get("http://127.0.0.1:8793/messages", {
+              headers: { authorization: "Bearer local-email-only" },
+            })
+          ).json()) as { messages: { recipient: string; text: string }[] };
+          invitation =
+            inbox.messages
+              .find((m) => m.recipient === "consent-wife@example.invalid")
+              ?.text.match(
+                /http:\/\/127\.0\.0\.1:4322\/#invite=[a-f0-9]{64}/,
+              )?.[0] ?? "";
+          return !!invitation;
+        },
+        { timeout: 15000 },
+      )
+      .toBeTruthy();
+    await recipient.goto(invitation);
+    await recipient
+      .getByRole("button", {
+        name: "Use another development Google account",
+        exact: true,
+      })
+      .click();
+    await recipient
+      .getByLabel("Development Google email")
+      .fill("consent-wife@example.invalid");
+    await recipient
+      .getByLabel("Development Google display name")
+      .fill("Taylor");
+    await recipient
+      .getByRole("button", {
+        name: "Continue development sign-in",
+        exact: true,
+      })
+      .click();
+    await recipient
+      .getByRole("button", { name: "Create account and join", exact: true })
+      .click();
+    await expect(
+      recipient.getByRole("heading", {
+        name: "You joined Consent family",
+        exact: true,
+      }),
+    ).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
+
 test("malformed invitation fragments are removed and explain how to recover", async ({
   page,
 }) => {
