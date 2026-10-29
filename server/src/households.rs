@@ -551,7 +551,7 @@ impl HouseholdService for Households {
             details_json: String,
         }
         let rows = self.0.db.query::<Entry>(
-            "SELECT e.sequence,coalesce(a.public_id,'') AS public_id,CASE WHEN e.actor_sub='system:operator' THEN 'Operator' ELSE coalesce(a.display_name,'Former head') END AS display_name,e.action,e.occurred_at,e.details_json FROM household_activity e LEFT JOIN pilot_accounts a ON a.subject=e.actor_sub WHERE e.household_id=? AND (CAST(? AS INTEGER)=0 OR e.sequence<CAST(? AS INTEGER)) ORDER BY e.sequence DESC LIMIT 51",
+            "SELECT e.sequence,coalesce(a.public_id,'') AS public_id,CASE WHEN e.actor_sub='system:operator' THEN 'Operator' WHEN e.actor_sub='system:requester' THEN 'Requester' ELSE coalesce(a.display_name,'Former head') END AS display_name,e.action,e.occurred_at,e.details_json FROM household_activity e LEFT JOIN pilot_accounts a ON a.subject=e.actor_sub WHERE e.household_id=? AND (CAST(? AS INTEGER)=0 OR e.sequence<CAST(? AS INTEGER)) ORDER BY e.sequence DESC LIMIT 51",
             &[r.household_id.into(), r.before_sequence.to_string(), r.before_sequence.to_string()],
         ).await?;
         // Recheck after the read so a revoked head cannot keep paging History.

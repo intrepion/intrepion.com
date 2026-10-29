@@ -3983,6 +3983,18 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     requester,
   );
   assert.equal(requested.status, "pending");
+  const requestHistory = (
+    await households.listHouseholdActivity({ householdId: id }, owner)
+  ).entries;
+  assert.ok(
+    requestHistory.some((entry) => entry.action === "Invitation requested"),
+  );
+  assert.equal(
+    JSON.stringify(requestHistory, (_, value: unknown) =>
+      typeof value === "bigint" ? value.toString() : value,
+    ).includes("jordan@example.invalid"),
+    false,
+  );
   const notifyOps = createClient(
     EmailOperationsService,
     createConnectTransport({ baseUrl }),
@@ -6119,6 +6131,21 @@ test("uncertain delivery retries reuse the link and early signed feedback surviv
 
 test("an interrupted final email attempt becomes terminal after its claim expires without another send", async () => {
   const owner = await login();
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const growth = await admin.getGrowth({}, owner);
+  if (growth.paused)
+    await admin.changeGrowth(
+      {
+        operationId: crypto.randomUUID(),
+        expectedRevision: growth.revision,
+        paused: false,
+        confirmed: true,
+      },
+      owner,
+    );
   const invites = createClient(
     EmailInvitationService,
     createConnectTransport({ baseUrl }),
@@ -6202,7 +6229,7 @@ test("an interrupted final email attempt becomes terminal after its claim expire
         await sending;
       } else {
         assert.equal((await futureMail.processQueue({}, ops)).attempted, 0n);
-        assert.equal((await status()).deliveryStatus, "failed");
+        assert.equal((await status()).deliveryStatus, "uncertain");
         assert.equal(
           (await provider("messages")).messages.filter(
             (m) => m.recipient === "interrupted@example.invalid",

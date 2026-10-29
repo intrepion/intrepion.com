@@ -608,6 +608,15 @@ impl EmailInvitationService for Invitations {
                 ],
             ),
             Statement::new(
+                "INSERT INTO household_activity(household_id,actor_sub,action) SELECT q.household_id,'system:requester','Invitation requested' FROM household_invitation_requests q WHERE q.id=? AND q.user_sub=? AND q.status='pending' AND NOT EXISTS(SELECT 1 FROM household_request_operations o WHERE o.user_sub=? AND o.operation_id=?)",
+                vec![
+                    r.operation_id.into(),
+                    session.user_sub.clone(),
+                    session.user_sub.clone(),
+                    r.operation_id.into(),
+                ],
+            ),
+            Statement::new(
                 "INSERT INTO household_request_notifications(id,request_id,household_id,head_sub,recipient_email,created_at) SELECT lower(hex(randomblob(4)))||'-'||lower(hex(randomblob(2)))||'-4'||substr(lower(hex(randomblob(2))),2)||'-a'||substr(lower(hex(randomblob(2))),2)||'-'||lower(hex(randomblob(6))),q.id,q.household_id,s.head_sub,s.confirmed_email,? FROM household_invitation_requests q JOIN household_request_notification_settings s ON s.household_id=q.household_id JOIN household_heads m ON m.household_id=s.household_id AND m.subject=s.head_sub JOIN pilot_accounts a ON a.subject=s.head_sub WHERE q.id=? AND q.user_sub=? AND q.status='pending' AND s.enabled=1 AND s.confirmed_email<>'' AND s.confirmed_email=a.google_verified_email AND m.active=1 AND a.approved=1 AND NOT EXISTS(SELECT 1 FROM household_request_operations o WHERE o.user_sub=? AND o.operation_id=?) ON CONFLICT(request_id,head_sub) DO NOTHING",
                 vec![
                     now.to_string(),

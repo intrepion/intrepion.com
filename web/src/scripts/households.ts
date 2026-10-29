@@ -720,9 +720,9 @@ export class Households {
           invitation.status === "pending"
             ? ({
                 queued: "Queued for sending",
-                submitted: "Submitted to email service",
+                submitted: "Delivery not confirmed",
                 delivered: "Delivered to receiving mail server",
-                uncertain: "Sending not yet confirmed",
+                uncertain: "Delivery not confirmed",
                 failed: "Email could not be delivered. Contact support.",
                 sending: "Sending",
               }[invitation.deliveryStatus] ?? "Pending")

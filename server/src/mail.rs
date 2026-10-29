@@ -144,7 +144,7 @@ impl Delivery {
         // A stopped process can leave the last bounded attempt unacknowledged.
         // Its expired claim permits reconciliation, never another provider call.
         // Keep the attempt's conservative uncertainty and monthly charge count.
-        self.0.db.query::<serde_json::Value>("UPDATE email_invitations SET delivery_status='failed',claim_id='',claim_until=0 WHERE status='pending' AND delivery_status='sending' AND attempts>=3 AND claim_until<=CAST(? AS INTEGER)",std::slice::from_ref(&now)).await?;
+        self.0.db.query::<serde_json::Value>("UPDATE email_invitations SET delivery_status='uncertain',claim_id='',claim_until=0 WHERE status='pending' AND delivery_status='sending' AND attempts>=3 AND claim_until<=CAST(? AS INTEGER)",std::slice::from_ref(&now)).await?;
         // All eligibility checks are repeated in the transaction claiming the attempt.
         let eligible = "i.status='pending' AND i.delivery_status IN('queued','uncertain','sending') AND i.expires_at>CAST(? AS INTEGER) AND i.attempts<3 AND i.claim_until<=CAST(? AS INTEGER) AND i.next_attempt_at<=CAST(? AS INTEGER) AND (i.consent_until=0 OR i.consent_until>CAST(? AS INTEGER)) AND EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND EXISTS(SELECT 1 FROM site_safety_policy WHERE id=1 AND enabled=1) AND EXISTS(SELECT 1 FROM households h JOIN household_heads m ON m.household_id=h.id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=i.household_id AND h.status='active' AND m.subject=i.created_by AND m.active=1 AND a.approved=1) AND NOT EXISTS(SELECT 1 FROM email_suppressions x WHERE x.recipient_email=i.recipient_email)";
         let pending=self.0.db.query::<Pending>(&format!("SELECT i.id,i.household_id,i.recipient_email,i.generation,i.attempts FROM email_invitations i WHERE {eligible} ORDER BY i.created_at,i.id LIMIT 3"),&[now.clone(),now.clone(),now.clone(),now.clone()]).await?;
@@ -199,11 +199,7 @@ impl Delivery {
             let (outcome, message_id) = match result {
                 Ok(id) => ("submitted", id),
                 Err(temporary) => (
-                    if temporary && i.attempts + 1 < 3 {
-                        "uncertain"
-                    } else {
-                        "failed"
-                    },
+                    if temporary { "uncertain" } else { "failed" },
                     String::new(),
                 ),
             };
@@ -232,7 +228,7 @@ impl Delivery {
     }
     async fn process_notifications(&self, settings: &Settings) -> Result<u64, ConnectError> {
         let now = auth::now();
-        self.0.db.query::<serde_json::Value>("UPDATE household_request_notifications SET status='failed',claim_id='',claim_until=0 WHERE status='sending' AND attempts>=3 AND claim_until<=?",&[now.to_string()]).await?;
+        self.0.db.query::<serde_json::Value>("UPDATE household_request_notifications SET status='uncertain',claim_id='',claim_until=0 WHERE status='sending' AND attempts>=3 AND claim_until<=?",&[now.to_string()]).await?;
         let eligible = "n.status IN('queued','uncertain','sending') AND n.attempts<3 AND n.claim_until<=CAST(? AS INTEGER) AND n.next_attempt_at<=CAST(? AS INTEGER) AND EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND EXISTS(SELECT 1 FROM household_invitation_requests q WHERE q.id=n.request_id AND q.status='pending' AND q.expires_at>CAST(? AS INTEGER)) AND EXISTS(SELECT 1 FROM households h JOIN household_heads m ON m.household_id=h.id JOIN pilot_accounts a ON a.subject=m.subject JOIN household_request_notification_settings s ON s.household_id=h.id AND s.head_sub=m.subject WHERE h.id=n.household_id AND h.status='active' AND m.subject=n.head_sub AND m.active=1 AND a.approved=1 AND s.enabled=1 AND s.confirmed_email=n.recipient_email AND a.google_verified_email=n.recipient_email) AND NOT EXISTS(SELECT 1 FROM email_suppressions x WHERE x.recipient_email=n.recipient_email)";
         let pending=self.0.db.query::<PendingNotification>(&format!("SELECT n.id,n.household_id,h.name AS household_name,n.recipient_email,n.attempts FROM household_request_notifications n JOIN households h ON h.id=n.household_id WHERE {eligible} ORDER BY n.created_at,n.id LIMIT 3"),&[now.to_string(),now.to_string(),now.to_string()]).await?;
         let mut attempted = 0;
@@ -270,11 +266,7 @@ impl Delivery {
             let (outcome, message_id) = match self.submit(settings, &payload).await {
                 Ok(id) => ("submitted", id),
                 Err(temporary) => (
-                    if temporary && n.attempts + 1 < 3 {
-                        "uncertain"
-                    } else {
-                        "failed"
-                    },
+                    if temporary { "uncertain" } else { "failed" },
                     String::new(),
                 ),
             };
