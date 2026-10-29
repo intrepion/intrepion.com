@@ -216,14 +216,25 @@ impl EmailInvitationService for Invitations {
         Households(self.0.clone())
             .require_head(r.id, &session.user_sub)
             .await?;
+        if !r.after_id.is_empty() && !valid_id(r.after_id) {
+            return Err(ConnectError::invalid_argument("Invalid page cursor."));
+        }
         #[derive(Deserialize)]
         struct Row {
             id: String,
             expires_at: i64,
             revoked: i32,
         }
-        let rows=self.0.db.query::<Row>("SELECT l.id,l.expires_at,l.revoked FROM household_request_links l WHERE l.household_id=? AND EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=l.household_id AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1) ORDER BY l.created_at DESC,l.id LIMIT 100",&[r.id.into(),session.user_sub]).await?;
+        let mut rows=self.0.db.query::<Row>("SELECT l.id,l.expires_at,l.revoked FROM household_request_links l WHERE l.household_id=? AND l.revoked=0 AND l.expires_at>? AND l.id>? AND EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=l.household_id AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1) ORDER BY l.id LIMIT 11",&[r.id.into(),auth::now().to_string(),r.after_id.into(),session.user_sub]).await?;
+        let more = rows.len() > 10;
+        rows.truncate(10);
+        let next_after_id = if more {
+            rows.last().map_or_else(String::new, |row| row.id.clone())
+        } else {
+            String::new()
+        };
         Response::ok(RequestLinkPage {
+            next_after_id,
             links: rows
                 .into_iter()
                 .map(|r| RequestLinkSummary {
@@ -348,7 +359,7 @@ impl EmailInvitationService for Invitations {
     async fn list_my_invitation_requests(
         &self,
         ctx: RequestContext,
-        _r: ServiceRequest<'_, Empty>,
+        r: ServiceRequest<'_, RequestHistoryQuery>,
     ) -> ServiceResult<MyInvitationRequestPage> {
         let session = self
             .0
@@ -371,8 +382,19 @@ impl EmailInvitationService for Invitations {
             status: String,
             requested_at: i64,
         }
-        let rows=self.0.db.query::<Row>("SELECT q.id,h.name AS household_name,q.email,CASE WHEN q.status='pending' AND q.expires_at<=? THEN 'expired' ELSE q.status END AS status,q.requested_at FROM household_invitation_requests q JOIN households h ON h.id=q.household_id WHERE q.user_sub=? AND h.status<>'erased' ORDER BY q.requested_at DESC,q.id LIMIT 100",&[auth::now().to_string(),session.user_sub]).await?;
+        if !r.after_id.is_empty() && !valid_id(r.after_id) {
+            return Err(ConnectError::invalid_argument("Invalid page cursor."));
+        }
+        let mut rows=self.0.db.query::<Row>("SELECT q.id,h.name AS household_name,q.email,CASE WHEN q.status='pending' AND q.expires_at<=? THEN 'expired' ELSE q.status END AS status,q.requested_at FROM household_invitation_requests q JOIN households h ON h.id=q.household_id WHERE q.user_sub=? AND h.status<>'erased' AND q.id>? ORDER BY q.id LIMIT 11",&[auth::now().to_string(),session.user_sub,r.after_id.into()]).await?;
+        let more = rows.len() > 10;
+        rows.truncate(10);
+        let next_after_id = if more {
+            rows.last().map_or_else(String::new, |row| row.id.clone())
+        } else {
+            String::new()
+        };
         Response::ok(MyInvitationRequestPage {
+            next_after_id,
             requests: rows
                 .into_iter()
                 .map(|r| MyInvitationRequest {
@@ -742,6 +764,9 @@ impl EmailInvitationService for Invitations {
         Households(self.0.clone())
             .require_head(r.id, &session.user_sub)
             .await?;
+        if !r.after_id.is_empty() && !valid_id(r.after_id) {
+            return Err(ConnectError::invalid_argument("Invalid page cursor."));
+        }
         #[derive(Deserialize)]
         struct Row {
             id: String,
@@ -750,8 +775,16 @@ impl EmailInvitationService for Invitations {
             status: String,
             requested_at: i64,
         }
-        let rows=self.0.db.query::<Row>("SELECT id,display_name,email,status,requested_at FROM household_invitation_requests WHERE household_id=? AND status='pending' AND expires_at>? ORDER BY requested_at,id LIMIT 100",&[r.id.into(),auth::now().to_string()]).await?;
+        let mut rows=self.0.db.query::<Row>("SELECT id,display_name,email,status,requested_at FROM household_invitation_requests WHERE household_id=? AND status='pending' AND expires_at>? AND id>? ORDER BY id LIMIT 11",&[r.id.into(),auth::now().to_string(),r.after_id.into()]).await?;
+        let more = rows.len() > 10;
+        rows.truncate(10);
+        let next_after_id = if more {
+            rows.last().map_or_else(String::new, |row| row.id.clone())
+        } else {
+            String::new()
+        };
         Response::ok(InvitationRequestPage {
+            next_after_id,
             requests: rows
                 .into_iter()
                 .map(|r| InvitationRequest {

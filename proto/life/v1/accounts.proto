@@ -103,7 +103,7 @@ service EmailInvitationService {
   rpc ListInvitationRequests(HouseholdKey) returns (InvitationRequestPage);
   rpc DeclineInvitationRequest(InvitationRequestDecision) returns (Empty);
   rpc ApproveInvitationRequest(InvitationRequestDecision) returns (EmailInvitation);
-  rpc ListMyInvitationRequests(Empty) returns (MyInvitationRequestPage);
+  rpc ListMyInvitationRequests(RequestHistoryQuery) returns (MyInvitationRequestPage);
   rpc WithdrawInvitationRequest(InvitationRequestWithdraw) returns (Empty);
   rpc GetRequestNotifications(HouseholdKey) returns (RequestNotificationSettings);
   rpc SetRequestNotifications(RequestNotificationChange) returns (RequestNotificationSettings);
@@ -116,13 +116,14 @@ message RequestLinkCreate { string operation_id = 1; string household_id = 2; }
 message RequestLinkRevoke { string household_id = 1; string link_id = 2; }
 message RequestLink { string id = 1; string token = 2; int64 expires_at = 3; }
 message RequestLinkSummary { string id = 1; int64 expires_at = 2; bool revoked = 3; }
-message RequestLinkPage { repeated RequestLinkSummary links = 1; }
+message RequestLinkPage { repeated RequestLinkSummary links = 1; string next_after_id = 2; }
 message RequestPreview { string household_name = 1; string email = 2; string display_name = 3; bool already_head = 4; }
 message InvitationRequestSubmit { string operation_id = 1; bool confirmed = 2; }
 message InvitationRequest { string id = 1; string display_name = 2; string email = 3; string status = 4; int64 requested_at = 5; }
-message InvitationRequestPage { repeated InvitationRequest requests = 1; }
+message InvitationRequestPage { repeated InvitationRequest requests = 1; string next_after_id = 2; }
+message RequestHistoryQuery { string after_id = 1; }
 message MyInvitationRequest { string id = 1; string household_name = 2; string email = 3; string status = 4; int64 requested_at = 5; }
-message MyInvitationRequestPage { repeated MyInvitationRequest requests = 1; }
+message MyInvitationRequestPage { repeated MyInvitationRequest requests = 1; string next_after_id = 2; }
 message InvitationRequestWithdraw { string operation_id = 1; string request_id = 2; bool confirmed = 3; }
 message RequestNotificationSettings { bool enabled = 1; string email = 2; bool confirmation_required = 3; }
 message RequestNotificationChange { string household_id = 1; bool enabled = 2; bool confirmed = 3; }

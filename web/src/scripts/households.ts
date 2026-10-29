@@ -74,6 +74,8 @@ export class Households {
   private invitationRequests: InvitationRequest[] = [];
   private requestNotifications?: RequestNotificationSettings;
   private requestLinks: RequestLinkSummary[] = [];
+  private requestLinksCursor = "";
+  private invitationRequestsCursor = "";
   private requestLink = "";
   private requestLinkHousehold = "";
   private requestLinkOperation = "";
@@ -643,6 +645,10 @@ export class Households {
         this.root.append(row);
       }
     }
+    if (this.requestLinksCursor)
+      this.root.append(
+        button("Show more request links", () => void this.loadMoreLinks()),
+      );
     const settings = this.requestNotifications;
     if (settings) {
       this.root.append(
@@ -691,6 +697,13 @@ export class Households {
       );
       this.root.append(card);
     }
+    if (this.invitationRequestsCursor)
+      this.root.append(
+        button(
+          "Show more invitation requests",
+          () => void this.loadMoreRequests(),
+        ),
+      );
     if (!this.invitationRequests.length)
       this.root.append(element("p", "No pending requests."));
     for (const head of detail.heads) {
@@ -1378,27 +1391,59 @@ export class Households {
         )
       ).invitations;
     if (this.overview?.normalAccounts) {
-      this.invitationRequests = (
-        await this.api.invitations.listInvitationRequests(
-          { id: this.api.space },
-          { timeoutMs: 90000 },
-        )
-      ).requests;
+      const requestsPage = await this.api.invitations.listInvitationRequests(
+        { id: this.api.space },
+        { timeoutMs: 90000 },
+      );
+      this.invitationRequests = requestsPage.requests;
+      this.invitationRequestsCursor = requestsPage.nextAfterId;
       this.requestNotifications =
         await this.api.invitations.getRequestNotifications(
           { id: this.api.space },
           { timeoutMs: 90000 },
         );
-      this.requestLinks = (
-        await this.api.invitations.listRequestLinks(
-          { id: this.api.space },
-          { timeoutMs: 90000 },
-        )
-      ).links;
+      const linksPage = await this.api.invitations.listRequestLinks(
+        { id: this.api.space },
+        { timeoutMs: 90000 },
+      );
+      this.requestLinks = linksPage.links;
+      this.requestLinksCursor = linksPage.nextAfterId;
     }
     this.activity = page.entries;
     this.activityCursor = page.nextBeforeSequence;
     this.renderHousehold();
+  }
+  private async loadMoreLinks() {
+    this.hooks.busy(true);
+    try {
+      const page = await this.api.invitations.listRequestLinks(
+        { id: this.api.space, afterId: this.requestLinksCursor },
+        { timeoutMs: 90000 },
+      );
+      this.requestLinks.push(...page.links);
+      this.requestLinksCursor = page.nextAfterId;
+      this.renderHousehold();
+    } catch (error) {
+      this.problem(error);
+    } finally {
+      this.hooks.busy(false);
+    }
+  }
+  private async loadMoreRequests() {
+    this.hooks.busy(true);
+    try {
+      const page = await this.api.invitations.listInvitationRequests(
+        { id: this.api.space, afterId: this.invitationRequestsCursor },
+        { timeoutMs: 90000 },
+      );
+      this.invitationRequests.push(...page.requests);
+      this.invitationRequestsCursor = page.nextAfterId;
+      this.renderHousehold();
+    } catch (error) {
+      this.problem(error);
+    } finally {
+      this.hooks.busy(false);
+    }
   }
   private renderHousehold() {
     if (this.overview?.normalAccounts) {

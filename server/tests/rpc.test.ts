@@ -6272,6 +6272,111 @@ test("revocation waits for an already-started provider handoff", async () => {
   );
 });
 
+test("active request links and pending requests remain accessible across pages", async () => {
+  const owner = await login();
+  await stop(server);
+  server = start("target/debug/intrepion-server", [], { env: localEnv });
+  await ready(`${baseUrl}/health/live`);
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const growth = await admin.getGrowth({}, owner);
+  if (growth.paused)
+    await admin.changeGrowth(
+      {
+        operationId: crypto.randomUUID(),
+        expectedRevision: growth.revision,
+        paused: false,
+        confirmed: true,
+      },
+      owner,
+    );
+  const invites = createClient(
+    EmailInvitationService,
+    createConnectTransport({ baseUrl }),
+  );
+  const id = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      action: HouseholdAction.CREATE,
+      name: "Paged requests",
+    },
+    owner,
+  );
+  const links = [];
+  for (let n = 0; n < 11; n++) {
+    links.push(
+      await invites.createRequestLink(
+        { householdId: id, operationId: crypto.randomUUID() },
+        owner,
+      ),
+    );
+    const challenge = await fetch(`${baseUrl}/auth/challenge`, {
+      method: "POST",
+      headers: { origin },
+    });
+    const { nonce } = (await challenge.json()) as { nonce: string };
+    const response: Response = await fetch(`${baseUrl}/auth/development`, {
+      method: "POST",
+      headers: {
+        origin,
+        "content-type": "application/json",
+        cookie: challenge.headers
+          .getSetCookie()
+          .map((s) => s.split(";")[0])
+          .join("; "),
+      },
+      body: JSON.stringify({
+        nonce,
+        credential: `paged-user-${n}`,
+        request_token: links[n]!.token,
+        development_email: `paged-${n}@example.invalid`,
+        development_name: "Requester",
+      }),
+    });
+    assert.equal(response.status, 200);
+    const session = (await response.json()) as { csrf: string };
+    await invites.submitInvitationRequest(
+      { operationId: crypto.randomUUID(), confirmed: true },
+      {
+        headers: {
+          origin,
+          "x-csrf-token": session.csrf,
+          cookie: response.headers
+            .getSetCookie()
+            .map((s) => s.split(";")[0])
+            .join("; "),
+        },
+      },
+    );
+  }
+  const firstLinks = await invites.listRequestLinks({ id }, owner);
+  assert.equal(firstLinks.links.length, 10);
+  assert.ok(firstLinks.nextAfterId);
+  const secondLinks = await invites.listRequestLinks(
+    { id, afterId: firstLinks.nextAfterId },
+    owner,
+  );
+  assert.equal(secondLinks.links.length, 1);
+  const firstRequests = await invites.listInvitationRequests({ id }, owner);
+  assert.equal(firstRequests.requests.length, 10);
+  assert.ok(firstRequests.nextAfterId);
+  const secondRequests = await invites.listInvitationRequests(
+    { id, afterId: firstRequests.nextAfterId },
+    owner,
+  );
+  assert.equal(secondRequests.requests.length, 1);
+  assert.equal(
+    new Set(
+      [...firstRequests.requests, ...secondRequests.requests].map((r) => r.id),
+    ).size,
+    11,
+  );
+});
+
 test("an interrupted final email attempt leaves the handoff gate closed after restart", async () => {
   const owner = await login();
   const admin = createClient(

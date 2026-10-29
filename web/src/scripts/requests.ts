@@ -1,4 +1,5 @@
 import { Api } from "../lib/api";
+import type { MyInvitationRequest } from "../gen/life/v1/accounts_pb";
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, text = "") {
   const node = document.createElement(tag);
@@ -18,6 +19,7 @@ export class Requests {
   malformed = false;
   private operation = "";
   private withdrawals = new Map<string, string>();
+  private mine: MyInvitationRequest[] = [];
   constructor(
     private root: HTMLElement,
     private api: Api,
@@ -148,15 +150,16 @@ export class Requests {
       this.busy(false);
     }
   }
-  private async openMine() {
+  private async openMine(afterId = "") {
     const page = await this.api.invitations.listMyInvitationRequests(
-      {},
+      { afterId },
       { timeoutMs: 90000 },
     );
+    this.mine = afterId ? [...this.mine, ...page.requests] : page.requests;
     this.root.replaceChildren(el("h1", "My invitation requests"));
-    if (!page.requests.length)
+    if (!this.mine.length)
       this.root.append(el("p", "You have no retained invitation requests."));
-    for (const request of page.requests) {
+    for (const request of this.mine) {
       const card = el("article");
       card.className = "household-card";
       card.append(
@@ -169,6 +172,13 @@ export class Requests {
         );
       this.root.append(card);
     }
+    if (page.nextAfterId)
+      this.root.append(
+        button(
+          "Show more requests",
+          () => void this.openMine(page.nextAfterId),
+        ),
+      );
     this.root.append(
       button("Refresh requests", () => void this.open()),
       button("Sign out", () => void this.leave()),

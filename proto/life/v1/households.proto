@@ -22,7 +22,7 @@ message ResourceAmounts {
   uint64 households = 6;
 }
 message PilotIdentity { string id = 1; string name = 2; }
-message HouseholdKey { string id = 1; }
+message HouseholdKey { string id = 1; string after_id = 2; }
 message HouseholdSummary {
   string id = 1;
   string name = 2;
