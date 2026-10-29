@@ -229,6 +229,242 @@ impl Invitations {
 }
 #[allow(refining_impl_trait)]
 impl EmailInvitationService for Invitations {
+    async fn submit_invitation_request(
+        &self,
+        ctx: RequestContext,
+        r: ServiceRequest<'_, InvitationRequestSubmit>,
+    ) -> ServiceResult<InvitationRequest> {
+        if !r.confirmed || !valid_id(r.operation_id) {
+            return Err(ConnectError::failed_precondition(
+                "Confirm that you want an invitation email.",
+            ));
+        }
+        let session = self
+            .0
+            .request_session(ctx.headers(), true)
+            .await
+            .map_err(|e| match e.0 {
+                axum::http::StatusCode::UNAUTHORIZED => {
+                    ConnectError::unauthenticated("Sign in to request an invitation.")
+                }
+                axum::http::StatusCode::FORBIDDEN => {
+                    ConnectError::permission_denied("Request session and CSRF token required.")
+                }
+                _ => ConnectError::unavailable("Request verification is temporarily unavailable."),
+            })?;
+        #[derive(Deserialize)]
+        struct RequestRow {
+            id: String,
+            display_name: String,
+            email: String,
+            status: String,
+            requested_at: i64,
+            link_id: String,
+        }
+        let now = auth::now();
+        let statements = vec![
+            Statement::new(
+                "UPDATE household_invitation_requests SET status='expired',closed_at=expires_at WHERE status='pending' AND expires_at<=?",
+                vec![now.to_string()],
+            ),
+            Statement::new(
+                "INSERT INTO household_invitation_requests(id,household_id,link_id,user_sub,email,display_name,status,consent_version,requested_at,expires_at) SELECT ?,l.household_id,l.id,?,?,?,'pending','v1',?,? FROM household_request_links l JOIN households h ON h.id=l.household_id WHERE l.id=? AND l.revoked=0 AND l.expires_at>? AND h.status='active' AND EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND NOT EXISTS(SELECT 1 FROM household_heads m WHERE m.household_id=l.household_id AND m.subject=? AND m.active=1) AND NOT EXISTS(SELECT 1 FROM pilot_accounts a WHERE a.subject=? AND a.approved=0) AND NOT EXISTS(SELECT 1 FROM protected_account_access p WHERE p.subject_hash=? AND p.active=0) AND NOT EXISTS(SELECT 1 FROM household_request_operations o WHERE o.user_sub=? AND o.operation_id=?) ON CONFLICT DO NOTHING",
+                vec![
+                    r.operation_id.into(),
+                    session.user_sub.clone(),
+                    session.email.clone(),
+                    session.display_name.clone(),
+                    now.to_string(),
+                    (now + 7 * 86400).to_string(),
+                    session.link_id.clone(),
+                    now.to_string(),
+                    session.user_sub.clone(),
+                    session.user_sub.clone(),
+                    crate::security::subject_hash(&session.user_sub),
+                    session.user_sub.clone(),
+                    r.operation_id.into(),
+                ],
+            ),
+            Statement::new(
+                "INSERT INTO household_request_operations(user_sub,operation_id,link_id,request_id) SELECT ?,?,l.id,q.id FROM household_request_links l JOIN household_invitation_requests q ON q.household_id=l.household_id AND q.user_sub=? AND q.email=? AND q.status='pending' WHERE l.id=? AND l.revoked=0 AND l.expires_at>? AND EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) ON CONFLICT(user_sub,operation_id) DO NOTHING",
+                vec![
+                    session.user_sub.clone(),
+                    r.operation_id.into(),
+                    session.user_sub.clone(),
+                    session.email.clone(),
+                    session.link_id.clone(),
+                    now.to_string(),
+                ],
+            ),
+            Statement::new(
+                "SELECT q.id,q.display_name,q.email,q.status,q.requested_at,o.link_id FROM household_request_operations o JOIN household_invitation_requests q ON q.id=o.request_id WHERE o.user_sub=? AND o.operation_id=?",
+                vec![session.user_sub.clone(), r.operation_id.into()],
+            ),
+        ];
+        let result = self.0.db.batch(&statements).await?;
+        let row: RequestRow = serde_json::from_value(
+            result
+                .last()
+                .and_then(|r| r.first())
+                .cloned()
+                .ok_or_else(unavailable)?,
+        )
+        .map_err(|_| ConnectError::internal("Request could not be read."))?;
+        if row.link_id != session.link_id || row.email != session.email {
+            return Err(unavailable());
+        }
+        Response::ok(InvitationRequest {
+            id: row.id,
+            display_name: row.display_name,
+            email: row.email,
+            status: row.status,
+            requested_at: row.requested_at,
+            ..Default::default()
+        })
+    }
+    async fn list_invitation_requests(
+        &self,
+        ctx: RequestContext,
+        r: ServiceRequest<'_, HouseholdKey>,
+    ) -> ServiceResult<InvitationRequestPage> {
+        let session = self.0.authorize_rpc(&ctx).await?;
+        Households(self.0.clone())
+            .require_head(r.id, &session.user_sub)
+            .await?;
+        #[derive(Deserialize)]
+        struct Row {
+            id: String,
+            display_name: String,
+            email: String,
+            status: String,
+            requested_at: i64,
+        }
+        let rows=self.0.db.query::<Row>("SELECT id,display_name,email,status,requested_at FROM household_invitation_requests WHERE household_id=? AND status='pending' AND expires_at>? ORDER BY requested_at,id LIMIT 100",&[r.id.into(),auth::now().to_string()]).await?;
+        Response::ok(InvitationRequestPage {
+            requests: rows
+                .into_iter()
+                .map(|r| InvitationRequest {
+                    id: r.id,
+                    display_name: r.display_name,
+                    email: r.email,
+                    status: r.status,
+                    requested_at: r.requested_at,
+                    ..Default::default()
+                })
+                .collect(),
+            ..Default::default()
+        })
+    }
+    async fn get_request_preview(
+        &self,
+        ctx: RequestContext,
+        _r: ServiceRequest<'_, Empty>,
+    ) -> ServiceResult<RequestPreview> {
+        let session = self
+            .0
+            .request_session(ctx.headers(), true)
+            .await
+            .map_err(|e| match e.0 {
+                axum::http::StatusCode::UNAUTHORIZED => {
+                    ConnectError::unauthenticated("Sign in to review this request.")
+                }
+                axum::http::StatusCode::FORBIDDEN => {
+                    ConnectError::permission_denied("Request session and CSRF token required.")
+                }
+                _ => ConnectError::unavailable("Request verification is temporarily unavailable."),
+            })?;
+        #[derive(Deserialize)]
+        struct Preview {
+            household_name: String,
+            already_head: i32,
+        }
+        let row=self.0.db.query::<Preview>("SELECT h.name AS household_name, EXISTS(SELECT 1 FROM household_heads m WHERE m.household_id=h.id AND m.subject=? AND m.active=1) AS already_head FROM household_request_links l JOIN households h ON h.id=l.household_id WHERE l.id=? AND l.revoked=0 AND l.expires_at>? AND h.status='active'",&[session.user_sub,session.link_id,auth::now().to_string()]).await?.pop().ok_or_else(unavailable)?;
+        Response::ok(RequestPreview {
+            household_name: row.household_name,
+            email: session.email,
+            display_name: session.display_name,
+            already_head: row.already_head != 0,
+            ..Default::default()
+        })
+    }
+    async fn revoke_request_link(
+        &self,
+        ctx: RequestContext,
+        r: ServiceRequest<'_, RequestLinkRevoke>,
+    ) -> ServiceResult<Empty> {
+        let session = self.0.authorize_rpc(&ctx).await?;
+        if !valid_id(r.household_id) || !valid_id(r.link_id) {
+            return Err(ConnectError::invalid_argument(
+                "Invalid request link action.",
+            ));
+        }
+        Households(self.0.clone())
+            .require_head(r.household_id, &session.user_sub)
+            .await?;
+        let result = self.0.db.batch(&[
+            Statement::new("UPDATE household_request_links SET revoked=1 WHERE id=? AND household_id=? AND EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=? AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1)", vec![r.link_id.into(),r.household_id.into(),r.household_id.into(),session.user_sub.clone()]),
+            Statement::new("UPDATE household_invitation_requests SET status='canceled',closed_at=? WHERE link_id=? AND status='pending' AND EXISTS(SELECT 1 FROM household_request_links l JOIN household_heads m ON m.household_id=l.household_id JOIN households h ON h.id=l.household_id JOIN pilot_accounts a ON a.subject=m.subject WHERE l.id=? AND l.household_id=? AND l.revoked=1 AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1)", vec![auth::now().to_string(),r.link_id.into(),r.link_id.into(),r.household_id.into(),session.user_sub.clone()]),
+            Statement::new("SELECT id FROM household_request_links WHERE id=? AND household_id=? AND revoked=1 AND EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=? AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1)", vec![r.link_id.into(),r.household_id.into(),r.household_id.into(),session.user_sub]),
+        ]).await?;
+        if result.last().is_none_or(|rows| rows.is_empty()) {
+            return Err(unavailable());
+        }
+        Response::ok(Empty::default())
+    }
+    async fn create_request_link(
+        &self,
+        ctx: RequestContext,
+        r: ServiceRequest<'_, RequestLinkCreate>,
+    ) -> ServiceResult<RequestLink> {
+        let session = self.0.authorize_rpc(&ctx).await?;
+        if !valid_id(r.operation_id) || !valid_id(r.household_id) {
+            return Err(ConnectError::invalid_argument(
+                "Invalid request link action.",
+            ));
+        }
+        Households(self.0.clone())
+            .require_head(r.household_id, &session.user_sub)
+            .await?;
+        if !capacity::normal_accounts(&self.0.db).await? {
+            return Err(ConnectError::failed_precondition(
+                "Normal accounts are not enabled.",
+            ));
+        }
+        #[derive(Deserialize)]
+        struct LinkRow {
+            id: String,
+            household_id: String,
+            created_by: String,
+            expires_at: i64,
+            revoked: i64,
+        }
+        let params = vec![r.operation_id.into()];
+        let read = || {
+            self.0.db.query::<LinkRow>("SELECT id,household_id,created_by,expires_at,revoked FROM household_request_links WHERE id=?", &params)
+        };
+        let token = self.token(r.operation_id, 0)?;
+        let token_hash = format!("{:x}", Sha256::digest(token.as_bytes()));
+        let existing = read().await?;
+        if existing.is_empty() {
+            let expires = (auth::now() + 7 * 86400).to_string();
+            self.0.db.batch(&[
+                Statement::new("INSERT INTO household_request_links(id,household_id,created_by,token_hash,expires_at) SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=? AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1) ON CONFLICT(id) DO NOTHING", vec![r.operation_id.into(),r.household_id.into(),session.user_sub.clone(),token_hash,expires,r.household_id.into(),session.user_sub.clone()]),
+            ]).await?;
+        }
+        let row = read().await?.pop().ok_or_else(unavailable)?;
+        if row.household_id != r.household_id
+            || row.created_by != session.user_sub
+            || row.revoked != 0
+        {
+            return Err(unavailable());
+        }
+        Response::ok(RequestLink {
+            id: row.id,
+            token,
+            expires_at: row.expires_at,
+            ..Default::default()
+        })
+    }
     async fn get_onboarding(
         &self,
         ctx: RequestContext,

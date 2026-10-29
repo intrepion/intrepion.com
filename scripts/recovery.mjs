@@ -144,6 +144,7 @@ async function upgrade(db) {
     ["view", "content_space_usage", "0022_household_metadata_storage"],
     ["table", "site_usage_samples", "0023_aggregate_usage_history"],
     ["trigger", "record_account_admission", "0024_protected_account_admission"],
+    ["table", "household_request_links", "0025_request_links"],
   ])
     if (!exists(type, anchor))
       db.exec(
@@ -177,6 +178,7 @@ async function upgrade(db) {
     "0022_household_metadata_storage.sql",
     "0023_aggregate_usage_history.sql",
     "0024_protected_account_admission.sql",
+    "0025_request_links.sql",
   ];
   db.exec(
     "CREATE TABLE IF NOT EXISTS d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
@@ -292,7 +294,14 @@ function replay(
             db.prepare(`DELETE FROM ${table} WHERE owner_sub=?`).run(space);
           for (const sql of householdEmailErasure)
             db.prepare(sql).run(record.collection_id);
+          db.prepare(
+            "DELETE FROM household_request_operations WHERE request_id IN (SELECT id FROM household_invitation_requests WHERE household_id=?)",
+          ).run(record.collection_id);
+          db.prepare(
+            "DELETE FROM household_invitation_requests WHERE household_id=?",
+          ).run(record.collection_id);
           for (const table of [
+            "household_request_links",
             "household_invitations",
             "household_content_erasures",
             "household_activity",
@@ -386,7 +395,7 @@ function replay(
     retainedPublicIdentities,
   );
   db.exec(
-    "DELETE FROM sessions; DELETE FROM login_challenges; DELETE FROM onboarding_sessions; UPDATE email_invitations SET status='revoked',delivery_status='canceled',claim_id='',claim_until=0,revision=revision+1 WHERE status='pending'; UPDATE household_invitations SET status='revoked' WHERE status='pending'; UPDATE invitation_growth SET paused=1,revision=revision+1 WHERE id=1; UPDATE security_replay_control SET replaying=0 WHERE id=1;",
+    "DELETE FROM sessions; DELETE FROM login_challenges; DELETE FROM onboarding_sessions; DELETE FROM request_sessions; UPDATE household_request_links SET revoked=1; UPDATE household_invitation_requests SET status='canceled',closed_at=unixepoch() WHERE status='pending'; UPDATE email_invitations SET status='revoked',delivery_status='canceled',claim_id='',claim_until=0,revision=revision+1 WHERE status='pending'; UPDATE household_invitations SET status='revoked' WHERE status='pending'; UPDATE invitation_growth SET paused=1,revision=revision+1 WHERE id=1; UPDATE security_replay_control SET replaying=0 WHERE id=1;",
   );
 }
 function replaySecurity(db, records, retainedPublicIdentities) {

@@ -2,10 +2,11 @@
 
 The owner approved the prototype. It settled the invitation-request and notification flows described in the [approved scope](../../docs/mvp-3-1-consent-plan.md). The throwaway source is preserved on branch `prototype/consent-invitations`.
 
-Open the standalone prototype from the repository root:
+The prototype is preserved on the separate `prototype/consent-invitations` branch. To open a copy without switching branches, run these commands from the repository root:
 
 ```sh
-xdg-open prototype/public/consent-invitations/index.html
+git show prototype/consent-invitations:prototype/public/consent-invitations/index.html > /tmp/intrepion-consent-prototype.html
+xdg-open /tmp/intrepion-consent-prototype.html
 ```
 
 It runs directly in the browser without the web server or other dependencies. Everything is simulated: Google sign-in, the household link, copying the link, email delivery, and the clock. It does not copy to the clipboard, send email, contact a provider, or save state; reloading resets it. The review-only state panel shows synthetic information and is not a proposed production screen.

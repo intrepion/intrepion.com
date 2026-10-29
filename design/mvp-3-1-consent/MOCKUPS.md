@@ -1,6 +1,6 @@
 # Consent-based invitation mockups
 
-The owner approved the [scope](../../docs/mvp-3-1-consent-plan.md), [wireframes](wireframes.html), and these visual mockups. The interactive standalone [prototype](PROTOTYPE.md) is ready for review; prototype code remains separate from production.
+The owner approved the [scope](../../docs/mvp-3-1-consent-plan.md), [wireframes](wireframes.html), these visual mockups, and the interactive standalone [prototype](PROTOTYPE.md). Prototype code remains separate from production.
 
 Open the 35-screen [mockup gallery](mockups.html) directly, with no server:
 

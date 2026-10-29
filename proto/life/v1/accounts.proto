@@ -95,11 +95,23 @@ message SitePolicyReview {
 }
 
 service EmailInvitationService {
+  rpc CreateRequestLink(RequestLinkCreate) returns (RequestLink);
+  rpc RevokeRequestLink(RequestLinkRevoke) returns (Empty);
+  rpc GetRequestPreview(Empty) returns (RequestPreview);
+  rpc SubmitInvitationRequest(InvitationRequestSubmit) returns (InvitationRequest);
+  rpc ListInvitationRequests(HouseholdKey) returns (InvitationRequestPage);
   rpc ListInvitations(HouseholdKey) returns (EmailInvitationPage);
   rpc GetOnboarding(Empty) returns (OnboardingPreview);
   rpc AcceptInvitation(InvitationAcceptance) returns (AccountSession);
   rpc ChangeInvitation(EmailInvitationChange) returns (EmailInvitation);
 }
+message RequestLinkCreate { string operation_id = 1; string household_id = 2; }
+message RequestLinkRevoke { string household_id = 1; string link_id = 2; }
+message RequestLink { string id = 1; string token = 2; int64 expires_at = 3; }
+message RequestPreview { string household_name = 1; string email = 2; string display_name = 3; bool already_head = 4; }
+message InvitationRequestSubmit { string operation_id = 1; bool confirmed = 2; }
+message InvitationRequest { string id = 1; string display_name = 2; string email = 3; string status = 4; int64 requested_at = 5; }
+message InvitationRequestPage { repeated InvitationRequest requests = 1; }
 enum EmailInvitationAction {
  EMAIL_INVITATION_ACTION_UNSPECIFIED = 0;
  EMAIL_INVITATION_ACTION_CREATE = 1;

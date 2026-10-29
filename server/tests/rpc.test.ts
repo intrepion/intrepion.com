@@ -3714,6 +3714,131 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     },
     owner,
   );
+  const linkAction = { operationId: crypto.randomUUID(), householdId: id };
+  const requestLink = await invitations.createRequestLink(linkAction, owner);
+  assert.match(requestLink.token, /^[a-f0-9]{64}$/);
+  assert.equal(
+    (await invitations.createRequestLink(linkAction, owner)).id,
+    requestLink.id,
+  );
+  assert.equal(
+    (await invitations.createRequestLink(linkAction, owner)).token,
+    requestLink.token,
+  );
+  await assert.rejects(
+    invitations.getRequestPreview({}),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.Unauthenticated,
+  );
+  const challenge = await fetch(`${baseUrl}/auth/challenge`, {
+    method: "POST",
+    headers: { origin },
+  });
+  const { nonce } = (await challenge.json()) as { nonce: string };
+  const requestLogin = await fetch(`${baseUrl}/auth/development`, {
+    method: "POST",
+    headers: {
+      origin,
+      "content-type": "application/json",
+      cookie: challenge.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+    body: JSON.stringify({
+      nonce,
+      credential: "new-requester",
+      request_token: requestLink.token,
+      development_email: "jordan@example.invalid",
+      development_name: "Jordan",
+    }),
+  });
+  assert.equal(requestLogin.status, 200);
+  const requestIdentity = (await requestLogin.json()) as { csrf: string };
+  const requester = {
+    headers: {
+      origin,
+      "x-csrf-token": requestIdentity.csrf,
+      cookie: requestLogin.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+  };
+  const preview = await invitations.getRequestPreview({}, requester);
+  assert.equal(preview.householdName, "Email invitation household");
+  assert.equal(preview.email, "jordan@example.invalid");
+  assert.equal(preview.displayName, "Jordan");
+  const submission = { operationId: crypto.randomUUID(), confirmed: true };
+  await assert.rejects(
+    invitations.submitInvitationRequest(
+      { ...submission, confirmed: false },
+      requester,
+    ),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.FailedPrecondition,
+  );
+  const requested = await invitations.submitInvitationRequest(
+    submission,
+    requester,
+  );
+  assert.equal(requested.status, "pending");
+  assert.equal(
+    (await invitations.submitInvitationRequest(submission, requester)).id,
+    requested.id,
+  );
+  assert.equal(
+    (
+      await invitations.submitInvitationRequest(
+        { ...submission, operationId: crypto.randomUUID() },
+        requester,
+      )
+    ).id,
+    requested.id,
+  );
+  assert.equal(
+    (await invitations.listInvitationRequests({ id }, owner)).requests.length,
+    1,
+  );
+  await assert.rejects(
+    invitations.listInvitationRequests({ id }, other),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.PermissionDenied,
+  );
+  await assert.rejects(
+    invitations.createRequestLink(
+      { ...linkAction, operationId: crypto.randomUUID() },
+      other,
+    ),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.PermissionDenied,
+  );
+  await assert.rejects(
+    invitations.revokeRequestLink(
+      { householdId: id, linkId: requestLink.id },
+      other,
+    ),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.PermissionDenied,
+  );
+  await invitations.revokeRequestLink(
+    { householdId: id, linkId: requestLink.id },
+    owner,
+  );
+  assert.equal(
+    (await invitations.listInvitationRequests({ id }, owner)).requests.length,
+    0,
+  );
+  await assert.rejects(
+    invitations.getRequestPreview({}, requester),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.Unauthenticated,
+  );
+  await assert.rejects(
+    invitations.createRequestLink(linkAction, owner),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.FailedPrecondition,
+  );
   const sent = await invitations.changeInvitation(change, owner);
   assert.equal(sent.recipientEmail, "morgan@example.invalid");
   assert.equal(sent.deliveryStatus, "queued");
@@ -4263,11 +4388,20 @@ test("site account suspension and restoration preserve data, end old sessions an
       headers: { authorization: "Bearer local-erasure-only" },
     })
   ).json()) as {
-    records: { scope: string; security?: { public_id: string } }[];
+    records: {
+      operation_id: string;
+      scope: string;
+      security?: { public_id: string };
+    }[];
   };
-  const priorChanges = priorJournal.records.filter(
-    (r) => r.scope === "account_access" && r.security?.public_id === otherId,
-  ).length;
+  const priorChanges = new Set(
+    priorJournal.records
+      .filter(
+        (r) =>
+          r.scope === "account_access" && r.security?.public_id === otherId,
+      )
+      .map((r) => r.operation_id),
+  );
   const change = {
     operationId: crypto.randomUUID(),
     accountId: otherId,
@@ -4352,6 +4486,7 @@ test("site account suspension and restoration preserve data, end old sessions an
   assert.equal(ledgerResponse.status, 200);
   const ledger = (await ledgerResponse.json()) as {
     records: {
+      operation_id: string;
       version: number;
       scope: string;
       security?: { public_id: string; subject_hash: string; active: boolean };
@@ -4363,13 +4498,10 @@ test("site account suspension and restoration preserve data, end old sessions an
       r.scope === "account_access" &&
       r.security?.public_id === otherId,
   );
-  assert.equal(changes.length, priorChanges + 2);
-  assert.ok(
-    changes.slice(priorChanges).some((r) => r.security?.active === false),
-  );
-  assert.ok(
-    changes.slice(priorChanges).some((r) => r.security?.active === true),
-  );
+  assert.equal(changes.length, priorChanges.size + 2);
+  const newChanges = changes.filter((r) => !priorChanges.has(r.operation_id));
+  assert.ok(newChanges.some((r) => r.security?.active === false));
+  assert.ok(newChanges.some((r) => r.security?.active === true));
   assert.ok(
     changes.every((r) => /^[a-f0-9]{64}$/.test(r.security!.subject_hash)),
   );

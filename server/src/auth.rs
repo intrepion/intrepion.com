@@ -16,6 +16,7 @@ use std::{
 use tokio::sync::Mutex;
 
 mod onboarding;
+mod requests;
 pub(crate) use onboarding::Onboarding;
 
 pub type SharedAuth = Arc<Auth>;
@@ -51,6 +52,8 @@ pub struct Login {
     pub nonce: String,
     #[serde(default)]
     pub invitation_token: Option<String>,
+    #[serde(default)]
+    pub request_token: Option<String>,
     #[cfg(feature = "dev-auth")]
     #[serde(default)]
     pub development_email: Option<String>,
@@ -435,6 +438,22 @@ pub async fn login(
     auth.limit_login(&headers, peer.ip()).await?;
     auth.consume_challenge(&headers, &login.nonce).await?;
     let claims = auth.verify_google(&login.credential, &login.nonce).await?;
+    if login.request_token.is_some() && login.invitation_token.is_some() {
+        return Err(forbidden());
+    }
+    if let Some(token) = login.request_token {
+        if !claims.email_verified {
+            return Err(forbidden());
+        }
+        return auth
+            .begin_request(
+                &claims.sub,
+                claims.email.as_deref().ok_or_else(forbidden)?,
+                claims.name.as_deref().unwrap_or(""),
+                &token,
+            )
+            .await;
+    }
     if let Some(token) = login.invitation_token {
         if !claims.email_verified {
             return Err(forbidden());
@@ -467,6 +486,19 @@ pub async fn development_login(
     } else {
         &login.credential
     };
+    if login.request_token.is_some() && login.invitation_token.is_some() {
+        return Err(forbidden());
+    }
+    if let Some(token) = login.request_token.as_deref() {
+        return auth
+            .begin_request(
+                subject,
+                login.development_email.as_deref().ok_or_else(forbidden)?,
+                login.development_name.as_deref().unwrap_or(""),
+                token,
+            )
+            .await;
+    }
     if let Some(token) = login.invitation_token.as_deref() {
         return auth
             .begin_invitation(

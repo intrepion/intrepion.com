@@ -321,7 +321,7 @@ test("recovering an MVP 1 archive upgrades retained tasks and the migration ledg
       );
       assert.equal(
         restored.prepare("SELECT count(*) n FROM d1_migrations").get().n,
-        24,
+        25,
       );
       assert.equal(restored.prepare("SELECT count(*) n FROM tasks").get().n, 0);
     } finally {
@@ -798,6 +798,7 @@ test("encrypted recovery preserves later account suspensions and head removals a
       INSERT INTO email_feedback_receipts(id,digest,claim_id,received_at) VALUES('${id(915)}','test-digest','test-claim',unixepoch()-31*86400);
       INSERT INTO site_audit(operation_id,actor_sub,action,occurred_at) VALUES('${id(916)}','restore-owner','Expired audit',unixepoch('now','-2 years'));
       INSERT INTO email_suppressions(recipient_email,reason) VALUES('retained-block@example.invalid','complaint');
+      INSERT INTO household_request_links(id,household_id,created_by,token_hash,expires_at) VALUES('${id(926)}','${id(901)}','restore-owner','request-link-hash',unixepoch()+86400);
       INSERT OR REPLACE INTO email_monthly_attempts(month,attempted) VALUES(strftime('%Y-%m','now'),9999);
     `),
     ]);
@@ -821,6 +822,12 @@ test("encrypted recovery preserves later account suspensions and head removals a
     const pendingDb = new DatabaseSync(":memory:");
     try {
       pendingDb.exec(recoveredPending.toString());
+      assert.equal(
+        pendingDb
+          .prepare("SELECT revoked FROM household_request_links WHERE id=?")
+          .get(id(926)).revoked,
+        1,
+      );
       assert.equal(
         pendingDb.prepare("SELECT count(*) n FROM email_send_attempts").get().n,
         0,
@@ -913,6 +920,7 @@ test("encrypted recovery preserves later account suspensions and head removals a
     try {
       erasedDb.exec(erased.toString());
       for (const table of [
+        "household_request_links",
         "email_invitations",
         "email_send_attempts",
         "email_feedback_receipts",

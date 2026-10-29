@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file life/v1/accounts.proto.
  */
 export const file_life_v1_accounts: GenFile = /*@__PURE__*/
-  fileDesc("ChZsaWZlL3YxL2FjY291bnRzLnByb3RvEgdsaWZlLnYxItkBCgxBZG1pbkFjY291bnQSCgoCaWQYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJEhEKCXN1c3BlbmRlZBgDIAEoCBIwCg5wZXJzb25hbF91c2FnZRgEIAEoCzIYLmxpZmUudjEuUmVzb3VyY2VBbW91bnRzEhkKEWFjdGl2ZV9ob3VzZWhvbGRzGAUgASgEEhcKD2FjY2Vzc19yZXZpc2lvbhgGIAEoBBIaChJwcm90ZWN0aW9uX3BlbmRpbmcYByABKAgSEgoKc2l0ZV9vd25lchgIIAEoCCJ5Cg5BZG1pbkhvdXNlaG9sZBIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg4KBnN0YXR1cxgDIAEoCRInCgV1c2FnZRgEIAEoCzIYLmxpZmUudjEuUmVzb3VyY2VBbW91bnRzEhQKDGFjdGl2ZV9oZWFkcxgFIAEoBCKbBAoNQWRtaW5PdmVydmlldxInCghhY2NvdW50cxgBIAMoCzIVLmxpZmUudjEuQWRtaW5BY2NvdW50EisKCmhvdXNlaG9sZHMYAiADKAsyFy5saWZlLnYxLkFkbWluSG91c2Vob2xkEhUKDWxvZ2ljYWxfYnl0ZXMYAyABKAQSHQoVcHJvdmlkZXJfdXNhZ2Vfc3RhdHVzGAQgASgJEhQKDG5leHRfYWNjb3VudBgFIAEoCRIWCg5uZXh0X2hvdXNlaG9sZBgGIAEoCRIVCg1hY2NvdW50X2NvdW50GAcgASgEEh8KF3N1c3BlbmRlZF9hY2NvdW50X2NvdW50GAggASgEEh4KFmFjdGl2ZV9ob3VzZWhvbGRfY291bnQYCSABKAQSHgoWY2xvc2VkX2hvdXNlaG9sZF9jb3VudBgKIAEoBBIgChhwZW5kaW5nX3NlY3VyaXR5X2NoYW5nZXMYCyABKAQSGAoQcGVuZGluZ19jbG9zdXJlcxgMIAEoBBIgChhwZW5kaW5nX2NvbnRlbnRfZXJhc3VyZXMYDSABKAQSFQoNZ3Jvd3RoX3N0YXR1cxgOIAEoCRIUCgxncm93dGhfc2luY2UYDyABKAMSGwoTbG9naWNhbF9ieXRlX2NoYW5nZRgQIAEoEhIWCg5hY2NvdW50X2NoYW5nZRgRIAEoEhIYChBob3VzZWhvbGRfY2hhbmdlGBIgASgSIj0KD0FkbWluQXVkaXRRdWVyeRIXCg9iZWZvcmVfc2VxdWVuY2UYASABKAQSEQoJcGFnZV9zaXplGAIgASgNIoQBCg9BZG1pbkF1ZGl0RW50cnkSEAoIc2VxdWVuY2UYASABKAQSFAoMb3BlcmF0aW9uX2lkGAIgASgJEhIKCmFjdG9yX25hbWUYAyABKAkSEAoIYWN0b3JfaWQYBCABKAkSDgoGYWN0aW9uGAUgASgJEhMKC29jY3VycmVkX2F0GAYgASgDIlAKDkFkbWluQXVkaXRQYWdlEikKB2VudHJpZXMYASADKAsyGC5saWZlLnYxLkFkbWluQXVkaXRFbnRyeRITCgtuZXh0X2JlZm9yZRgCIAEoBCJXChJBZG1pbk92ZXJ2aWV3UXVlcnkSEQoJcGFnZV9zaXplGAEgASgNEhUKDWFmdGVyX2FjY291bnQYAiABKAkSFwoPYWZ0ZXJfaG91c2Vob2xkGAMgASgJIsICChBTaXRlU2FmZXR5UG9saWN5EhAKCHJldmlzaW9uGAEgASgEEg8KB2VuYWJsZWQYAiABKAgSLwoNcGVyc29uYWxfc29mdBgDIAEoCzIYLmxpZmUudjEuUmVzb3VyY2VBbW91bnRzEi8KDXBlcnNvbmFsX2hhcmQYBCABKAsyGC5saWZlLnYxLlJlc291cmNlQW1vdW50cxIwCg5ob3VzZWhvbGRfc29mdBgFIAEoCzIYLmxpZmUudjEuUmVzb3VyY2VBbW91bnRzEjAKDmhvdXNlaG9sZF9oYXJkGAYgASgLMhgubGlmZS52MS5SZXNvdXJjZUFtb3VudHMSIAoYbWF4X2l0ZW1zX3Blcl9jb2xsZWN0aW9uGAcgASgEEiMKG21heF9zZWN0aW9uc19wZXJfY29sbGVjdGlvbhgIIAEoBCKYAQoQU2l0ZVBvbGljeUNoYW5nZRIUCgxvcGVyYXRpb25faWQYASABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAiABKAQSKQoGcG9saWN5GAMgASgLMhkubGlmZS52MS5TaXRlU2FmZXR5UG9saWN5EhUKDXByZXZpZXdfdG9rZW4YBCABKAkSEQoJY29uZmlybWVkGAUgASgIImkKEFNpdGVQb2xpY3lSZXZpZXcSFQoNcHJldmlld190b2tlbhgBIAEoCRIOCgZlZmZlY3QYAiABKAkSFQoNYWNjb3VudF9jb3VudBgDIAEoBBIXCg9ob3VzZWhvbGRfY291bnQYBCABKAQi0QEKFUVtYWlsSW52aXRhdGlvbkNoYW5nZRIUCgxvcGVyYXRpb25faWQYASABKAkSFAoMaG91c2Vob2xkX2lkGAIgASgJEhUKDWludml0YXRpb25faWQYAyABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YBCABKAQSFwoPcmVjaXBpZW50X2VtYWlsGAUgASgJEi4KBmFjdGlvbhgGIAEoDjIeLmxpZmUudjEuRW1haWxJbnZpdGF0aW9uQWN0aW9uEhEKCWNvbmZpcm1lZBgHIAEoCCKFAQoPRW1haWxJbnZpdGF0aW9uEgoKAmlkGAEgASgJEhcKD3JlY2lwaWVudF9lbWFpbBgCIAEoCRIOCgZzdGF0dXMYAyABKAkSFwoPZGVsaXZlcnlfc3RhdHVzGAQgASgJEhIKCmV4cGlyZXNfYXQYBSABKAMSEAoIcmV2aXNpb24YBiABKAQiRAoTRW1haWxJbnZpdGF0aW9uUGFnZRItCgtpbnZpdGF0aW9ucxgBIAMoCzIYLmxpZmUudjEuRW1haWxJbnZpdGF0aW9uImIKDEdyb3d0aENoYW5nZRIUCgxvcGVyYXRpb25faWQYASABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAiABKAQSDgoGcGF1c2VkGAMgASgIEhEKCWNvbmZpcm1lZBgEIAEoCCIvCgtHcm93dGhTdGF0ZRIQCghyZXZpc2lvbhgBIAEoBBIOCgZwYXVzZWQYAiABKAgiUAoQRW1haWxRdWV1ZVJlc3VsdBIRCglhdHRlbXB0ZWQYASABKAQSGAoQbW9udGhseV9hdHRlbXB0cxgCIAEoBBIPCgd3YXJuaW5nGAMgASgIIqcBChFPbmJvYXJkaW5nUHJldmlldxIUCgxob3VzZWhvbGRfaWQYASABKAkSFgoOaG91c2Vob2xkX25hbWUYAiABKAkSDQoFZW1haWwYAyABKAkSFAoMZGlzcGxheV9uYW1lGAQgASgJEhgKEGV4aXN0aW5nX2FjY291bnQYBSABKAgSFQoNZ3Jvd3RoX3BhdXNlZBgGIAEoCBIOCgZzdGF0dXMYByABKAkiVQoUSW52aXRhdGlvbkFjY2VwdGFuY2USFAoMb3BlcmF0aW9uX2lkGAEgASgJEhQKDGRpc3BsYXlfbmFtZRgCIAEoCRIRCgljb25maXJtZWQYAyABKAgicAoOQWNjb3VudFNlc3Npb24SDAoEY3NyZhgBIAEoCRISCgpleHBpcmVzX2F0GAIgASgEEhQKDGRpc3BsYXlfbmFtZRgDIAEoCRIQCgh1c2VyX3N1YhgEIAEoCRIUCgxob3VzZWhvbGRfaWQYBSABKAkigAEKE0FjY291bnRBY2Nlc3NDaGFuZ2USFAoMb3BlcmF0aW9uX2lkGAEgASgJEhIKCmFjY291bnRfaWQYAiABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAyABKAQSEQoJc3VzcGVuZGVkGAQgASgIEhEKCWNvbmZpcm1lZBgFIAEoCCJhChNFbWFpbERlbGl2ZXJ5UmVjb3JkEgoKAmlkGAEgASgJEhcKD3JlY2lwaWVudF9lbWFpbBgCIAEoCRIPCgdvdXRjb21lGAMgASgJEhQKDGF0dGVtcHRlZF9hdBgEIAEoAyJNChBFbWFpbFN1cHByZXNzaW9uEhcKD3JlY2lwaWVudF9lbWFpbBgBIAEoCRIOCgZyZWFzb24YAiABKAkSEAoIcmV2aXNpb24YAyABKAQiqgIKF0VtYWlsT3BlcmF0aW9uc092ZXJ2aWV3EhgKEG1vbnRobHlfYXR0ZW1wdHMYASABKAQSFgoObW9udGhseV9idWRnZXQYAiABKAQSDwoHd2FybmluZxgDIAEoCBIwCgpkZWxpdmVyaWVzGAQgAygLMhwubGlmZS52MS5FbWFpbERlbGl2ZXJ5UmVjb3JkEi8KDHN1cHByZXNzaW9ucxgFIAMoCzIZLmxpZmUudjEuRW1haWxTdXBwcmVzc2lvbhIaChJuZXh0X2RlbGl2ZXJ5X3RpbWUYBiABKAMSGAoQbmV4dF9kZWxpdmVyeV9pZBgHIAEoCRIYChBuZXh0X3N1cHByZXNzaW9uGAggASgJEhkKEWFjY291bnRpbmdfc3RhdHVzGAkgASgJInIKFEVtYWlsT3BlcmF0aW9uc1F1ZXJ5EhMKC2JlZm9yZV90aW1lGAEgASgDEhEKCWJlZm9yZV9pZBgCIAEoCRIZChFhZnRlcl9zdXBwcmVzc2lvbhgDIAEoCRIXCg9yZWNpcGllbnRfZW1haWwYBCABKAkidAoVRW1haWxTdXBwcmVzc2lvbkNsZWFyEhQKDG9wZXJhdGlvbl9pZBgBIAEoCRIXCg9yZWNpcGllbnRfZW1haWwYAiABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAyABKAQSEQoJY29uZmlybWVkGAQgASgIKq0BChVFbWFpbEludml0YXRpb25BY3Rpb24SJwojRU1BSUxfSU5WSVRBVElPTl9BQ1RJT05fVU5TUEVDSUZJRUQQABIiCh5FTUFJTF9JTlZJVEFUSU9OX0FDVElPTl9DUkVBVEUQARIjCh9FTUFJTF9JTlZJVEFUSU9OX0FDVElPTl9SRVBMQUNFEAISIgoeRU1BSUxfSU5WSVRBVElPTl9BQ1RJT05fUkVWT0tFEAMytgUKE0FjY291bnRBZG1pblNlcnZpY2USQgoLR2V0T3ZlcnZpZXcSGy5saWZlLnYxLkFkbWluT3ZlcnZpZXdRdWVyeRoWLmxpZmUudjEuQWRtaW5PdmVydmlldxI2CglHZXRQb2xpY3kSDi5saWZlLnYxLkVtcHR5GhkubGlmZS52MS5TaXRlU2FmZXR5UG9saWN5EjEKCUdldEdyb3d0aBIOLmxpZmUudjEuRW1wdHkaFC5saWZlLnYxLkdyb3d0aFN0YXRlElUKEkdldEVtYWlsT3BlcmF0aW9ucxIdLmxpZmUudjEuRW1haWxPcGVyYXRpb25zUXVlcnkaIC5saWZlLnYxLkVtYWlsT3BlcmF0aW9uc092ZXJ2aWV3Ej4KCUxpc3RBdWRpdBIYLmxpZmUudjEuQWRtaW5BdWRpdFF1ZXJ5GhcubGlmZS52MS5BZG1pbkF1ZGl0UGFnZRJHChVDbGVhckVtYWlsU3VwcHJlc3Npb24SHi5saWZlLnYxLkVtYWlsU3VwcHJlc3Npb25DbGVhchoOLmxpZmUudjEuRW1wdHkSRwoQU2V0QWNjb3VudEFjY2VzcxIcLmxpZmUudjEuQWNjb3VudEFjY2Vzc0NoYW5nZRoVLmxpZmUudjEuQWRtaW5BY2NvdW50EjsKDENoYW5nZUdyb3d0aBIVLmxpZmUudjEuR3Jvd3RoQ2hhbmdlGhQubGlmZS52MS5Hcm93dGhTdGF0ZRJFCg1QcmV2aWV3UG9saWN5EhkubGlmZS52MS5TaXRlUG9saWN5Q2hhbmdlGhkubGlmZS52MS5TaXRlUG9saWN5UmV2aWV3EkMKC0FwcGx5UG9saWN5EhkubGlmZS52MS5TaXRlUG9saWN5Q2hhbmdlGhkubGlmZS52MS5TaXRlU2FmZXR5UG9saWN5MrcCChZFbWFpbEludml0YXRpb25TZXJ2aWNlEkYKD0xpc3RJbnZpdGF0aW9ucxIVLmxpZmUudjEuSG91c2Vob2xkS2V5GhwubGlmZS52MS5FbWFpbEludml0YXRpb25QYWdlEjsKDUdldE9uYm9hcmRpbmcSDi5saWZlLnYxLkVtcHR5GhoubGlmZS52MS5PbmJvYXJkaW5nUHJldmlldxJKChBBY2NlcHRJbnZpdGF0aW9uEh0ubGlmZS52MS5JbnZpdGF0aW9uQWNjZXB0YW5jZRoXLmxpZmUudjEuQWNjb3VudFNlc3Npb24STAoQQ2hhbmdlSW52aXRhdGlvbhIeLmxpZmUudjEuRW1haWxJbnZpdGF0aW9uQ2hhbmdlGhgubGlmZS52MS5FbWFpbEludml0YXRpb24yUwoWRW1haWxPcGVyYXRpb25zU2VydmljZRI5CgxQcm9jZXNzUXVldWUSDi5saWZlLnYxLkVtcHR5GhkubGlmZS52MS5FbWFpbFF1ZXVlUmVzdWx0YgZwcm90bzM", [file_life_v1_tasks, file_life_v1_households]);
+  fileDesc("ChZsaWZlL3YxL2FjY291bnRzLnByb3RvEgdsaWZlLnYxItkBCgxBZG1pbkFjY291bnQSCgoCaWQYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJEhEKCXN1c3BlbmRlZBgDIAEoCBIwCg5wZXJzb25hbF91c2FnZRgEIAEoCzIYLmxpZmUudjEuUmVzb3VyY2VBbW91bnRzEhkKEWFjdGl2ZV9ob3VzZWhvbGRzGAUgASgEEhcKD2FjY2Vzc19yZXZpc2lvbhgGIAEoBBIaChJwcm90ZWN0aW9uX3BlbmRpbmcYByABKAgSEgoKc2l0ZV9vd25lchgIIAEoCCJ5Cg5BZG1pbkhvdXNlaG9sZBIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg4KBnN0YXR1cxgDIAEoCRInCgV1c2FnZRgEIAEoCzIYLmxpZmUudjEuUmVzb3VyY2VBbW91bnRzEhQKDGFjdGl2ZV9oZWFkcxgFIAEoBCKbBAoNQWRtaW5PdmVydmlldxInCghhY2NvdW50cxgBIAMoCzIVLmxpZmUudjEuQWRtaW5BY2NvdW50EisKCmhvdXNlaG9sZHMYAiADKAsyFy5saWZlLnYxLkFkbWluSG91c2Vob2xkEhUKDWxvZ2ljYWxfYnl0ZXMYAyABKAQSHQoVcHJvdmlkZXJfdXNhZ2Vfc3RhdHVzGAQgASgJEhQKDG5leHRfYWNjb3VudBgFIAEoCRIWCg5uZXh0X2hvdXNlaG9sZBgGIAEoCRIVCg1hY2NvdW50X2NvdW50GAcgASgEEh8KF3N1c3BlbmRlZF9hY2NvdW50X2NvdW50GAggASgEEh4KFmFjdGl2ZV9ob3VzZWhvbGRfY291bnQYCSABKAQSHgoWY2xvc2VkX2hvdXNlaG9sZF9jb3VudBgKIAEoBBIgChhwZW5kaW5nX3NlY3VyaXR5X2NoYW5nZXMYCyABKAQSGAoQcGVuZGluZ19jbG9zdXJlcxgMIAEoBBIgChhwZW5kaW5nX2NvbnRlbnRfZXJhc3VyZXMYDSABKAQSFQoNZ3Jvd3RoX3N0YXR1cxgOIAEoCRIUCgxncm93dGhfc2luY2UYDyABKAMSGwoTbG9naWNhbF9ieXRlX2NoYW5nZRgQIAEoEhIWCg5hY2NvdW50X2NoYW5nZRgRIAEoEhIYChBob3VzZWhvbGRfY2hhbmdlGBIgASgSIj0KD0FkbWluQXVkaXRRdWVyeRIXCg9iZWZvcmVfc2VxdWVuY2UYASABKAQSEQoJcGFnZV9zaXplGAIgASgNIoQBCg9BZG1pbkF1ZGl0RW50cnkSEAoIc2VxdWVuY2UYASABKAQSFAoMb3BlcmF0aW9uX2lkGAIgASgJEhIKCmFjdG9yX25hbWUYAyABKAkSEAoIYWN0b3JfaWQYBCABKAkSDgoGYWN0aW9uGAUgASgJEhMKC29jY3VycmVkX2F0GAYgASgDIlAKDkFkbWluQXVkaXRQYWdlEikKB2VudHJpZXMYASADKAsyGC5saWZlLnYxLkFkbWluQXVkaXRFbnRyeRITCgtuZXh0X2JlZm9yZRgCIAEoBCJXChJBZG1pbk92ZXJ2aWV3UXVlcnkSEQoJcGFnZV9zaXplGAEgASgNEhUKDWFmdGVyX2FjY291bnQYAiABKAkSFwoPYWZ0ZXJfaG91c2Vob2xkGAMgASgJIsICChBTaXRlU2FmZXR5UG9saWN5EhAKCHJldmlzaW9uGAEgASgEEg8KB2VuYWJsZWQYAiABKAgSLwoNcGVyc29uYWxfc29mdBgDIAEoCzIYLmxpZmUudjEuUmVzb3VyY2VBbW91bnRzEi8KDXBlcnNvbmFsX2hhcmQYBCABKAsyGC5saWZlLnYxLlJlc291cmNlQW1vdW50cxIwCg5ob3VzZWhvbGRfc29mdBgFIAEoCzIYLmxpZmUudjEuUmVzb3VyY2VBbW91bnRzEjAKDmhvdXNlaG9sZF9oYXJkGAYgASgLMhgubGlmZS52MS5SZXNvdXJjZUFtb3VudHMSIAoYbWF4X2l0ZW1zX3Blcl9jb2xsZWN0aW9uGAcgASgEEiMKG21heF9zZWN0aW9uc19wZXJfY29sbGVjdGlvbhgIIAEoBCKYAQoQU2l0ZVBvbGljeUNoYW5nZRIUCgxvcGVyYXRpb25faWQYASABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAiABKAQSKQoGcG9saWN5GAMgASgLMhkubGlmZS52MS5TaXRlU2FmZXR5UG9saWN5EhUKDXByZXZpZXdfdG9rZW4YBCABKAkSEQoJY29uZmlybWVkGAUgASgIImkKEFNpdGVQb2xpY3lSZXZpZXcSFQoNcHJldmlld190b2tlbhgBIAEoCRIOCgZlZmZlY3QYAiABKAkSFQoNYWNjb3VudF9jb3VudBgDIAEoBBIXCg9ob3VzZWhvbGRfY291bnQYBCABKAQiPwoRUmVxdWVzdExpbmtDcmVhdGUSFAoMb3BlcmF0aW9uX2lkGAEgASgJEhQKDGhvdXNlaG9sZF9pZBgCIAEoCSI6ChFSZXF1ZXN0TGlua1Jldm9rZRIUCgxob3VzZWhvbGRfaWQYASABKAkSDwoHbGlua19pZBgCIAEoCSI8CgtSZXF1ZXN0TGluaxIKCgJpZBgBIAEoCRINCgV0b2tlbhgCIAEoCRISCgpleHBpcmVzX2F0GAMgASgDImMKDlJlcXVlc3RQcmV2aWV3EhYKDmhvdXNlaG9sZF9uYW1lGAEgASgJEg0KBWVtYWlsGAIgASgJEhQKDGRpc3BsYXlfbmFtZRgDIAEoCRIUCgxhbHJlYWR5X2hlYWQYBCABKAgiQgoXSW52aXRhdGlvblJlcXVlc3RTdWJtaXQSFAoMb3BlcmF0aW9uX2lkGAEgASgJEhEKCWNvbmZpcm1lZBgCIAEoCCJqChFJbnZpdGF0aW9uUmVxdWVzdBIKCgJpZBgBIAEoCRIUCgxkaXNwbGF5X25hbWUYAiABKAkSDQoFZW1haWwYAyABKAkSDgoGc3RhdHVzGAQgASgJEhQKDHJlcXVlc3RlZF9hdBgFIAEoAyJFChVJbnZpdGF0aW9uUmVxdWVzdFBhZ2USLAoIcmVxdWVzdHMYASADKAsyGi5saWZlLnYxLkludml0YXRpb25SZXF1ZXN0ItEBChVFbWFpbEludml0YXRpb25DaGFuZ2USFAoMb3BlcmF0aW9uX2lkGAEgASgJEhQKDGhvdXNlaG9sZF9pZBgCIAEoCRIVCg1pbnZpdGF0aW9uX2lkGAMgASgJEhkKEWV4cGVjdGVkX3JldmlzaW9uGAQgASgEEhcKD3JlY2lwaWVudF9lbWFpbBgFIAEoCRIuCgZhY3Rpb24YBiABKA4yHi5saWZlLnYxLkVtYWlsSW52aXRhdGlvbkFjdGlvbhIRCgljb25maXJtZWQYByABKAgihQEKD0VtYWlsSW52aXRhdGlvbhIKCgJpZBgBIAEoCRIXCg9yZWNpcGllbnRfZW1haWwYAiABKAkSDgoGc3RhdHVzGAMgASgJEhcKD2RlbGl2ZXJ5X3N0YXR1cxgEIAEoCRISCgpleHBpcmVzX2F0GAUgASgDEhAKCHJldmlzaW9uGAYgASgEIkQKE0VtYWlsSW52aXRhdGlvblBhZ2USLQoLaW52aXRhdGlvbnMYASADKAsyGC5saWZlLnYxLkVtYWlsSW52aXRhdGlvbiJiCgxHcm93dGhDaGFuZ2USFAoMb3BlcmF0aW9uX2lkGAEgASgJEhkKEWV4cGVjdGVkX3JldmlzaW9uGAIgASgEEg4KBnBhdXNlZBgDIAEoCBIRCgljb25maXJtZWQYBCABKAgiLwoLR3Jvd3RoU3RhdGUSEAoIcmV2aXNpb24YASABKAQSDgoGcGF1c2VkGAIgASgIIlAKEEVtYWlsUXVldWVSZXN1bHQSEQoJYXR0ZW1wdGVkGAEgASgEEhgKEG1vbnRobHlfYXR0ZW1wdHMYAiABKAQSDwoHd2FybmluZxgDIAEoCCKnAQoRT25ib2FyZGluZ1ByZXZpZXcSFAoMaG91c2Vob2xkX2lkGAEgASgJEhYKDmhvdXNlaG9sZF9uYW1lGAIgASgJEg0KBWVtYWlsGAMgASgJEhQKDGRpc3BsYXlfbmFtZRgEIAEoCRIYChBleGlzdGluZ19hY2NvdW50GAUgASgIEhUKDWdyb3d0aF9wYXVzZWQYBiABKAgSDgoGc3RhdHVzGAcgASgJIlUKFEludml0YXRpb25BY2NlcHRhbmNlEhQKDG9wZXJhdGlvbl9pZBgBIAEoCRIUCgxkaXNwbGF5X25hbWUYAiABKAkSEQoJY29uZmlybWVkGAMgASgIInAKDkFjY291bnRTZXNzaW9uEgwKBGNzcmYYASABKAkSEgoKZXhwaXJlc19hdBgCIAEoBBIUCgxkaXNwbGF5X25hbWUYAyABKAkSEAoIdXNlcl9zdWIYBCABKAkSFAoMaG91c2Vob2xkX2lkGAUgASgJIoABChNBY2NvdW50QWNjZXNzQ2hhbmdlEhQKDG9wZXJhdGlvbl9pZBgBIAEoCRISCgphY2NvdW50X2lkGAIgASgJEhkKEWV4cGVjdGVkX3JldmlzaW9uGAMgASgEEhEKCXN1c3BlbmRlZBgEIAEoCBIRCgljb25maXJtZWQYBSABKAgiYQoTRW1haWxEZWxpdmVyeVJlY29yZBIKCgJpZBgBIAEoCRIXCg9yZWNpcGllbnRfZW1haWwYAiABKAkSDwoHb3V0Y29tZRgDIAEoCRIUCgxhdHRlbXB0ZWRfYXQYBCABKAMiTQoQRW1haWxTdXBwcmVzc2lvbhIXCg9yZWNpcGllbnRfZW1haWwYASABKAkSDgoGcmVhc29uGAIgASgJEhAKCHJldmlzaW9uGAMgASgEIqoCChdFbWFpbE9wZXJhdGlvbnNPdmVydmlldxIYChBtb250aGx5X2F0dGVtcHRzGAEgASgEEhYKDm1vbnRobHlfYnVkZ2V0GAIgASgEEg8KB3dhcm5pbmcYAyABKAgSMAoKZGVsaXZlcmllcxgEIAMoCzIcLmxpZmUudjEuRW1haWxEZWxpdmVyeVJlY29yZBIvCgxzdXBwcmVzc2lvbnMYBSADKAsyGS5saWZlLnYxLkVtYWlsU3VwcHJlc3Npb24SGgoSbmV4dF9kZWxpdmVyeV90aW1lGAYgASgDEhgKEG5leHRfZGVsaXZlcnlfaWQYByABKAkSGAoQbmV4dF9zdXBwcmVzc2lvbhgIIAEoCRIZChFhY2NvdW50aW5nX3N0YXR1cxgJIAEoCSJyChRFbWFpbE9wZXJhdGlvbnNRdWVyeRITCgtiZWZvcmVfdGltZRgBIAEoAxIRCgliZWZvcmVfaWQYAiABKAkSGQoRYWZ0ZXJfc3VwcHJlc3Npb24YAyABKAkSFwoPcmVjaXBpZW50X2VtYWlsGAQgASgJInQKFUVtYWlsU3VwcHJlc3Npb25DbGVhchIUCgxvcGVyYXRpb25faWQYASABKAkSFwoPcmVjaXBpZW50X2VtYWlsGAIgASgJEhkKEWV4cGVjdGVkX3JldmlzaW9uGAMgASgEEhEKCWNvbmZpcm1lZBgEIAEoCCqtAQoVRW1haWxJbnZpdGF0aW9uQWN0aW9uEicKI0VNQUlMX0lOVklUQVRJT05fQUNUSU9OX1VOU1BFQ0lGSUVEEAASIgoeRU1BSUxfSU5WSVRBVElPTl9BQ1RJT05fQ1JFQVRFEAESIwofRU1BSUxfSU5WSVRBVElPTl9BQ1RJT05fUkVQTEFDRRACEiIKHkVNQUlMX0lOVklUQVRJT05fQUNUSU9OX1JFVk9LRRADMrYFChNBY2NvdW50QWRtaW5TZXJ2aWNlEkIKC0dldE92ZXJ2aWV3EhsubGlmZS52MS5BZG1pbk92ZXJ2aWV3UXVlcnkaFi5saWZlLnYxLkFkbWluT3ZlcnZpZXcSNgoJR2V0UG9saWN5Eg4ubGlmZS52MS5FbXB0eRoZLmxpZmUudjEuU2l0ZVNhZmV0eVBvbGljeRIxCglHZXRHcm93dGgSDi5saWZlLnYxLkVtcHR5GhQubGlmZS52MS5Hcm93dGhTdGF0ZRJVChJHZXRFbWFpbE9wZXJhdGlvbnMSHS5saWZlLnYxLkVtYWlsT3BlcmF0aW9uc1F1ZXJ5GiAubGlmZS52MS5FbWFpbE9wZXJhdGlvbnNPdmVydmlldxI+CglMaXN0QXVkaXQSGC5saWZlLnYxLkFkbWluQXVkaXRRdWVyeRoXLmxpZmUudjEuQWRtaW5BdWRpdFBhZ2USRwoVQ2xlYXJFbWFpbFN1cHByZXNzaW9uEh4ubGlmZS52MS5FbWFpbFN1cHByZXNzaW9uQ2xlYXIaDi5saWZlLnYxLkVtcHR5EkcKEFNldEFjY291bnRBY2Nlc3MSHC5saWZlLnYxLkFjY291bnRBY2Nlc3NDaGFuZ2UaFS5saWZlLnYxLkFkbWluQWNjb3VudBI7CgxDaGFuZ2VHcm93dGgSFS5saWZlLnYxLkdyb3d0aENoYW5nZRoULmxpZmUudjEuR3Jvd3RoU3RhdGUSRQoNUHJldmlld1BvbGljeRIZLmxpZmUudjEuU2l0ZVBvbGljeUNoYW5nZRoZLmxpZmUudjEuU2l0ZVBvbGljeVJldmlldxJDCgtBcHBseVBvbGljeRIZLmxpZmUudjEuU2l0ZVBvbGljeUNoYW5nZRoZLmxpZmUudjEuU2l0ZVNhZmV0eVBvbGljeTKnBQoWRW1haWxJbnZpdGF0aW9uU2VydmljZRJFChFDcmVhdGVSZXF1ZXN0TGluaxIaLmxpZmUudjEuUmVxdWVzdExpbmtDcmVhdGUaFC5saWZlLnYxLlJlcXVlc3RMaW5rEj8KEVJldm9rZVJlcXVlc3RMaW5rEhoubGlmZS52MS5SZXF1ZXN0TGlua1Jldm9rZRoOLmxpZmUudjEuRW1wdHkSPAoRR2V0UmVxdWVzdFByZXZpZXcSDi5saWZlLnYxLkVtcHR5GhcubGlmZS52MS5SZXF1ZXN0UHJldmlldxJXChdTdWJtaXRJbnZpdGF0aW9uUmVxdWVzdBIgLmxpZmUudjEuSW52aXRhdGlvblJlcXVlc3RTdWJtaXQaGi5saWZlLnYxLkludml0YXRpb25SZXF1ZXN0Ek8KFkxpc3RJbnZpdGF0aW9uUmVxdWVzdHMSFS5saWZlLnYxLkhvdXNlaG9sZEtleRoeLmxpZmUudjEuSW52aXRhdGlvblJlcXVlc3RQYWdlEkYKD0xpc3RJbnZpdGF0aW9ucxIVLmxpZmUudjEuSG91c2Vob2xkS2V5GhwubGlmZS52MS5FbWFpbEludml0YXRpb25QYWdlEjsKDUdldE9uYm9hcmRpbmcSDi5saWZlLnYxLkVtcHR5GhoubGlmZS52MS5PbmJvYXJkaW5nUHJldmlldxJKChBBY2NlcHRJbnZpdGF0aW9uEh0ubGlmZS52MS5JbnZpdGF0aW9uQWNjZXB0YW5jZRoXLmxpZmUudjEuQWNjb3VudFNlc3Npb24STAoQQ2hhbmdlSW52aXRhdGlvbhIeLmxpZmUudjEuRW1haWxJbnZpdGF0aW9uQ2hhbmdlGhgubGlmZS52MS5FbWFpbEludml0YXRpb24yUwoWRW1haWxPcGVyYXRpb25zU2VydmljZRI5CgxQcm9jZXNzUXVldWUSDi5saWZlLnYxLkVtcHR5GhkubGlmZS52MS5FbWFpbFF1ZXVlUmVzdWx0YgZwcm90bzM", [file_life_v1_tasks, file_life_v1_households]);
 
 /**
  * @generated from message life.v1.AdminAccount
@@ -444,6 +444,185 @@ export const SitePolicyReviewSchema: GenMessage<SitePolicyReview> = /*@__PURE__*
   messageDesc(file_life_v1_accounts, 9);
 
 /**
+ * @generated from message life.v1.RequestLinkCreate
+ */
+export type RequestLinkCreate = Message<"life.v1.RequestLinkCreate"> & {
+  /**
+   * @generated from field: string operation_id = 1;
+   */
+  operationId: string;
+
+  /**
+   * @generated from field: string household_id = 2;
+   */
+  householdId: string;
+};
+
+/**
+ * Describes the message life.v1.RequestLinkCreate.
+ * Use `create(RequestLinkCreateSchema)` to create a new message.
+ */
+export const RequestLinkCreateSchema: GenMessage<RequestLinkCreate> = /*@__PURE__*/
+  messageDesc(file_life_v1_accounts, 10);
+
+/**
+ * @generated from message life.v1.RequestLinkRevoke
+ */
+export type RequestLinkRevoke = Message<"life.v1.RequestLinkRevoke"> & {
+  /**
+   * @generated from field: string household_id = 1;
+   */
+  householdId: string;
+
+  /**
+   * @generated from field: string link_id = 2;
+   */
+  linkId: string;
+};
+
+/**
+ * Describes the message life.v1.RequestLinkRevoke.
+ * Use `create(RequestLinkRevokeSchema)` to create a new message.
+ */
+export const RequestLinkRevokeSchema: GenMessage<RequestLinkRevoke> = /*@__PURE__*/
+  messageDesc(file_life_v1_accounts, 11);
+
+/**
+ * @generated from message life.v1.RequestLink
+ */
+export type RequestLink = Message<"life.v1.RequestLink"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string token = 2;
+   */
+  token: string;
+
+  /**
+   * @generated from field: int64 expires_at = 3;
+   */
+  expiresAt: bigint;
+};
+
+/**
+ * Describes the message life.v1.RequestLink.
+ * Use `create(RequestLinkSchema)` to create a new message.
+ */
+export const RequestLinkSchema: GenMessage<RequestLink> = /*@__PURE__*/
+  messageDesc(file_life_v1_accounts, 12);
+
+/**
+ * @generated from message life.v1.RequestPreview
+ */
+export type RequestPreview = Message<"life.v1.RequestPreview"> & {
+  /**
+   * @generated from field: string household_name = 1;
+   */
+  householdName: string;
+
+  /**
+   * @generated from field: string email = 2;
+   */
+  email: string;
+
+  /**
+   * @generated from field: string display_name = 3;
+   */
+  displayName: string;
+
+  /**
+   * @generated from field: bool already_head = 4;
+   */
+  alreadyHead: boolean;
+};
+
+/**
+ * Describes the message life.v1.RequestPreview.
+ * Use `create(RequestPreviewSchema)` to create a new message.
+ */
+export const RequestPreviewSchema: GenMessage<RequestPreview> = /*@__PURE__*/
+  messageDesc(file_life_v1_accounts, 13);
+
+/**
+ * @generated from message life.v1.InvitationRequestSubmit
+ */
+export type InvitationRequestSubmit = Message<"life.v1.InvitationRequestSubmit"> & {
+  /**
+   * @generated from field: string operation_id = 1;
+   */
+  operationId: string;
+
+  /**
+   * @generated from field: bool confirmed = 2;
+   */
+  confirmed: boolean;
+};
+
+/**
+ * Describes the message life.v1.InvitationRequestSubmit.
+ * Use `create(InvitationRequestSubmitSchema)` to create a new message.
+ */
+export const InvitationRequestSubmitSchema: GenMessage<InvitationRequestSubmit> = /*@__PURE__*/
+  messageDesc(file_life_v1_accounts, 14);
+
+/**
+ * @generated from message life.v1.InvitationRequest
+ */
+export type InvitationRequest = Message<"life.v1.InvitationRequest"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string display_name = 2;
+   */
+  displayName: string;
+
+  /**
+   * @generated from field: string email = 3;
+   */
+  email: string;
+
+  /**
+   * @generated from field: string status = 4;
+   */
+  status: string;
+
+  /**
+   * @generated from field: int64 requested_at = 5;
+   */
+  requestedAt: bigint;
+};
+
+/**
+ * Describes the message life.v1.InvitationRequest.
+ * Use `create(InvitationRequestSchema)` to create a new message.
+ */
+export const InvitationRequestSchema: GenMessage<InvitationRequest> = /*@__PURE__*/
+  messageDesc(file_life_v1_accounts, 15);
+
+/**
+ * @generated from message life.v1.InvitationRequestPage
+ */
+export type InvitationRequestPage = Message<"life.v1.InvitationRequestPage"> & {
+  /**
+   * @generated from field: repeated life.v1.InvitationRequest requests = 1;
+   */
+  requests: InvitationRequest[];
+};
+
+/**
+ * Describes the message life.v1.InvitationRequestPage.
+ * Use `create(InvitationRequestPageSchema)` to create a new message.
+ */
+export const InvitationRequestPageSchema: GenMessage<InvitationRequestPage> = /*@__PURE__*/
+  messageDesc(file_life_v1_accounts, 16);
+
+/**
  * @generated from message life.v1.EmailInvitationChange
  */
 export type EmailInvitationChange = Message<"life.v1.EmailInvitationChange"> & {
@@ -488,7 +667,7 @@ export type EmailInvitationChange = Message<"life.v1.EmailInvitationChange"> & {
  * Use `create(EmailInvitationChangeSchema)` to create a new message.
  */
 export const EmailInvitationChangeSchema: GenMessage<EmailInvitationChange> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 10);
+  messageDesc(file_life_v1_accounts, 17);
 
 /**
  * @generated from message life.v1.EmailInvitation
@@ -530,7 +709,7 @@ export type EmailInvitation = Message<"life.v1.EmailInvitation"> & {
  * Use `create(EmailInvitationSchema)` to create a new message.
  */
 export const EmailInvitationSchema: GenMessage<EmailInvitation> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 11);
+  messageDesc(file_life_v1_accounts, 18);
 
 /**
  * @generated from message life.v1.EmailInvitationPage
@@ -547,7 +726,7 @@ export type EmailInvitationPage = Message<"life.v1.EmailInvitationPage"> & {
  * Use `create(EmailInvitationPageSchema)` to create a new message.
  */
 export const EmailInvitationPageSchema: GenMessage<EmailInvitationPage> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 12);
+  messageDesc(file_life_v1_accounts, 19);
 
 /**
  * @generated from message life.v1.GrowthChange
@@ -579,7 +758,7 @@ export type GrowthChange = Message<"life.v1.GrowthChange"> & {
  * Use `create(GrowthChangeSchema)` to create a new message.
  */
 export const GrowthChangeSchema: GenMessage<GrowthChange> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 13);
+  messageDesc(file_life_v1_accounts, 20);
 
 /**
  * @generated from message life.v1.GrowthState
@@ -601,7 +780,7 @@ export type GrowthState = Message<"life.v1.GrowthState"> & {
  * Use `create(GrowthStateSchema)` to create a new message.
  */
 export const GrowthStateSchema: GenMessage<GrowthState> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 14);
+  messageDesc(file_life_v1_accounts, 21);
 
 /**
  * @generated from message life.v1.EmailQueueResult
@@ -628,7 +807,7 @@ export type EmailQueueResult = Message<"life.v1.EmailQueueResult"> & {
  * Use `create(EmailQueueResultSchema)` to create a new message.
  */
 export const EmailQueueResultSchema: GenMessage<EmailQueueResult> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 15);
+  messageDesc(file_life_v1_accounts, 22);
 
 /**
  * @generated from message life.v1.OnboardingPreview
@@ -675,7 +854,7 @@ export type OnboardingPreview = Message<"life.v1.OnboardingPreview"> & {
  * Use `create(OnboardingPreviewSchema)` to create a new message.
  */
 export const OnboardingPreviewSchema: GenMessage<OnboardingPreview> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 16);
+  messageDesc(file_life_v1_accounts, 23);
 
 /**
  * @generated from message life.v1.InvitationAcceptance
@@ -702,7 +881,7 @@ export type InvitationAcceptance = Message<"life.v1.InvitationAcceptance"> & {
  * Use `create(InvitationAcceptanceSchema)` to create a new message.
  */
 export const InvitationAcceptanceSchema: GenMessage<InvitationAcceptance> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 17);
+  messageDesc(file_life_v1_accounts, 24);
 
 /**
  * @generated from message life.v1.AccountSession
@@ -739,7 +918,7 @@ export type AccountSession = Message<"life.v1.AccountSession"> & {
  * Use `create(AccountSessionSchema)` to create a new message.
  */
 export const AccountSessionSchema: GenMessage<AccountSession> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 18);
+  messageDesc(file_life_v1_accounts, 25);
 
 /**
  * @generated from message life.v1.AccountAccessChange
@@ -776,7 +955,7 @@ export type AccountAccessChange = Message<"life.v1.AccountAccessChange"> & {
  * Use `create(AccountAccessChangeSchema)` to create a new message.
  */
 export const AccountAccessChangeSchema: GenMessage<AccountAccessChange> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 19);
+  messageDesc(file_life_v1_accounts, 26);
 
 /**
  * @generated from message life.v1.EmailDeliveryRecord
@@ -808,7 +987,7 @@ export type EmailDeliveryRecord = Message<"life.v1.EmailDeliveryRecord"> & {
  * Use `create(EmailDeliveryRecordSchema)` to create a new message.
  */
 export const EmailDeliveryRecordSchema: GenMessage<EmailDeliveryRecord> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 20);
+  messageDesc(file_life_v1_accounts, 27);
 
 /**
  * @generated from message life.v1.EmailSuppression
@@ -835,7 +1014,7 @@ export type EmailSuppression = Message<"life.v1.EmailSuppression"> & {
  * Use `create(EmailSuppressionSchema)` to create a new message.
  */
 export const EmailSuppressionSchema: GenMessage<EmailSuppression> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 21);
+  messageDesc(file_life_v1_accounts, 28);
 
 /**
  * @generated from message life.v1.EmailOperationsOverview
@@ -892,7 +1071,7 @@ export type EmailOperationsOverview = Message<"life.v1.EmailOperationsOverview">
  * Use `create(EmailOperationsOverviewSchema)` to create a new message.
  */
 export const EmailOperationsOverviewSchema: GenMessage<EmailOperationsOverview> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 22);
+  messageDesc(file_life_v1_accounts, 29);
 
 /**
  * @generated from message life.v1.EmailOperationsQuery
@@ -924,7 +1103,7 @@ export type EmailOperationsQuery = Message<"life.v1.EmailOperationsQuery"> & {
  * Use `create(EmailOperationsQuerySchema)` to create a new message.
  */
 export const EmailOperationsQuerySchema: GenMessage<EmailOperationsQuery> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 23);
+  messageDesc(file_life_v1_accounts, 30);
 
 /**
  * @generated from message life.v1.EmailSuppressionClear
@@ -956,7 +1135,7 @@ export type EmailSuppressionClear = Message<"life.v1.EmailSuppressionClear"> & {
  * Use `create(EmailSuppressionClearSchema)` to create a new message.
  */
 export const EmailSuppressionClearSchema: GenMessage<EmailSuppressionClear> = /*@__PURE__*/
-  messageDesc(file_life_v1_accounts, 24);
+  messageDesc(file_life_v1_accounts, 31);
 
 /**
  * @generated from enum life.v1.EmailInvitationAction
@@ -1082,6 +1261,46 @@ export const AccountAdminService: GenService<{
  * @generated from service life.v1.EmailInvitationService
  */
 export const EmailInvitationService: GenService<{
+  /**
+   * @generated from rpc life.v1.EmailInvitationService.CreateRequestLink
+   */
+  createRequestLink: {
+    methodKind: "unary";
+    input: typeof RequestLinkCreateSchema;
+    output: typeof RequestLinkSchema;
+  },
+  /**
+   * @generated from rpc life.v1.EmailInvitationService.RevokeRequestLink
+   */
+  revokeRequestLink: {
+    methodKind: "unary";
+    input: typeof RequestLinkRevokeSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc life.v1.EmailInvitationService.GetRequestPreview
+   */
+  getRequestPreview: {
+    methodKind: "unary";
+    input: typeof EmptySchema;
+    output: typeof RequestPreviewSchema;
+  },
+  /**
+   * @generated from rpc life.v1.EmailInvitationService.SubmitInvitationRequest
+   */
+  submitInvitationRequest: {
+    methodKind: "unary";
+    input: typeof InvitationRequestSubmitSchema;
+    output: typeof InvitationRequestSchema;
+  },
+  /**
+   * @generated from rpc life.v1.EmailInvitationService.ListInvitationRequests
+   */
+  listInvitationRequests: {
+    methodKind: "unary";
+    input: typeof HouseholdKeySchema;
+    output: typeof InvitationRequestPageSchema;
+  },
   /**
    * @generated from rpc life.v1.EmailInvitationService.ListInvitations
    */
