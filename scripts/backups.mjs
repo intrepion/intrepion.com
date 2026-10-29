@@ -3,10 +3,11 @@ import { readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { DatabaseSync } from "node:sqlite";
 import { pathToFileURL } from "node:url";
+import { RECOVERY_MAX_BYTES } from "./recovery-budget.mjs";
 
 const digest = (bytes, algorithm = "sha256") =>
   createHash(algorithm).update(bytes).digest("hex");
-const MAX_BYTES = 20 * 1024 * 1024;
+const MAX_BYTES = RECOVERY_MAX_BYTES;
 const required = (name) => {
   const value = process.env[name];
   if (!value) throw new Error(`Missing ${name}`);
@@ -305,7 +306,7 @@ export function encrypt(sql, recipient) {
   const result = spawnSync(process.env.AGE_BIN ?? "age", ["-r", recipient], {
     input: sql,
     maxBuffer: MAX_BYTES + 1024 * 1024,
-    timeout: 30000,
+    timeout: 120000,
   });
   if (result.status !== 0 || !result.stdout?.length)
     throw new Error("Backup encryption failed.");
@@ -332,7 +333,7 @@ export class B2 {
       throw new Error(`Backup authorization failed (${response.status}).`);
     return new B2(await response.json(), required("B2_BUCKET_ID"));
   }
-  async fetch(url, options = {}) {
+  async fetch(url, options = {}, timeoutMs = 60000) {
     const parsed = new URL(url);
     if (
       parsed.protocol !== "https:" ||
@@ -343,7 +344,7 @@ export class B2 {
     const response = await this.request(url, {
       ...options,
       redirect: "error",
-      signal: AbortSignal.timeout(60000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!response.ok)
       throw new Error(`Backup provider request failed (${response.status}).`);
@@ -381,16 +382,20 @@ export class B2 {
       bucketId: this.bucket,
     });
     return (
-      await this.fetch(upload.uploadUrl, {
-        method: "POST",
-        headers: {
-          authorization: upload.authorizationToken,
-          "X-Bz-File-Name": encodeURIComponent(name),
-          "X-Bz-Content-Sha1": digest(bytes, "sha1"),
-          "content-type": "application/octet-stream",
+      await this.fetch(
+        upload.uploadUrl,
+        {
+          method: "POST",
+          headers: {
+            authorization: upload.authorizationToken,
+            "X-Bz-File-Name": encodeURIComponent(name),
+            "X-Bz-Content-Sha1": digest(bytes, "sha1"),
+            "content-type": "application/octet-stream",
+          },
+          body: bytes,
         },
-        body: bytes,
-      })
+        180000,
+      )
     ).json();
   }
   async download(id) {
@@ -399,6 +404,7 @@ export class B2 {
         await this.fetch(
           `${this.info.apiInfo.storageApi.downloadUrl}/b2api/v4/b2_download_file_by_id?fileId=${encodeURIComponent(id)}`,
           { headers: { authorization: this.info.authorizationToken } },
+          180000,
         )
       ).arrayBuffer(),
     );

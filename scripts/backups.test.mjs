@@ -169,7 +169,7 @@ test("verified markers report measured plaintext size and preserve unknown sizes
   assert.equal(marker.sql_bytes, sql.length);
   const health = await checkBackup(store, new Date("2026-10-24T05:00:00Z"));
   assert.equal(health.sql_bytes, sql.length);
-  assert.equal(health.budget_bytes, 20_971_520);
+  assert.equal(health.budget_bytes, 134_217_728);
   const markerFile = store.files.find((f) =>
     f.fileName.endsWith("verified.json"),
   );
@@ -187,7 +187,7 @@ test("watchdog rejects malformed plaintext measurements rather than reporting fa
   await createBackup(store, sql, () => Buffer.from("encrypted fixture"));
   const file = store.files.find((f) => f.fileName.endsWith("verified.json"));
   const original = JSON.parse(store.data.get(file.fileId).toString());
-  for (const value of [null, "1088", 0, -1, 20_971_521, 1.5]) {
+  for (const value of [null, "1088", 0, -1, 134_217_729, 1.5]) {
     store.data.set(
       file.fileId,
       Buffer.from(JSON.stringify({ ...original, sql_bytes: value })),
@@ -218,6 +218,13 @@ test("verified markers carry a separately measured recovery estimate and reject 
   }
 });
 
+test("backup validation rejects input above the expanded recovery budget", () => {
+  assert.throws(
+    () => verifySql(Buffer.alloc(134_217_729)),
+    /Backup exceeds the MVP size budget/,
+  );
+});
+
 test("monitored backup creation records both measurements after verified encrypted storage", async () => {
   const { createMonitoredBackup } = await import("./backup-operations.mjs");
   const store = new Storage();
@@ -230,7 +237,7 @@ test("monitored backup creation records both measurements after verified encrypt
   assert.equal(report.failed, false);
   assert.equal(report.health.sql_bytes, 1088);
   assert.ok(report.health.recovery_sql_bytes > report.health.sql_bytes);
-  assert.equal(report.health.budget_bytes, 20_971_520);
+  assert.equal(report.health.budget_bytes, 134_217_728);
   assert.ok(
     store.files.some((file) => file.fileName.endsWith("verified.json")),
   );

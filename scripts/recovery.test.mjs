@@ -622,7 +622,7 @@ test("encrypted recovery cannot reopen a household closed after the snapshot or 
   }
 });
 
-test("oversized recovery estimates stay measurable while encrypted restores keep the 20 MiB ceiling", async () => {
+test("a large encrypted backup recovers importable SQL while respecting later erasures", async () => {
   const directory = await mkdtemp(join(tmpdir(), "intrepion-size-recovery-"));
   try {
     const identity = join(directory, "identity.agekey");
@@ -637,7 +637,7 @@ test("oversized recovery estimates stay measurable while encrypted restores keep
       { encoding: "utf8" },
     ).stdout.trim();
     const rows = Array.from(
-      { length: 2270 },
+      { length: 9800 },
       (_, n) =>
         `('owner','${id(10000 + n)}',1,'Synthetic size fixture','${"x".repeat(9000)}','${id(20000 + n)}')`,
     );
@@ -647,9 +647,94 @@ test("oversized recovery estimates stay measurable while encrypted restores keep
         rows.join(",") +
         ";",
     );
-    assert.ok(input.length < 20_971_520);
+    assert.ok(input.length > 80 * 1024 * 1024);
     const { estimateRecoverySqlBytes } = await import("./recovery.mjs");
     assert.ok((await estimateRecoverySqlBytes(input)) > 20_971_520);
+    const output = await recoverArchive(encrypt(input, recipient), identity, {
+      databaseId,
+      records: [
+        {
+          version: 1,
+          database_id: databaseId,
+          operation_id: id(90000),
+          collection_id: id(10000),
+          scope: "collection",
+          target_id: "",
+        },
+      ],
+      complete: true,
+    });
+    assert.ok(output.length > 80 * 1024 * 1024);
+    let position = 0;
+    while (position < output.length) {
+      const newline = output.indexOf(10, position);
+      const end = newline < 0 ? output.length : newline;
+      assert.ok(
+        end - position <= 100_000,
+        "Recovery generated an oversized SQL line",
+      );
+      position = end + 1;
+    }
+    const restored = new DatabaseSync(":memory:");
+    restored.setAuthorizer((action) =>
+      [constants.SQLITE_TRANSACTION, constants.SQLITE_SAVEPOINT].includes(
+        action,
+      )
+        ? constants.SQLITE_DENY
+        : constants.SQLITE_OK,
+    );
+    try {
+      restored.exec(output.toString());
+      assert.equal(
+        restored.prepare("SELECT count(*) n FROM collections").get().n,
+        9799,
+      );
+      assert.equal(
+        restored
+          .prepare("SELECT count(*) n FROM collections WHERE id=?")
+          .get(id(10000)).n,
+        0,
+      );
+      assert.equal(
+        restored
+          .prepare("SELECT length(notes) n FROM collections WHERE id=?")
+          .get(id(19799)).n,
+        9000,
+      );
+    } finally {
+      restored.close();
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("recovery measures expanded SQL beyond its ceiling and fails closed", async () => {
+  const directory = await mkdtemp(
+    join(tmpdir(), "intrepion-expanded-recovery-"),
+  );
+  try {
+    const identity = join(directory, "identity.agekey");
+    assert.equal(
+      spawnSync(process.env.AGE_KEYGEN_BIN ?? "age-keygen", ["-o", identity])
+        .status,
+      0,
+    );
+    const recipient = spawnSync(
+      process.env.AGE_KEYGEN_BIN ?? "age-keygen",
+      ["-y", identity],
+      { encoding: "utf8" },
+    ).stdout.trim();
+    const input = Buffer.from(
+      migrations +
+        `
+      WITH RECURSIVE seq(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM seq WHERE n<15000)
+      INSERT INTO collections(owner_sub,id,kind,title,notes,last_operation)
+      SELECT 'synthetic-owner',printf('00000000-0000-4000-a000-%012d',n),1,'Synthetic',replace(hex(zeroblob(4500)),'00','xx'),printf('10000000-0000-4000-a000-%012d',n) FROM seq;
+    `,
+    );
+    const { estimateRecoverySqlBytes } = await import("./recovery.mjs");
+    assert.ok((await estimateRecoverySqlBytes(input)) > 134_217_728);
     await assert.rejects(
       recoverArchive(encrypt(input, recipient), identity, {
         databaseId,

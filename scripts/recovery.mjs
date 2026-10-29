@@ -4,8 +4,9 @@ import { DatabaseSync } from "node:sqlite";
 import { readFile, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { B2, verifySql } from "./backups.mjs";
+import { RECOVERY_MAX_BYTES } from "./recovery-budget.mjs";
 
-const MAX_BYTES = 20 * 1024 * 1024;
+const MAX_BYTES = RECOVERY_MAX_BYTES;
 const householdEmailErasure = (
   await readFile(
     new URL("../server/household-email-erasure.sql", import.meta.url),
@@ -585,9 +586,20 @@ function dump(db, enforceBudget = true) {
     .all();
   // D1 manages the import transaction itself and rejects explicit BEGIN/COMMIT.
   // Recovery is imported only into a new isolated database, verified before use.
-  const output = ["PRAGMA foreign_keys=OFF;"];
+  const output = [];
+  let size = 0;
+  const emit = (statement) => {
+    const addition = Buffer.byteLength(statement) + (size === 0 ? 0 : 1);
+    size += addition;
+    if (!Number.isSafeInteger(size))
+      throw new Error("Recovery size is too large to measure.");
+    if (enforceBudget && size > MAX_BYTES)
+      throw new Error("Recovery output exceeds the MVP size budget.");
+    if (enforceBudget) output.push(statement);
+  };
+  emit("PRAGMA foreign_keys=OFF;");
   for (const entry of schema.filter((row) => row.type === "table"))
-    output.push(`${entry.sql};`);
+    emit(`${entry.sql};`);
   for (const table of schema.filter((row) => row.type === "table")) {
     const columns = db
       .prepare(`PRAGMA table_info(${identifier(table.name)})`)
@@ -595,9 +607,8 @@ function dump(db, enforceBudget = true) {
       .map((column) => column.name);
     const query = db.prepare(`SELECT * FROM ${identifier(table.name)}`);
     query.setReadBigInts(true);
-    const rows = query.all();
-    for (const row of rows)
-      output.push(
+    for (const row of query.iterate())
+      emit(
         `INSERT INTO ${identifier(table.name)}(${columns.map(identifier).join(",")}) VALUES(${columns.map((column) => literal(row[column])).join(",")});`,
       );
   }
@@ -605,21 +616,18 @@ function dump(db, enforceBudget = true) {
   if (
     db.prepare("SELECT 1 FROM sqlite_master WHERE name='sqlite_sequence'").get()
   ) {
-    output.push("DELETE FROM sqlite_sequence;");
+    emit("DELETE FROM sqlite_sequence;");
     const query = db.prepare("SELECT name,seq FROM sqlite_sequence");
     query.setReadBigInts(true);
-    for (const row of query.all())
-      output.push(
+    for (const row of query.iterate())
+      emit(
         `INSERT INTO sqlite_sequence(name,seq) VALUES(${literal(row.name)},${literal(row.seq)});`,
       );
   }
   for (const entry of schema.filter((row) => row.type !== "table"))
-    output.push(`${entry.sql};`);
-  output.push("PRAGMA foreign_keys=ON;");
-  const bytes = Buffer.from(output.join("\n"));
-  if (enforceBudget && bytes.length > MAX_BYTES)
-    throw new Error("Recovery output exceeds the MVP size budget.");
-  return bytes;
+    emit(`${entry.sql};`);
+  emit("PRAGMA foreign_keys=ON;");
+  return enforceBudget ? Buffer.from(output.join("\n")) : size;
 }
 
 function holdRecoveryMailBudget(db) {
@@ -638,10 +646,7 @@ export async function estimateRecoverySqlBytes(sql) {
     db.exec(sql.toString());
     await upgrade(db);
     holdRecoveryMailBudget(db);
-    const serialized = dump(db, false);
-    const size = serialized.length;
-    serialized.fill(0);
-    return size;
+    return dump(db, false);
   } finally {
     db.close();
   }
@@ -730,7 +735,7 @@ export async function recoverArchive(archive, identity, ledger) {
   const decrypted = spawnSync(
     process.env.AGE_BIN ?? "age",
     ["-d", "-i", identity],
-    { input: archive, maxBuffer: MAX_BYTES, timeout: 30000 },
+    { input: archive, maxBuffer: MAX_BYTES, timeout: 120000 },
   );
   if (decrypted.status !== 0 || !decrypted.stdout?.length)
     throw new Error("Recovery decryption failed.");
