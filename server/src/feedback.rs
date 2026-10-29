@@ -221,6 +221,8 @@ pub(crate) async fn receive(
     {
         return if r.digest == verified.digest {
             Ok(StatusCode::NO_CONTENT)
+        } else if verified.kind == "Notification" {
+            Err(temporary())
         } else {
             Err(invalid())
         };
@@ -267,6 +269,17 @@ pub(crate) async fn receive(
         record_receipt(&auth, &verified, "").await?;
         return Ok(StatusCode::NO_CONTENT);
     }
+    // SNS may acknowledge 4xx responses as delivered. Once the envelope is
+    // authenticated, processing errors must be retryable and reach the DLQ.
+    process_notification(&auth, verified)
+        .await
+        .map_err(|_| temporary())
+}
+
+async fn process_notification(
+    auth: &SharedAuth,
+    verified: Verified,
+) -> Result<StatusCode, StatusCode> {
     let event: Value = serde_json::from_str(&verified.message).map_err(|_| invalid())?;
     let event_type = event
         .get("eventType")

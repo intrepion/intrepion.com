@@ -364,6 +364,7 @@ export class Administration {
     );
     this.feedback();
     const form = el("form");
+    form.className = "safety-thresholds";
     for (const [name, amounts] of [
       ["Personal", draft.policy.personalSoft],
       ["Personal", draft.policy.personalHard],

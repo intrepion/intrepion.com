@@ -5262,6 +5262,16 @@ async function signedFeedback(
   return envelope;
 }
 
+test("authenticated malformed feedback is retried instead of silently acknowledged", async () => {
+  const envelope = await signedFeedback({ controlled_invalid_event: true });
+  const response = await fetch(`${baseUrl}/email/feedback`, {
+    method: "POST",
+    headers: { "content-type": "text/plain" },
+    body: JSON.stringify(envelope),
+  });
+  assert.equal(response.status, 503);
+});
+
 test("signed SES feedback rejects forgeries and applies hard-bounce suppression once through the real HTTP boundary", async () => {
   const owner = await login();
   const admin = createClient(
@@ -5360,6 +5370,17 @@ test("signed SES feedback rejects forgeries and applies hard-bounce suppression 
   );
   assert.equal((await post(envelope)).status, 204);
   assert.equal((await post(envelope)).status, 204);
+  assert.equal(
+    (
+      await post(
+        await signedFeedback(
+          { ...event, eventType: "Delivery" },
+          { MessageId: envelope.MessageId },
+        ),
+      )
+    ).status,
+    503,
+  );
   const status = await admin.getEmailOperations({}, owner);
   const block = status.suppressions.find(
     (s) => s.recipientEmail === received.recipient,

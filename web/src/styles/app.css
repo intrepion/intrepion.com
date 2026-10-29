@@ -655,6 +655,31 @@ footer .everyday-actions {
   font-size: 25px;
   margin: 12px 0;
 }
+.safety-thresholds fieldset {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 12px 20px;
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.safety-thresholds legend {
+  padding: 0 6px;
+  font-weight: 700;
+}
+.safety-thresholds label {
+  display: block;
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+.safety-thresholds fieldset label {
+  margin: 0;
+}
+.safety-thresholds input {
+  width: min(100%, 180px);
+  margin-top: 6px;
+}
 @media (max-width: 760px) {
   .admin-grid {
     grid-template-columns: 1fr;
