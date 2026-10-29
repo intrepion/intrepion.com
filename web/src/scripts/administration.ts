@@ -428,6 +428,22 @@ export class Administration {
     form.onsubmit = async (event) => {
       event.preventDefault();
       if (this.pending) return;
+      // Household counts are controlled per account; the shared policy schema
+      // also requires positive household values for each household budget.
+      if (
+        draft.policy?.householdSoft &&
+        draft.policy.personalSoft &&
+        draft.policy.householdSoft.households === 0n
+      )
+        draft.policy.householdSoft.households =
+          draft.policy.personalSoft.households;
+      if (
+        draft.policy?.householdHard &&
+        draft.policy.personalHard &&
+        draft.policy.householdHard.households === 0n
+      )
+        draft.policy.householdHard.households =
+          draft.policy.personalHard.households;
       this.hooks.busy(true);
       try {
         this.review = await this.api.administration.previewPolicy(draft, {

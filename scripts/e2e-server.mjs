@@ -89,7 +89,7 @@ try {
     }),
   );
   await ready("http://127.0.0.1:8788/health/live");
-  if (process.env.NORMAL_ACCOUNTS_TEST)
+  if (process.env.NORMAL_ACCOUNTS_TEST && !process.env.BOOTSTRAP_POLICY_TEST)
     await (
       await import("./local-normal-accounts.mjs")
     ).seedLocalNormalAccounts();
