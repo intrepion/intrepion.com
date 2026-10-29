@@ -3,6 +3,7 @@ pub mod auth;
 mod capacity;
 pub mod config;
 pub mod db;
+mod delivery_gate;
 pub mod erasure_ledger;
 mod feedback;
 mod households;
@@ -126,6 +127,10 @@ pub fn app(auth: SharedAuth) -> Router {
         .layer(DefaultBodyLimit::max(64 * 1024))
         .layer(middleware::from_fn_with_state(
             auth.clone(),
+            delivery_handoff,
+        ))
+        .layer(middleware::from_fn_with_state(
+            auth.clone(),
             resource_feedback,
         ))
         .layer(middleware::from_fn_with_state(
@@ -134,6 +139,46 @@ pub fn app(auth: SharedAuth) -> Router {
         ))
         .layer(cors)
         .layer(middleware::from_fn(observe))
+}
+
+// Serialize consent and authorization changes with provider handoffs across
+// server instances. Feedback remains independent so provider callbacks can
+// be recorded even while a handoff is in progress.
+async fn delivery_handoff(
+    State(auth): State<SharedAuth>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let path = request.uri().path();
+    let guarded = request.method() == Method::POST
+        && (matches!(
+            path,
+            "/auth/google"
+                | "/auth/development"
+                | "/life.v1.HouseholdService/ChangeHousehold"
+                | "/life.v1.HouseholdMaintenanceService/EraseDueHouseholds"
+                | "/life.v1.AccountAdminService/SetAccountAccess"
+                | "/life.v1.AccountAdminService/ChangeGrowth"
+                | "/life.v1.AccountAdminService/ApplyPolicy"
+                | "/life.v1.EmailInvitationService/RevokeRequestLink"
+                | "/life.v1.EmailInvitationService/DeclineInvitationRequest"
+                | "/life.v1.EmailInvitationService/ApproveInvitationRequest"
+                | "/life.v1.EmailInvitationService/WithdrawInvitationRequest"
+                | "/life.v1.EmailInvitationService/SetRequestNotifications"
+                | "/life.v1.EmailInvitationService/AcceptInvitation"
+                | "/life.v1.EmailInvitationService/ChangeInvitation"
+        ) || path.starts_with("/life.v1.PilotOperatorService/"));
+    if !guarded {
+        return next.run(request).await;
+    }
+    let Ok(token) = delivery_gate::acquire(&auth.db).await else {
+        return (StatusCode::SERVICE_UNAVAILABLE, [(header::CONTENT_TYPE, "application/json")], r#"{"code":"unavailable","message":"An email action is in progress. Try again shortly."}"#).into_response();
+    };
+    let response = next.run(request).await;
+    if delivery_gate::release(&auth.db, &token).await.is_err() {
+        return (StatusCode::SERVICE_UNAVAILABLE, [(header::CONTENT_TYPE, "application/json")], r#"{"code":"unavailable","message":"The email action could not be confirmed. Try again."}"#).into_response();
+    }
+    response
 }
 
 // Keep resource enforcement detailed internally while normal-account clients
@@ -257,6 +302,7 @@ mod tests {
                 household_maintenance_token: None,
                 pilot_operator_token: None,
                 erasure_ledger: None,
+                request_safety: Default::default(),
             };
             let db =
                 crate::db::Database::new(config.db_url.clone(), config.db_token.clone()).unwrap();
@@ -332,6 +378,7 @@ mod tests {
             household_maintenance_token: None,
             pilot_operator_token: None,
             erasure_ledger: None,
+            request_safety: Default::default(),
         };
         let db = crate::db::Database::new(config.db_url.clone(), config.db_token.clone()).unwrap();
         let response = app(crate::auth::Auth::new(config, db).unwrap())

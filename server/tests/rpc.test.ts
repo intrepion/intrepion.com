@@ -3895,6 +3895,27 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     (h) => h.id === id,
   )!.usage!.bytes;
   const requestLink = await invitations.createRequestLink(linkAction, owner);
+  const limitedBase = "http://127.0.0.1:8789";
+  const limitedServer = start("target/debug/intrepion-server", [], {
+    env: { ...localEnv, PORT: "8789", MAX_REQUEST_LINKS_PER_HOUSEHOLD: "1" },
+  });
+  try {
+    await ready(`${limitedBase}/health/live`);
+    const limitedInvites = createClient(
+      EmailInvitationService,
+      createConnectTransport({ baseUrl: limitedBase }),
+    );
+    await assert.rejects(
+      limitedInvites.createRequestLink(
+        { householdId: id, operationId: crypto.randomUUID() },
+        owner,
+      ),
+      (e: unknown) =>
+        e instanceof ConnectError && e.code === Code.FailedPrecondition,
+    );
+  } finally {
+    await stop(limitedServer);
+  }
   const managedLinks = await invitations.listRequestLinks({ id }, owner);
   assert.equal(managedLinks.links.length, 1);
   assert.equal(managedLinks.links[0]?.id, requestLink.id);
@@ -4383,11 +4404,29 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
       .map((s) => s.split(";")[0])
       .join("; "),
   };
+  let joinedCookies = "";
   const joined = await invitations.acceptInvitation(
     { operationId: crypto.randomUUID(), displayName: "Alex", confirmed: true },
-    { headers: onboardHeaders },
+    {
+      headers: onboardHeaders,
+      onHeader: (headers) => {
+        joinedCookies = (headers.get("set-cookie") ?? "").split(";")[0] ?? "";
+      },
+    },
   );
   assert.equal(joined.householdId, id);
+  const joinedSession = {
+    headers: { origin, "x-csrf-token": joined.csrf, cookie: joinedCookies },
+  };
+  const joinedNotifications = await invitations.setRequestNotifications(
+    { householdId: id, enabled: true, confirmed: true },
+    joinedSession,
+  );
+  assert.equal(joinedNotifications.email, "alex@example.invalid");
+  await invitations.setRequestNotifications(
+    { householdId: id, enabled: false, confirmed: true },
+    joinedSession,
+  );
   assert.equal(
     (
       await invitations.submitInvitationRequest(
@@ -6126,6 +6165,93 @@ test("uncertain delivery retries reuse the link and early signed feedback surviv
     (await admin.getEmailOperations({}, owner)).suppressions.some(
       (s) => s.recipientEmail === "early-feedback@example.invalid",
     ),
+  );
+});
+
+test("revocation waits for an already-started provider handoff", async () => {
+  const owner = await login();
+  const admin = createClient(
+    AccountAdminService,
+    createConnectTransport({ baseUrl }),
+  );
+  const growth = await admin.getGrowth({}, owner);
+  if (growth.paused)
+    await admin.changeGrowth(
+      {
+        operationId: crypto.randomUUID(),
+        expectedRevision: growth.revision,
+        paused: false,
+        confirmed: true,
+      },
+      owner,
+    );
+  const id = crypto.randomUUID();
+  await households.changeHousehold(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      action: HouseholdAction.CREATE,
+      name: "Handoff coordination",
+    },
+    owner,
+  );
+  const invite = await createConsentedInvitation(
+    id,
+    owner,
+    "handoff@example.invalid",
+  );
+  const invitations = createClient(
+    EmailInvitationService,
+    createConnectTransport({ baseUrl }),
+  );
+  const mail = createClient(
+    EmailOperationsService,
+    createConnectTransport({ baseUrl }),
+  );
+  await fetch("http://127.0.0.1:8793/fault", {
+    method: "POST",
+    headers: {
+      authorization: "Bearer local-email-only",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ fail_next: "hold" }),
+  });
+  const sending = mail.processQueue(
+    {},
+    { headers: { authorization: `Bearer ${"ef".repeat(32)}` } },
+  );
+  let handedOff = false;
+  for (let i = 0; i < 100 && !handedOff; i++) {
+    const inbox = (await (
+      await fetch("http://127.0.0.1:8793/messages", {
+        headers: { authorization: "Bearer local-email-only" },
+      })
+    ).json()) as { messages: { recipient: string }[] };
+    handedOff = inbox.messages.some(
+      (m) => m.recipient === "handoff@example.invalid",
+    );
+    if (!handedOff) await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  assert.equal(handedOff, true);
+  const revoke = {
+    operationId: crypto.randomUUID(),
+    householdId: id,
+    invitationId: invite.id,
+    expectedRevision: invite.revision,
+    action: EmailInvitationAction.REVOKE,
+    confirmed: true,
+  };
+  try {
+    await assert.rejects(
+      invitations.changeInvitation(revoke, owner),
+      (e: unknown) => e instanceof ConnectError && e.code === Code.Unavailable,
+    );
+  } finally {
+    await sending;
+  }
+  assert.equal(
+    (await invitations.changeInvitation(revoke, owner)).status,
+    "revoked",
   );
 });
 

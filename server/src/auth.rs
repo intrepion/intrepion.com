@@ -393,7 +393,7 @@ impl Auth {
         );
         Ok(response)
     }
-    async fn record_verified_email(
+    pub(crate) async fn record_verified_email(
         &self,
         subject: &str,
         address: Option<&str>,

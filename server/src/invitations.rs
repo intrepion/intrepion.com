@@ -274,10 +274,23 @@ impl EmailInvitationService for Invitations {
         Households(self.0.clone())
             .require_head(r.household_id, &session.user_sub)
             .await?;
-        let result=self.0.db.batch(&[
+        let mut statements = Vec::new();
+        if r.enabled {
+            statements.push(capacity::snapshot(
+                &format!("household:{}", r.household_id),
+                &session.user_sub,
+                "",
+            ));
+        }
+        statements.push(
             Statement::new("INSERT INTO household_request_notification_settings(household_id,head_sub,enabled,confirmed_email) SELECT h.id,a.subject,?,CASE WHEN CAST(? AS INTEGER)=1 THEN a.google_verified_email ELSE '' END FROM households h JOIN household_heads m ON m.household_id=h.id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=? AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1 AND (CAST(? AS INTEGER)=0 OR a.google_verified_email<>'') ON CONFLICT(household_id,head_sub) DO UPDATE SET enabled=excluded.enabled,confirmed_email=excluded.confirmed_email",vec![(r.enabled as u8).to_string(),(r.enabled as u8).to_string(),r.household_id.into(),session.user_sub.clone(),(r.enabled as u8).to_string()]),
-            Statement::new("SELECT s.enabled,a.google_verified_email AS email,s.confirmed_email FROM household_request_notification_settings s JOIN pilot_accounts a ON a.subject=s.head_sub JOIN household_heads m ON m.household_id=s.household_id AND m.subject=s.head_sub JOIN households h ON h.id=s.household_id WHERE s.household_id=? AND s.head_sub=? AND s.enabled=? AND m.active=1 AND a.approved=1 AND h.status='active' AND (s.enabled=0 OR (a.google_verified_email<>'' AND s.confirmed_email=a.google_verified_email))",vec![r.household_id.into(),session.user_sub,(r.enabled as u8).to_string()]),
-        ]).await?;
+        );
+        if r.enabled {
+            statements.extend(capacity::content_checks());
+            statements.push(Statement::new("DELETE FROM invariant_guards", vec![]));
+        }
+        statements.push(Statement::new("SELECT s.enabled,a.google_verified_email AS email,s.confirmed_email FROM household_request_notification_settings s JOIN pilot_accounts a ON a.subject=s.head_sub JOIN household_heads m ON m.household_id=s.household_id AND m.subject=s.head_sub JOIN households h ON h.id=s.household_id WHERE s.household_id=? AND s.head_sub=? AND s.enabled=? AND m.active=1 AND a.approved=1 AND h.status='active' AND (s.enabled=0 OR (a.google_verified_email<>'' AND s.confirmed_email=a.google_verified_email))",vec![r.household_id.into(),session.user_sub,(r.enabled as u8).to_string()]));
+        let result = self.0.db.batch(&statements).await?;
         #[derive(Deserialize)]
         struct Settings {
             email: String,
@@ -588,7 +601,7 @@ impl EmailInvitationService for Invitations {
                 vec![now.to_string()],
             ),
             Statement::new(
-                "INSERT INTO household_invitation_requests(id,household_id,link_id,user_sub,email,display_name,status,consent_version,requested_at,expires_at) SELECT ?,l.household_id,l.id,?,?,?,'pending','v1',?,? FROM household_request_links l JOIN households h ON h.id=l.household_id WHERE l.id=? AND l.revoked=0 AND l.expires_at>? AND h.status='active' AND EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND NOT EXISTS(SELECT 1 FROM household_heads m WHERE m.household_id=l.household_id AND m.subject=? AND m.active=1) AND NOT EXISTS(SELECT 1 FROM pilot_accounts a WHERE a.subject=? AND a.approved=0) AND NOT EXISTS(SELECT 1 FROM protected_account_access p WHERE p.subject_hash=? AND p.active=0) AND NOT EXISTS(SELECT 1 FROM household_request_operations o WHERE o.user_sub=? AND o.operation_id=?) AND NOT EXISTS(SELECT 1 FROM household_invitation_requests d WHERE d.link_id=l.id AND d.user_sub=? AND d.status='declined' AND d.closed_at>?) ON CONFLICT DO NOTHING",
+                "INSERT INTO household_invitation_requests(id,household_id,link_id,user_sub,email,display_name,status,consent_version,requested_at,expires_at) SELECT ?,l.household_id,l.id,?,?,?,'pending','v1',?,? FROM household_request_links l JOIN households h ON h.id=l.household_id WHERE l.id=? AND l.revoked=0 AND l.expires_at>? AND h.status='active' AND EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND NOT EXISTS(SELECT 1 FROM household_heads m WHERE m.household_id=l.household_id AND m.subject=? AND m.active=1) AND NOT EXISTS(SELECT 1 FROM pilot_accounts a WHERE a.subject=? AND a.approved=0) AND NOT EXISTS(SELECT 1 FROM protected_account_access p WHERE p.subject_hash=? AND p.active=0) AND NOT EXISTS(SELECT 1 FROM household_request_operations o WHERE o.user_sub=? AND o.operation_id=?) AND NOT EXISTS(SELECT 1 FROM household_invitation_requests d WHERE d.link_id=l.id AND d.user_sub=? AND d.status='declined' AND d.closed_at>?) AND (SELECT count(*) FROM household_invitation_requests x WHERE x.household_id=l.household_id AND x.status='pending' AND x.expires_at>?)<CAST(? AS INTEGER) AND (SELECT count(*) FROM household_invitation_requests x WHERE x.user_sub=? AND x.requested_at>?)<CAST(? AS INTEGER) ON CONFLICT DO NOTHING",
                 vec![
                     r.operation_id.into(),
                     session.user_sub.clone(),
@@ -605,6 +618,15 @@ impl EmailInvitationService for Invitations {
                     r.operation_id.into(),
                     session.user_sub.clone(),
                     now.saturating_sub(7 * 86400).to_string(),
+                    now.to_string(),
+                    self.0.config.request_safety.pending_requests.to_string(),
+                    session.user_sub.clone(),
+                    now.saturating_sub(86400).to_string(),
+                    self.0
+                        .config
+                        .request_safety
+                        .requests_per_identity_day
+                        .to_string(),
                 ],
             ),
             Statement::new(
@@ -617,13 +639,19 @@ impl EmailInvitationService for Invitations {
                 ],
             ),
             Statement::new(
-                "INSERT INTO household_request_notifications(id,request_id,household_id,head_sub,recipient_email,created_at) SELECT lower(hex(randomblob(4)))||'-'||lower(hex(randomblob(2)))||'-4'||substr(lower(hex(randomblob(2))),2)||'-a'||substr(lower(hex(randomblob(2))),2)||'-'||lower(hex(randomblob(6))),q.id,q.household_id,s.head_sub,s.confirmed_email,? FROM household_invitation_requests q JOIN household_request_notification_settings s ON s.household_id=q.household_id JOIN household_heads m ON m.household_id=s.household_id AND m.subject=s.head_sub JOIN pilot_accounts a ON a.subject=s.head_sub WHERE q.id=? AND q.user_sub=? AND q.status='pending' AND s.enabled=1 AND s.confirmed_email<>'' AND s.confirmed_email=a.google_verified_email AND m.active=1 AND a.approved=1 AND NOT EXISTS(SELECT 1 FROM household_request_operations o WHERE o.user_sub=? AND o.operation_id=?) ON CONFLICT(request_id,head_sub) DO NOTHING",
+                "INSERT INTO household_request_notifications(id,request_id,household_id,head_sub,recipient_email,created_at) SELECT lower(hex(randomblob(4)))||'-'||lower(hex(randomblob(2)))||'-4'||substr(lower(hex(randomblob(2))),2)||'-a'||substr(lower(hex(randomblob(2))),2)||'-'||lower(hex(randomblob(6))),q.id,q.household_id,s.head_sub,s.confirmed_email,? FROM household_invitation_requests q JOIN household_request_notification_settings s ON s.household_id=q.household_id JOIN household_heads m ON m.household_id=s.household_id AND m.subject=s.head_sub JOIN pilot_accounts a ON a.subject=s.head_sub WHERE q.id=? AND q.user_sub=? AND q.status='pending' AND s.enabled=1 AND s.confirmed_email<>'' AND s.confirmed_email=a.google_verified_email AND m.active=1 AND a.approved=1 AND NOT EXISTS(SELECT 1 FROM household_request_operations o WHERE o.user_sub=? AND o.operation_id=?) AND (SELECT count(*) FROM household_request_notifications x WHERE x.head_sub=s.head_sub AND x.created_at>?)<CAST(? AS INTEGER) ON CONFLICT(request_id,head_sub) DO NOTHING",
                 vec![
                     now.to_string(),
                     r.operation_id.into(),
                     session.user_sub.clone(),
                     session.user_sub.clone(),
                     r.operation_id.into(),
+                    now.saturating_sub(86400).to_string(),
+                    self.0
+                        .config
+                        .request_safety
+                        .notices_per_head_day
+                        .to_string(),
                 ],
             ),
             Statement::new(
@@ -799,7 +827,7 @@ impl EmailInvitationService for Invitations {
                 "",
             )];
             statements.push(
-                Statement::new("INSERT INTO household_request_links(id,household_id,created_by,token_hash,expires_at) SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=? AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1) ON CONFLICT(id) DO NOTHING", vec![r.operation_id.into(),r.household_id.into(),session.user_sub.clone(),token_hash,expires,r.household_id.into(),session.user_sub.clone()]),
+                Statement::new("INSERT INTO household_request_links(id,household_id,created_by,token_hash,expires_at) SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=? AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1) AND (SELECT count(*) FROM household_request_links WHERE household_id=? AND revoked=0 AND expires_at>?)<CAST(? AS INTEGER) AND (SELECT count(*) FROM household_request_links WHERE household_id=? AND created_at>?)<CAST(? AS INTEGER) ON CONFLICT(id) DO NOTHING", vec![r.operation_id.into(),r.household_id.into(),session.user_sub.clone(),token_hash,expires,r.household_id.into(),session.user_sub.clone(),r.household_id.into(),auth::now().to_string(),self.0.config.request_safety.active_links.to_string(),r.household_id.into(),auth::now().saturating_sub(86400).to_string(),self.0.config.request_safety.links_per_day.to_string()]),
             );
             statements.extend(capacity::content_checks());
             statements.push(Statement::new("DELETE FROM invariant_guards", vec![]));
@@ -831,6 +859,12 @@ impl EmailInvitationService for Invitations {
             let (_, token) = self.0.new_session(&context.user_sub).await.map_err(|_| {
                 ConnectError::unavailable("Account joined; retry sign-in recovery.")
             })?;
+            self.0
+                .record_verified_email(&context.user_sub, Some(&context.email))
+                .await
+                .map_err(|_| {
+                    ConnectError::unavailable("Account joined; retry sign-in recovery.")
+                })?;
             return Ok(Response::new(preview).with_header(
                 "set-cookie",
                 self.0.set_cookie("session", &token, 7 * 86400),
@@ -849,6 +883,10 @@ impl EmailInvitationService for Invitations {
         let (session, token) = self.0.new_session(&context.user_sub).await.map_err(|_| {
             ConnectError::unavailable("Account joined; sign in again or retry the same acceptance.")
         })?;
+        self.0
+            .record_verified_email(&context.user_sub, Some(&context.email))
+            .await
+            .map_err(|_| ConnectError::unavailable("Account joined; retry sign-in recovery."))?;
         result.csrf = session.csrf;
         result.expires_at = session.expires_at;
         result.display_name = session.display_name;

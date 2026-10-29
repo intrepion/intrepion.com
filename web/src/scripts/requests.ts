@@ -120,15 +120,21 @@ export class Requests {
     this.operation ||= crypto.randomUUID();
     this.busy(true);
     try {
-      await this.api.invitations.submitInvitationRequest(
+      const result = await this.api.invitations.submitInvitationRequest(
         { operationId: this.operation, confirmed: true },
         { timeoutMs: 90000 },
       );
+      const heading =
+        result.status === "pending"
+          ? "Your request is pending"
+          : `Your request is ${result.status}`;
       this.root.replaceChildren(
-        el("h1", "Your request is pending"),
+        el("h1", heading),
         el(
           "p",
-          "A household head can review your request. You can return to check or withdraw it.",
+          result.status === "pending"
+            ? "A household head can review your request. You can return to check or withdraw it."
+            : "Open My invitation requests to review its current status.",
         ),
         button("My invitation requests", () => this.startLookup()),
         button("Sign out", () => void this.leave()),

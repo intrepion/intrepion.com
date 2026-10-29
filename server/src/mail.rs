@@ -134,6 +134,12 @@ impl Delivery {
         if self.0.config.customer_writes_frozen {
             return Ok(EmailQueueResult::default());
         }
+        let token = crate::delivery_gate::acquire(&self.0.db).await?;
+        let result = self.process_locked().await;
+        crate::delivery_gate::release(&self.0.db, &token).await?;
+        result
+    }
+    async fn process_locked(&self) -> Result<EmailQueueResult, ConnectError> {
         crate::retention::prune(&self.0).await?;
         crate::security::protect(&self.0).await?;
         let _lock = self.0.mail_lock.lock().await;

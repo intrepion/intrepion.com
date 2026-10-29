@@ -18,6 +18,27 @@ pub struct Config {
     pub household_maintenance_token: Option<String>,
     pub pilot_operator_token: Option<String>,
     pub erasure_ledger: Option<crate::erasure_ledger::LedgerSettings>,
+    pub request_safety: RequestSafety,
+}
+
+#[derive(Clone)]
+pub struct RequestSafety {
+    pub active_links: u64,
+    pub links_per_day: u64,
+    pub pending_requests: u64,
+    pub requests_per_identity_day: u64,
+    pub notices_per_head_day: u64,
+}
+impl Default for RequestSafety {
+    fn default() -> Self {
+        Self {
+            active_links: 100,
+            links_per_day: 100,
+            pending_requests: 500,
+            requests_per_identity_day: 30,
+            notices_per_head_day: 500,
+        }
+    }
 }
 
 impl Config {
@@ -145,6 +166,13 @@ impl Config {
             return Err("Email operations credentials must be separate".into());
         }
         Ok(Self {
+            request_safety: RequestSafety {
+                active_links: safety_limit("MAX_REQUEST_LINKS_PER_HOUSEHOLD", 100)?,
+                links_per_day: safety_limit("MAX_REQUEST_LINKS_PER_DAY", 100)?,
+                pending_requests: safety_limit("MAX_PENDING_REQUESTS_PER_HOUSEHOLD", 500)?,
+                requests_per_identity_day: safety_limit("MAX_REQUESTS_PER_IDENTITY_DAY", 30)?,
+                notices_per_head_day: safety_limit("MAX_REQUEST_NOTICES_PER_HEAD_DAY", 500)?,
+            },
             mail,
             email_operations_token,
             invitation_signing_key,
@@ -163,6 +191,18 @@ impl Config {
             // forwarded-header trust for local or directly exposed deployments.
             trust_render_proxy: !local && env::var("RENDER").as_deref() == Ok("true"),
         })
+    }
+}
+
+fn safety_limit(name: &str, default: u64) -> Result<u64, String> {
+    match env::var(name) {
+        Err(env::VarError::NotPresent) => Ok(default),
+        Ok(value) => value
+            .parse::<u64>()
+            .ok()
+            .filter(|n| (1..=100_000).contains(n))
+            .ok_or_else(|| format!("{name} must be an integer from 1 through 100000")),
+        Err(_) => Err(format!("Invalid {name}")),
     }
 }
 
