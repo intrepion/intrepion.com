@@ -229,6 +229,36 @@ impl Invitations {
 }
 #[allow(refining_impl_trait)]
 impl EmailInvitationService for Invitations {
+    async fn decline_invitation_request(
+        &self,
+        ctx: RequestContext,
+        r: ServiceRequest<'_, InvitationRequestDecision>,
+    ) -> ServiceResult<Empty> {
+        let session = self.0.authorize_rpc(&ctx).await?;
+        if !r.confirmed
+            || !valid_id(r.operation_id)
+            || !valid_id(r.household_id)
+            || !valid_id(r.request_id)
+        {
+            return Err(ConnectError::invalid_argument(
+                "Confirm the request decision.",
+            ));
+        }
+        Households(self.0.clone())
+            .require_head(r.household_id, &session.user_sub)
+            .await?;
+        let authority = "EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=? AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1)";
+        let result=self.0.db.batch(&[
+            Statement::new(&format!("UPDATE household_invitation_requests SET status='declined',closed_at=?,last_decision=? WHERE id=? AND household_id=? AND status='pending' AND expires_at>? AND {authority} AND NOT EXISTS(SELECT 1 FROM household_request_decisions WHERE actor_sub=? AND operation_id=?)"),vec![auth::now().to_string(),r.operation_id.into(),r.request_id.into(),r.household_id.into(),auth::now().to_string(),r.household_id.into(),session.user_sub.clone(),session.user_sub.clone(),r.operation_id.into()]),
+            Statement::new("INSERT INTO household_activity(household_id,actor_sub,action) SELECT household_id,?,'Declined a household invitation request' FROM household_invitation_requests WHERE id=? AND household_id=? AND status='declined' AND last_decision=? AND NOT EXISTS(SELECT 1 FROM household_request_decisions WHERE actor_sub=? AND operation_id=?)",vec![session.user_sub.clone(),r.request_id.into(),r.household_id.into(),r.operation_id.into(),session.user_sub.clone(),r.operation_id.into()]),
+            Statement::new("INSERT INTO household_request_decisions(actor_sub,operation_id,request_id,household_id,action) SELECT ?,?,id,household_id,'decline' FROM household_invitation_requests WHERE id=? AND household_id=? AND status='declined' AND last_decision=? ON CONFLICT(actor_sub,operation_id) DO NOTHING",vec![session.user_sub.clone(),r.operation_id.into(),r.request_id.into(),r.household_id.into(),r.operation_id.into()]),
+            Statement::new("SELECT request_id FROM household_request_decisions WHERE actor_sub=? AND operation_id=? AND request_id=? AND household_id=? AND action='decline'",vec![session.user_sub,r.operation_id.into(),r.request_id.into(),r.household_id.into()]),
+        ]).await?;
+        if result.last().is_none_or(|rows| rows.is_empty()) {
+            return Err(unavailable());
+        }
+        Response::ok(Empty::default())
+    }
     async fn submit_invitation_request(
         &self,
         ctx: RequestContext,
@@ -268,7 +298,7 @@ impl EmailInvitationService for Invitations {
                 vec![now.to_string()],
             ),
             Statement::new(
-                "INSERT INTO household_invitation_requests(id,household_id,link_id,user_sub,email,display_name,status,consent_version,requested_at,expires_at) SELECT ?,l.household_id,l.id,?,?,?,'pending','v1',?,? FROM household_request_links l JOIN households h ON h.id=l.household_id WHERE l.id=? AND l.revoked=0 AND l.expires_at>? AND h.status='active' AND EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND NOT EXISTS(SELECT 1 FROM household_heads m WHERE m.household_id=l.household_id AND m.subject=? AND m.active=1) AND NOT EXISTS(SELECT 1 FROM pilot_accounts a WHERE a.subject=? AND a.approved=0) AND NOT EXISTS(SELECT 1 FROM protected_account_access p WHERE p.subject_hash=? AND p.active=0) AND NOT EXISTS(SELECT 1 FROM household_request_operations o WHERE o.user_sub=? AND o.operation_id=?) ON CONFLICT DO NOTHING",
+                "INSERT INTO household_invitation_requests(id,household_id,link_id,user_sub,email,display_name,status,consent_version,requested_at,expires_at) SELECT ?,l.household_id,l.id,?,?,?,'pending','v1',?,? FROM household_request_links l JOIN households h ON h.id=l.household_id WHERE l.id=? AND l.revoked=0 AND l.expires_at>? AND h.status='active' AND EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND NOT EXISTS(SELECT 1 FROM household_heads m WHERE m.household_id=l.household_id AND m.subject=? AND m.active=1) AND NOT EXISTS(SELECT 1 FROM pilot_accounts a WHERE a.subject=? AND a.approved=0) AND NOT EXISTS(SELECT 1 FROM protected_account_access p WHERE p.subject_hash=? AND p.active=0) AND NOT EXISTS(SELECT 1 FROM household_request_operations o WHERE o.user_sub=? AND o.operation_id=?) AND NOT EXISTS(SELECT 1 FROM household_invitation_requests d WHERE d.link_id=l.id AND d.user_sub=? AND d.status='declined' AND d.closed_at>?) ON CONFLICT DO NOTHING",
                 vec![
                     r.operation_id.into(),
                     session.user_sub.clone(),
@@ -283,6 +313,8 @@ impl EmailInvitationService for Invitations {
                     crate::security::subject_hash(&session.user_sub),
                     session.user_sub.clone(),
                     r.operation_id.into(),
+                    session.user_sub.clone(),
+                    now.saturating_sub(7 * 86400).to_string(),
                 ],
             ),
             Statement::new(

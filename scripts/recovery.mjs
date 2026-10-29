@@ -145,6 +145,7 @@ async function upgrade(db) {
     ["table", "site_usage_samples", "0023_aggregate_usage_history"],
     ["trigger", "record_account_admission", "0024_protected_account_admission"],
     ["table", "household_request_links", "0025_request_links"],
+    ["table", "household_request_decisions", "0026_request_decisions"],
   ])
     if (!exists(type, anchor))
       db.exec(
@@ -179,6 +180,7 @@ async function upgrade(db) {
     "0023_aggregate_usage_history.sql",
     "0024_protected_account_admission.sql",
     "0025_request_links.sql",
+    "0026_request_decisions.sql",
   ];
   db.exec(
     "CREATE TABLE IF NOT EXISTS d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
@@ -269,6 +271,9 @@ function replay(
           const space = db
             .prepare("SELECT scope_sub FROM households WHERE id=?")
             .get(record.collection_id).scope_sub;
+          db.prepare(
+            "DELETE FROM household_request_decisions WHERE household_id=?",
+          ).run(record.collection_id);
           db.prepare(
             "INSERT INTO household_releases(household_id,subject,released_at) SELECT household_id,subject,? FROM household_allocations WHERE household_id=? ON CONFLICT(household_id,subject) DO NOTHING",
           ).run(record.erase_due_at, record.collection_id);

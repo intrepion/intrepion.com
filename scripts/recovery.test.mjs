@@ -321,7 +321,7 @@ test("recovering an MVP 1 archive upgrades retained tasks and the migration ledg
       );
       assert.equal(
         restored.prepare("SELECT count(*) n FROM d1_migrations").get().n,
-        25,
+        26,
       );
       assert.equal(restored.prepare("SELECT count(*) n FROM tasks").get().n, 0);
     } finally {

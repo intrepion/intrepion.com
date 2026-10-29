@@ -100,6 +100,7 @@ service EmailInvitationService {
   rpc GetRequestPreview(Empty) returns (RequestPreview);
   rpc SubmitInvitationRequest(InvitationRequestSubmit) returns (InvitationRequest);
   rpc ListInvitationRequests(HouseholdKey) returns (InvitationRequestPage);
+  rpc DeclineInvitationRequest(InvitationRequestDecision) returns (Empty);
   rpc ListInvitations(HouseholdKey) returns (EmailInvitationPage);
   rpc GetOnboarding(Empty) returns (OnboardingPreview);
   rpc AcceptInvitation(InvitationAcceptance) returns (AccountSession);
@@ -112,6 +113,7 @@ message RequestPreview { string household_name = 1; string email = 2; string dis
 message InvitationRequestSubmit { string operation_id = 1; bool confirmed = 2; }
 message InvitationRequest { string id = 1; string display_name = 2; string email = 3; string status = 4; int64 requested_at = 5; }
 message InvitationRequestPage { repeated InvitationRequest requests = 1; }
+message InvitationRequestDecision { string operation_id = 1; string household_id = 2; string request_id = 3; bool confirmed = 4; }
 enum EmailInvitationAction {
  EMAIL_INVITATION_ACTION_UNSPECIFIED = 0;
  EMAIL_INVITATION_ACTION_CREATE = 1;

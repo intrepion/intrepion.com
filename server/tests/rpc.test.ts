@@ -3800,6 +3800,70 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     (await invitations.listInvitationRequests({ id }, owner)).requests.length,
     1,
   );
+  const decision = {
+    operationId: crypto.randomUUID(),
+    householdId: id,
+    requestId: requested.id,
+    confirmed: true,
+  };
+  await assert.rejects(
+    invitations.declineInvitationRequest(decision, other),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.PermissionDenied,
+  );
+  await invitations.declineInvitationRequest(decision, owner);
+  await invitations.declineInvitationRequest(decision, owner);
+  await assert.rejects(
+    invitations.submitInvitationRequest(
+      { operationId: crypto.randomUUID(), confirmed: true },
+      requester,
+    ),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.FailedPrecondition,
+  );
+  const nextChallenge = await fetch(`${baseUrl}/auth/challenge`, {
+    method: "POST",
+    headers: { origin },
+  });
+  const nextNonce = ((await nextChallenge.json()) as { nonce: string }).nonce;
+  const nextLogin = await fetch(`${baseUrl}/auth/development`, {
+    method: "POST",
+    headers: {
+      origin,
+      "content-type": "application/json",
+      cookie: nextChallenge.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+    body: JSON.stringify({
+      nonce: nextNonce,
+      credential: "another-requester",
+      request_token: requestLink.token,
+      development_email: "alex@example.invalid",
+      development_name: "Alex",
+    }),
+  });
+  assert.equal(nextLogin.status, 200);
+  const nextIdentity = (await nextLogin.json()) as { csrf: string };
+  const nextRequester = {
+    headers: {
+      origin,
+      "x-csrf-token": nextIdentity.csrf,
+      cookie: nextLogin.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+  };
+  await invitations.submitInvitationRequest(
+    { operationId: crypto.randomUUID(), confirmed: true },
+    nextRequester,
+  );
+  assert.equal(
+    (await invitations.listInvitationRequests({ id }, owner)).requests.length,
+    1,
+  );
   await assert.rejects(
     invitations.listInvitationRequests({ id }, other),
     (e: unknown) =>
