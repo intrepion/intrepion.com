@@ -1,0 +1,11 @@
+{
+  "status": "owner-approved-not-yet-applied",
+  "approved_on_utc": "2026-10-29",
+  "personal_soft": { "items": 800, "shopping": 80, "templates": 80, "runs": 800, "bytes": 838860, "households": 8 },
+  "personal_hard": { "items": 1000, "shopping": 100, "templates": 100, "runs": 1000, "bytes": 1048576, "households": 10 },
+  "household_soft": { "items": 800, "shopping": 80, "templates": 80, "runs": 800, "bytes": 838860, "households": 8 },
+  "household_hard": { "items": 1000, "shopping": 100, "templates": 100, "runs": 1000, "bytes": 1048576, "households": 10 },
+  "max_items_per_collection": 500,
+  "max_sections_per_collection": 100,
+  "constraints": "The backup alerts remain at 5, 10 and 15 MiB. Recovery sizing is workload-dependent; retain measured monitoring and review before growth. Apply through the audited owner preview and confirmation only after recovery verification and the controlled cutover."
+}
