@@ -3783,6 +3783,150 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     requester,
   );
   assert.equal(requested.status, "pending");
+  const lookupChallenge = await fetch(`${baseUrl}/auth/challenge`, {
+    method: "POST",
+    headers: { origin },
+  });
+  const lookupNonce = ((await lookupChallenge.json()) as { nonce: string })
+    .nonce;
+  const lookupLogin = await fetch(`${baseUrl}/auth/development`, {
+    method: "POST",
+    headers: {
+      origin,
+      "content-type": "application/json",
+      cookie: lookupChallenge.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+    body: JSON.stringify({
+      nonce: lookupNonce,
+      credential: "new-requester",
+      request_lookup: true,
+      development_email: "jordan@example.invalid",
+      development_name: "Jordan",
+    }),
+  });
+  assert.equal(lookupLogin.status, 200);
+  const lookupIdentity = (await lookupLogin.json()) as { csrf: string };
+  const lookupSession = {
+    headers: {
+      origin,
+      "x-csrf-token": lookupIdentity.csrf,
+      cookie: lookupLogin.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+  };
+  const mine = await invitations.listMyInvitationRequests({}, lookupSession);
+  assert.equal(mine.requests.length, 1);
+  assert.equal(mine.requests[0]?.householdName, "Email invitation household");
+  assert.equal(mine.requests[0]?.id, requested.id);
+  const withdrawChallenge = await fetch(`${baseUrl}/auth/challenge`, {
+    method: "POST",
+    headers: { origin },
+  });
+  const withdrawNonce = ((await withdrawChallenge.json()) as { nonce: string })
+    .nonce;
+  const withdrawLogin = await fetch(`${baseUrl}/auth/development`, {
+    method: "POST",
+    headers: {
+      origin,
+      "content-type": "application/json",
+      cookie: withdrawChallenge.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+    body: JSON.stringify({
+      nonce: withdrawNonce,
+      credential: "withdraw-requester",
+      request_token: requestLink.token,
+      development_email: "withdraw@example.invalid",
+      development_name: "Withdraw",
+    }),
+  });
+  assert.equal(withdrawLogin.status, 200);
+  const withdrawAuth = (await withdrawLogin.json()) as { csrf: string };
+  const withdrawRequestSession = {
+    headers: {
+      origin,
+      "x-csrf-token": withdrawAuth.csrf,
+      cookie: withdrawLogin.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+  };
+  const withdrawTarget = await invitations.submitInvitationRequest(
+    { operationId: crypto.randomUUID(), confirmed: true },
+    withdrawRequestSession,
+  );
+  const freshChallenge = await fetch(`${baseUrl}/auth/challenge`, {
+    method: "POST",
+    headers: { origin },
+  });
+  const freshNonce = ((await freshChallenge.json()) as { nonce: string }).nonce;
+  const freshLogin = await fetch(`${baseUrl}/auth/development`, {
+    method: "POST",
+    headers: {
+      origin,
+      "content-type": "application/json",
+      cookie: freshChallenge.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+    body: JSON.stringify({
+      nonce: freshNonce,
+      credential: "withdraw-requester",
+      request_lookup: true,
+      development_email: "withdraw@example.invalid",
+    }),
+  });
+  assert.equal(freshLogin.status, 200);
+  const freshIdentity = (await freshLogin.json()) as { csrf: string };
+  const freshSession = {
+    headers: {
+      origin,
+      "x-csrf-token": freshIdentity.csrf,
+      cookie: freshLogin.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+  };
+  const withdrawal = {
+    operationId: crypto.randomUUID(),
+    requestId: withdrawTarget.id,
+    confirmed: true,
+  };
+  const withdrawnInvitation = await invitations.approveInvitationRequest(
+    {
+      operationId: crypto.randomUUID(),
+      householdId: id,
+      requestId: withdrawTarget.id,
+      confirmed: true,
+    },
+    owner,
+  );
+  await assert.rejects(
+    invitations.withdrawInvitationRequest(withdrawal, lookupSession),
+  );
+  await invitations.withdrawInvitationRequest(withdrawal, freshSession);
+  await invitations.withdrawInvitationRequest(withdrawal, freshSession);
+  assert.equal(
+    (await invitations.listInvitations({ id }, owner)).invitations.find(
+      (i) => i.id === withdrawnInvitation.id,
+    )?.status,
+    "revoked",
+  );
+  assert.equal(
+    (await invitations.listMyInvitationRequests({}, freshSession)).requests[0]
+      ?.status,
+    "withdrawn",
+  );
   assert.equal(
     (await invitations.submitInvitationRequest(submission, requester)).id,
     requested.id,
@@ -3998,7 +4142,7 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
   assert.equal((await invitations.changeInvitation(change, owner)).id, sent.id);
   assert.equal(
     (await invitations.listInvitations({ id }, owner)).invitations.length,
-    2,
+    3,
   );
   await assert.rejects(
     invitations.listInvitations({ id }, other),

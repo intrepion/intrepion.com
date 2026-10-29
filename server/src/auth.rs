@@ -54,6 +54,8 @@ pub struct Login {
     pub invitation_token: Option<String>,
     #[serde(default)]
     pub request_token: Option<String>,
+    #[serde(default)]
+    pub request_lookup: bool,
     #[cfg(feature = "dev-auth")]
     #[serde(default)]
     pub development_email: Option<String>,
@@ -438,8 +440,24 @@ pub async fn login(
     auth.limit_login(&headers, peer.ip()).await?;
     auth.consume_challenge(&headers, &login.nonce).await?;
     let claims = auth.verify_google(&login.credential, &login.nonce).await?;
-    if login.request_token.is_some() && login.invitation_token.is_some() {
+    if usize::from(login.request_token.is_some())
+        + usize::from(login.invitation_token.is_some())
+        + usize::from(login.request_lookup)
+        > 1
+    {
         return Err(forbidden());
+    }
+    if login.request_lookup {
+        if !claims.email_verified {
+            return Err(forbidden());
+        }
+        return auth
+            .begin_request_lookup(
+                &claims.sub,
+                claims.email.as_deref().ok_or_else(forbidden)?,
+                claims.name.as_deref().unwrap_or(""),
+            )
+            .await;
     }
     if let Some(token) = login.request_token {
         if !claims.email_verified {
@@ -486,8 +504,21 @@ pub async fn development_login(
     } else {
         &login.credential
     };
-    if login.request_token.is_some() && login.invitation_token.is_some() {
+    if usize::from(login.request_token.is_some())
+        + usize::from(login.invitation_token.is_some())
+        + usize::from(login.request_lookup)
+        > 1
+    {
         return Err(forbidden());
+    }
+    if login.request_lookup {
+        return auth
+            .begin_request_lookup(
+                subject,
+                login.development_email.as_deref().ok_or_else(forbidden)?,
+                login.development_name.as_deref().unwrap_or(""),
+            )
+            .await;
     }
     if let Some(token) = login.request_token.as_deref() {
         return auth
@@ -518,20 +549,35 @@ pub async fn current_session(
     if let Ok(session) = auth.session(&headers, false).await {
         return Ok(Json(serde_json::to_value(session).expect("session")));
     }
-    let session = auth.onboarding(&headers, false).await?;
+    if let Ok(session) = auth.onboarding(&headers, false).await {
+        return Ok(Json(
+            serde_json::json!({"onboarding":true,"csrf":session.csrf,"expires_at":session.expires_at,"user_sub":session.user_sub,"display_name":session.display_name,"email":session.email}),
+        ));
+    }
+    if let Ok(session) = auth.request_session(&headers, false).await {
+        return Ok(Json(
+            serde_json::json!({"request_session":true,"csrf":session.csrf,"expires_at":session.expires_at,"user_sub":session.user_sub,"display_name":session.display_name,"email":session.email}),
+        ));
+    }
+    let session = auth.request_lookup_session(&headers, false).await?;
     Ok(Json(
-        serde_json::json!({"onboarding":true,"csrf":session.csrf,"expires_at":session.expires_at,"user_sub":session.user_sub,"display_name":session.display_name,"email":session.email}),
+        serde_json::json!({"request_lookup":true,"csrf":session.csrf,"expires_at":session.expires_at,"user_sub":session.user_sub,"display_name":session.display_name,"email":session.email}),
     ))
 }
 pub async fn logout(
     State(auth): State<SharedAuth>,
     headers: HeaderMap,
 ) -> Result<Response, AuthError> {
-    if auth.session(&headers, true).await.is_err() {
-        auth.onboarding(&headers, true).await?;
+    if auth.session(&headers, true).await.is_err()
+        && auth.onboarding(&headers, true).await.is_err()
+        && auth.request_session(&headers, true).await.is_err()
+    {
+        auth.request_lookup_session(&headers, true).await?;
     }
     let session = cookie(&headers, &auth.name("session")).unwrap_or("");
     let onboarding = cookie(&headers, &auth.name("onboarding")).unwrap_or("");
+    let request = cookie(&headers, &auth.name("request")).unwrap_or("");
+    let lookup = cookie(&headers, &auth.name("request-lookup")).unwrap_or("");
     auth.db
         .batch(&[
             crate::db::Statement::new(
@@ -542,10 +588,18 @@ pub async fn logout(
                 "DELETE FROM onboarding_sessions WHERE token_hash=?",
                 vec![hash(onboarding)],
             ),
+            crate::db::Statement::new(
+                "DELETE FROM request_sessions WHERE token_hash=?",
+                vec![hash(request)],
+            ),
+            crate::db::Statement::new(
+                "DELETE FROM request_lookup_sessions WHERE token_hash=?",
+                vec![hash(lookup)],
+            ),
         ])
         .await?;
     let mut response = StatusCode::NO_CONTENT.into_response();
-    for kind in ["session", "onboarding"] {
+    for kind in ["session", "onboarding", "request", "request-lookup"] {
         response.headers_mut().append(
             header::SET_COOKIE,
             auth.set_cookie(kind, "", 0)

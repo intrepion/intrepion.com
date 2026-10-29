@@ -153,6 +153,8 @@ async function upgrade(db) {
       "0028_request_final_state",
     ],
     ["trigger", "revoke_links_departed_head", "0029_request_link_lifecycle"],
+    ["table", "request_lookup_sessions", "0030_request_lookup"],
+    ["table", "household_request_withdrawals", "0031_request_withdrawals"],
   ])
     if (!exists(type, anchor))
       db.exec(
@@ -191,6 +193,8 @@ async function upgrade(db) {
     "0027_request_approval.sql",
     "0028_request_final_state.sql",
     "0029_request_link_lifecycle.sql",
+    "0030_request_lookup.sql",
+    "0031_request_withdrawals.sql",
   ];
   db.exec(
     "CREATE TABLE IF NOT EXISTS d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
@@ -400,7 +404,7 @@ function replay(
     retainedPublicIdentities,
   );
   db.exec(
-    "DELETE FROM sessions; DELETE FROM login_challenges; DELETE FROM onboarding_sessions; DELETE FROM request_sessions; UPDATE household_request_links SET revoked=1; UPDATE household_invitation_requests SET status='canceled',closed_at=unixepoch() WHERE status='pending'; UPDATE email_invitations SET status='revoked',delivery_status='canceled',claim_id='',claim_until=0,revision=revision+1 WHERE status='pending'; UPDATE household_invitations SET status='revoked' WHERE status='pending'; UPDATE invitation_growth SET paused=1,revision=revision+1 WHERE id=1; UPDATE security_replay_control SET replaying=0 WHERE id=1;",
+    "DELETE FROM sessions; DELETE FROM login_challenges; DELETE FROM onboarding_sessions; DELETE FROM request_sessions; DELETE FROM request_lookup_sessions; UPDATE household_request_links SET revoked=1; UPDATE household_invitation_requests SET status='canceled',closed_at=unixepoch() WHERE status='pending'; UPDATE email_invitations SET status='revoked',delivery_status='canceled',claim_id='',claim_until=0,revision=revision+1 WHERE status='pending'; UPDATE household_invitations SET status='revoked' WHERE status='pending'; UPDATE invitation_growth SET paused=1,revision=revision+1 WHERE id=1; UPDATE security_replay_control SET replaying=0 WHERE id=1;",
   );
 }
 function replaySecurity(db, records, retainedPublicIdentities) {

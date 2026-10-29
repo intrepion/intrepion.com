@@ -229,6 +229,80 @@ impl Invitations {
 }
 #[allow(refining_impl_trait)]
 impl EmailInvitationService for Invitations {
+    async fn withdraw_invitation_request(
+        &self,
+        ctx: RequestContext,
+        r: ServiceRequest<'_, InvitationRequestWithdraw>,
+    ) -> ServiceResult<Empty> {
+        if !r.confirmed || !valid_id(r.operation_id) || !valid_id(r.request_id) {
+            return Err(ConnectError::invalid_argument("Confirm the withdrawal."));
+        }
+        let session = self
+            .0
+            .request_lookup_session(ctx.headers(), true)
+            .await
+            .map_err(|e| match e.0 {
+                axum::http::StatusCode::UNAUTHORIZED => {
+                    ConnectError::unauthenticated("Sign in to withdraw your request.")
+                }
+                axum::http::StatusCode::FORBIDDEN => {
+                    ConnectError::permission_denied("Request session and CSRF token required.")
+                }
+                _ => ConnectError::unavailable("Requests are temporarily unavailable."),
+            })?;
+        let result=self.0.db.batch(&[
+            Statement::new("UPDATE household_invitation_requests SET status='withdrawn',closed_at=?,last_decision=? WHERE id=? AND user_sub=? AND status IN('pending','approved') AND NOT EXISTS(SELECT 1 FROM household_request_withdrawals WHERE user_sub=? AND operation_id=?)",vec![auth::now().to_string(),r.operation_id.into(),r.request_id.into(),session.user_sub.clone(),session.user_sub.clone(),r.operation_id.into()]),
+            Statement::new("UPDATE email_invitations SET status='revoked',delivery_status='canceled',claim_id='',claim_until=0,revision=revision+1 WHERE request_id=? AND status='pending' AND EXISTS(SELECT 1 FROM household_invitation_requests WHERE id=? AND user_sub=? AND status='withdrawn' AND last_decision=?)",vec![r.request_id.into(),r.request_id.into(),session.user_sub.clone(),r.operation_id.into()]),
+            Statement::new("INSERT INTO household_request_withdrawals(user_sub,operation_id,request_id) SELECT user_sub,?,id FROM household_invitation_requests WHERE id=? AND user_sub=? AND status='withdrawn' AND last_decision=? ON CONFLICT(user_sub,operation_id) DO NOTHING",vec![r.operation_id.into(),r.request_id.into(),session.user_sub.clone(),r.operation_id.into()]),
+            Statement::new("SELECT request_id FROM household_request_withdrawals WHERE user_sub=? AND operation_id=? AND request_id=?",vec![session.user_sub,r.operation_id.into(),r.request_id.into()]),
+        ]).await?;
+        if result.last().is_none_or(|rows| rows.is_empty()) {
+            return Err(unavailable());
+        }
+        Response::ok(Empty::default())
+    }
+    async fn list_my_invitation_requests(
+        &self,
+        ctx: RequestContext,
+        _r: ServiceRequest<'_, Empty>,
+    ) -> ServiceResult<MyInvitationRequestPage> {
+        let session = self
+            .0
+            .request_lookup_session(ctx.headers(), true)
+            .await
+            .map_err(|e| match e.0 {
+                axum::http::StatusCode::UNAUTHORIZED => {
+                    ConnectError::unauthenticated("Sign in to view your requests.")
+                }
+                axum::http::StatusCode::FORBIDDEN => {
+                    ConnectError::permission_denied("Request session and CSRF token required.")
+                }
+                _ => ConnectError::unavailable("Requests are temporarily unavailable."),
+            })?;
+        #[derive(Deserialize)]
+        struct Row {
+            id: String,
+            household_name: String,
+            email: String,
+            status: String,
+            requested_at: i64,
+        }
+        let rows=self.0.db.query::<Row>("SELECT q.id,h.name AS household_name,q.email,CASE WHEN q.status='pending' AND q.expires_at<=? THEN 'expired' ELSE q.status END AS status,q.requested_at FROM household_invitation_requests q JOIN households h ON h.id=q.household_id WHERE q.user_sub=? AND h.status<>'erased' ORDER BY q.requested_at DESC,q.id LIMIT 100",&[auth::now().to_string(),session.user_sub]).await?;
+        Response::ok(MyInvitationRequestPage {
+            requests: rows
+                .into_iter()
+                .map(|r| MyInvitationRequest {
+                    id: r.id,
+                    household_name: r.household_name,
+                    email: r.email,
+                    status: r.status,
+                    requested_at: r.requested_at,
+                    ..Default::default()
+                })
+                .collect(),
+            ..Default::default()
+        })
+    }
     async fn approve_invitation_request(
         &self,
         ctx: RequestContext,

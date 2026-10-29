@@ -103,6 +103,8 @@ impl Auth {
         let mut response=Json(serde_json::json!({"onboarding":true,"csrf":csrf,"expires_at":expires,"user_sub":subject,"display_name":name,"email":address})).into_response();
         for value in [
             self.set_cookie("onboarding", &token, 900),
+            self.set_cookie("request", "", 0),
+            self.set_cookie("request-lookup", "", 0),
             self.set_cookie("session", "", 0),
             self.set_cookie("login", "", 0),
         ] {
