@@ -147,6 +147,12 @@ async function upgrade(db) {
     ["table", "household_request_links", "0025_request_links"],
     ["table", "household_request_decisions", "0026_request_decisions"],
     ["table", "email_attempt_reservations", "0027_request_approval"],
+    [
+      "trigger",
+      "finalize_request_on_invitation_change",
+      "0028_request_final_state",
+    ],
+    ["trigger", "revoke_links_departed_head", "0029_request_link_lifecycle"],
   ])
     if (!exists(type, anchor))
       db.exec(
@@ -183,6 +189,8 @@ async function upgrade(db) {
     "0025_request_links.sql",
     "0026_request_decisions.sql",
     "0027_request_approval.sql",
+    "0028_request_final_state.sql",
+    "0029_request_link_lifecycle.sql",
   ];
   db.exec(
     "CREATE TABLE IF NOT EXISTS d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
@@ -274,9 +282,6 @@ function replay(
             .prepare("SELECT scope_sub FROM households WHERE id=?")
             .get(record.collection_id).scope_sub;
           db.prepare(
-            "DELETE FROM household_request_decisions WHERE household_id=?",
-          ).run(record.collection_id);
-          db.prepare(
             "INSERT INTO household_releases(household_id,subject,released_at) SELECT household_id,subject,? FROM household_allocations WHERE household_id=? ON CONFLICT(household_id,subject) DO NOTHING",
           ).run(record.erase_due_at, record.collection_id);
           for (const [table, kind] of [
@@ -301,14 +306,7 @@ function replay(
             db.prepare(`DELETE FROM ${table} WHERE owner_sub=?`).run(space);
           for (const sql of householdEmailErasure)
             db.prepare(sql).run(record.collection_id);
-          db.prepare(
-            "DELETE FROM household_request_operations WHERE request_id IN (SELECT id FROM household_invitation_requests WHERE household_id=?)",
-          ).run(record.collection_id);
-          db.prepare(
-            "DELETE FROM household_invitation_requests WHERE household_id=?",
-          ).run(record.collection_id);
           for (const table of [
-            "household_request_links",
             "household_invitations",
             "household_content_erasures",
             "household_activity",

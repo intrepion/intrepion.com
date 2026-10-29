@@ -3856,8 +3856,12 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
         .join("; "),
     },
   };
+  const approvedSubmission = {
+    operationId: crypto.randomUUID(),
+    confirmed: true,
+  };
   const approvedRequest = await invitations.submitInvitationRequest(
-    { operationId: crypto.randomUUID(), confirmed: true },
+    approvedSubmission,
     nextRequester,
   );
   assert.equal(
@@ -3940,6 +3944,15 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     { headers: onboardHeaders },
   );
   assert.equal(joined.householdId, id);
+  assert.equal(
+    (
+      await invitations.submitInvitationRequest(
+        approvedSubmission,
+        nextRequester,
+      )
+    ).status,
+    "accepted",
+  );
   await assert.rejects(
     invitations.listInvitationRequests({ id }, other),
     (e: unknown) =>
@@ -4513,14 +4526,73 @@ test("site account suspension and restoration preserve data, end old sessions an
   );
   const otherId = (await households.getOverview({}, other)).identity!.id;
   const ownerId = (await households.getOverview({}, owner)).identity!.id;
+  const otherHousehold = crypto.randomUUID();
   await households.changeHousehold(
     {
       action: HouseholdAction.CREATE,
-      householdId: crypto.randomUUID(),
+      householdId: otherHousehold,
       operationId: crypto.randomUUID(),
       name: "Account access usage projection",
     },
     other,
+  );
+  const invitations = createClient(
+    EmailInvitationService,
+    createConnectTransport({ baseUrl }),
+  );
+  const growthForSuspension = await admin.getGrowth({}, owner);
+  if (growthForSuspension.paused)
+    await admin.changeGrowth(
+      {
+        operationId: crypto.randomUUID(),
+        expectedRevision: growthForSuspension.revision,
+        paused: false,
+        confirmed: true,
+      },
+      owner,
+    );
+  const otherLink = await invitations.createRequestLink(
+    { operationId: crypto.randomUUID(), householdId: otherHousehold },
+    other,
+  );
+  const challenge = await fetch(`${baseUrl}/auth/challenge`, {
+    method: "POST",
+    headers: { origin },
+  });
+  const { nonce } = (await challenge.json()) as { nonce: string };
+  const prospective = await fetch(`${baseUrl}/auth/development`, {
+    method: "POST",
+    headers: {
+      origin,
+      "content-type": "application/json",
+      cookie: challenge.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+    body: JSON.stringify({
+      nonce,
+      credential: "suspension-requester",
+      request_token: otherLink.token,
+      development_email: "suspension@example.invalid",
+      development_name: "Requester",
+    }),
+  });
+  assert.equal(prospective.status, 200);
+  const requestIdentity = (await prospective.json()) as { csrf: string };
+  const requestSession = {
+    headers: {
+      origin,
+      "x-csrf-token": requestIdentity.csrf,
+      cookie: prospective.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+  };
+  await invitations.submitInvitationRequest(
+    { operationId: crypto.randomUUID(), confirmed: true },
+    requestSession,
   );
   const before = (await client.listTasks({}, other)).tasks
     .map((t) => t.id)
@@ -4568,6 +4640,11 @@ test("site account suspension and restoration preserve data, end old sessions an
       e instanceof ConnectError && e.code === Code.PermissionDenied,
   );
   const suspended = await admin.setAccountAccess(change, owner);
+  await assert.rejects(
+    invitations.getRequestPreview({}, requestSession),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.Unauthenticated,
+  );
   assert.equal(suspended.suspended, true);
   assert.equal(suspended.accessRevision, metadata.accessRevision + 1n);
   assert.equal(suspended.protectionPending, false);

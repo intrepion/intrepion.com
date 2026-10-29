@@ -4,3 +4,8 @@ DELETE FROM email_invitation_operations WHERE invitation_id IN(SELECT id FROM em
 DELETE FROM invitation_acceptance_receipts WHERE household_id=?;
 DELETE FROM onboarding_sessions WHERE invitation_id IN(SELECT id FROM email_invitations WHERE household_id=?);
 DELETE FROM email_invitations WHERE household_id=?;
+DELETE FROM household_request_decisions WHERE household_id=?;
+DELETE FROM household_request_operations WHERE request_id IN(SELECT id FROM household_invitation_requests WHERE household_id=?);
+DELETE FROM request_sessions WHERE link_id IN(SELECT id FROM household_request_links WHERE household_id=?);
+DELETE FROM household_invitation_requests WHERE household_id=?;
+DELETE FROM household_request_links WHERE household_id=?;

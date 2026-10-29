@@ -321,7 +321,7 @@ test("recovering an MVP 1 archive upgrades retained tasks and the migration ledg
       );
       assert.equal(
         restored.prepare("SELECT count(*) n FROM d1_migrations").get().n,
-        27,
+        29,
       );
       assert.equal(restored.prepare("SELECT count(*) n FROM tasks").get().n, 0);
     } finally {
@@ -799,6 +799,9 @@ test("encrypted recovery preserves later account suspensions and head removals a
       INSERT INTO site_audit(operation_id,actor_sub,action,occurred_at) VALUES('${id(916)}','restore-owner','Expired audit',unixepoch('now','-2 years'));
       INSERT INTO email_suppressions(recipient_email,reason) VALUES('retained-block@example.invalid','complaint');
       INSERT INTO household_request_links(id,household_id,created_by,token_hash,expires_at) VALUES('${id(926)}','${id(901)}','restore-owner','request-link-hash',unixepoch()+86400);
+      INSERT INTO household_invitation_requests(id,household_id,link_id,user_sub,email,display_name,status,consent_version,requested_at,expires_at,closed_at) VALUES('${id(927)}','${id(901)}','${id(926)}','old-requester','old@example.invalid','Old requester','declined','v1',unixepoch()-40*86400,unixepoch()-33*86400,unixepoch()-31*86400);
+      INSERT INTO household_request_operations(user_sub,operation_id,link_id,request_id) VALUES('old-requester','${id(928)}','${id(926)}','${id(927)}');
+      INSERT INTO household_request_decisions(actor_sub,operation_id,request_id,household_id,action) VALUES('restore-owner','${id(929)}','${id(927)}','${id(901)}','decline');
       INSERT OR REPLACE INTO email_monthly_attempts(month,attempted) VALUES(strftime('%Y-%m','now'),9999);
     `),
     ]);
@@ -827,6 +830,30 @@ test("encrypted recovery preserves later account suspensions and head removals a
           .prepare("SELECT revoked FROM household_request_links WHERE id=?")
           .get(id(926)).revoked,
         1,
+      );
+      assert.equal(
+        pendingDb
+          .prepare(
+            "SELECT count(*) n FROM household_invitation_requests WHERE id=?",
+          )
+          .get(id(927)).n,
+        0,
+      );
+      assert.equal(
+        pendingDb
+          .prepare(
+            "SELECT count(*) n FROM household_request_operations WHERE request_id=?",
+          )
+          .get(id(927)).n,
+        0,
+      );
+      assert.equal(
+        pendingDb
+          .prepare(
+            "SELECT count(*) n FROM household_request_decisions WHERE request_id=?",
+          )
+          .get(id(927)).n,
+        0,
       );
       assert.equal(
         pendingDb.prepare("SELECT count(*) n FROM email_send_attempts").get().n,
@@ -893,6 +920,8 @@ test("encrypted recovery preserves later account suspensions and head removals a
       INSERT INTO email_feedback_receipts(id,digest,claim_id,invitation_id) VALUES('${id(922)}','test-digest','test-claim','${id(919)}');
       INSERT INTO email_invitation_operations(actor_sub,operation_id,fingerprint,invitation_id) VALUES('restore-owner','${id(923)}','test-fingerprint','${id(919)}');
       INSERT INTO invitation_acceptance_receipts(user_sub,operation_id,fingerprint,invitation_id,household_id) VALUES('later-removed','${id(924)}','test-fingerprint','${id(919)}','${id(901)}');
+      INSERT INTO household_invitation_requests(id,household_id,link_id,user_sub,email,display_name,status,consent_version,requested_at,expires_at) VALUES('${id(940)}','${id(901)}','${id(926)}','live-requester','live@example.invalid','Live requester','pending','v1',unixepoch(),unixepoch()+86400);
+      INSERT INTO household_request_operations(user_sub,operation_id,link_id,request_id) VALUES('live-requester','${id(941)}','${id(926)}','${id(940)}');
     `),
     ]);
     const erased = await recoverArchive(
@@ -921,6 +950,9 @@ test("encrypted recovery preserves later account suspensions and head removals a
       erasedDb.exec(erased.toString());
       for (const table of [
         "household_request_links",
+        "household_invitation_requests",
+        "household_request_operations",
+        "household_request_decisions",
         "email_invitations",
         "email_send_attempts",
         "email_feedback_receipts",
