@@ -229,6 +229,70 @@ impl Invitations {
 }
 #[allow(refining_impl_trait)]
 impl EmailInvitationService for Invitations {
+    async fn get_request_notifications(
+        &self,
+        ctx: RequestContext,
+        r: ServiceRequest<'_, HouseholdKey>,
+    ) -> ServiceResult<RequestNotificationSettings> {
+        let session = self.0.authorize_rpc(&ctx).await?;
+        Households(self.0.clone())
+            .require_head(r.id, &session.user_sub)
+            .await?;
+        #[derive(Deserialize)]
+        struct Settings {
+            email: String,
+            enabled: i32,
+            confirmed_email: String,
+        }
+        let row=self.0.db.query::<Settings>("SELECT a.google_verified_email AS email,coalesce(s.enabled,0) AS enabled,coalesce(s.confirmed_email,'') AS confirmed_email FROM pilot_accounts a LEFT JOIN household_request_notification_settings s ON s.head_sub=a.subject AND s.household_id=? WHERE a.subject=? AND a.approved=1",&[r.id.into(),session.user_sub]).await?.pop().ok_or_else(unavailable)?;
+        Response::ok(RequestNotificationSettings {
+            enabled: row.enabled != 0,
+            confirmation_required: row.enabled != 0
+                && (row.email.is_empty() || row.email != row.confirmed_email),
+            email: row.email,
+            ..Default::default()
+        })
+    }
+    async fn set_request_notifications(
+        &self,
+        ctx: RequestContext,
+        r: ServiceRequest<'_, RequestNotificationChange>,
+    ) -> ServiceResult<RequestNotificationSettings> {
+        let session = self.0.authorize_rpc(&ctx).await?;
+        if !r.confirmed || !valid_id(r.household_id) {
+            return Err(ConnectError::invalid_argument(
+                "Confirm notification settings.",
+            ));
+        }
+        Households(self.0.clone())
+            .require_head(r.household_id, &session.user_sub)
+            .await?;
+        let result=self.0.db.batch(&[
+            Statement::new("INSERT INTO household_request_notification_settings(household_id,head_sub,enabled,confirmed_email) SELECT h.id,a.subject,?,CASE WHEN CAST(? AS INTEGER)=1 THEN a.google_verified_email ELSE '' END FROM households h JOIN household_heads m ON m.household_id=h.id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=? AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1 AND (CAST(? AS INTEGER)=0 OR a.google_verified_email<>'') ON CONFLICT(household_id,head_sub) DO UPDATE SET enabled=excluded.enabled,confirmed_email=excluded.confirmed_email",vec![(r.enabled as u8).to_string(),(r.enabled as u8).to_string(),r.household_id.into(),session.user_sub.clone(),(r.enabled as u8).to_string()]),
+            Statement::new("SELECT s.enabled,a.google_verified_email AS email,s.confirmed_email FROM household_request_notification_settings s JOIN pilot_accounts a ON a.subject=s.head_sub JOIN household_heads m ON m.household_id=s.household_id AND m.subject=s.head_sub JOIN households h ON h.id=s.household_id WHERE s.household_id=? AND s.head_sub=? AND s.enabled=? AND m.active=1 AND a.approved=1 AND h.status='active' AND (s.enabled=0 OR (a.google_verified_email<>'' AND s.confirmed_email=a.google_verified_email))",vec![r.household_id.into(),session.user_sub,(r.enabled as u8).to_string()]),
+        ]).await?;
+        #[derive(Deserialize)]
+        struct Settings {
+            email: String,
+            enabled: i32,
+            confirmed_email: String,
+        }
+        let row: Settings = serde_json::from_value(
+            result
+                .last()
+                .and_then(|v| v.first())
+                .cloned()
+                .ok_or_else(unavailable)?,
+        )
+        .map_err(|_| ConnectError::internal("Settings could not be read."))?;
+        Response::ok(RequestNotificationSettings {
+            enabled: row.enabled != 0,
+            confirmation_required: row.enabled != 0
+                && (row.email.is_empty() || row.email != row.confirmed_email),
+            email: row.email,
+            ..Default::default()
+        })
+    }
     async fn withdraw_invitation_request(
         &self,
         ctx: RequestContext,

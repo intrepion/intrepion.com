@@ -3715,6 +3715,103 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     owner,
   );
   const linkAction = { operationId: crypto.randomUUID(), householdId: id };
+  const defaultNotifications = await invitations.getRequestNotifications(
+    { id },
+    owner,
+  );
+  assert.equal(defaultNotifications.enabled, false);
+  await assert.rejects(
+    invitations.setRequestNotifications(
+      { householdId: id, enabled: true, confirmed: true },
+      owner,
+    ),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.FailedPrecondition,
+  );
+  const headChallenge = await fetch(`${baseUrl}/auth/challenge`, {
+    method: "POST",
+    headers: { origin },
+  });
+  const headNonce = ((await headChallenge.json()) as { nonce: string }).nonce;
+  const headLogin = await fetch(`${baseUrl}/auth/development`, {
+    method: "POST",
+    headers: {
+      origin,
+      "content-type": "application/json",
+      cookie: headChallenge.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+    body: JSON.stringify({
+      nonce: headNonce,
+      credential: "development-owner",
+      development_email: "head@example.invalid",
+    }),
+  });
+  assert.equal(headLogin.status, 200);
+  const headIdentity = (await headLogin.json()) as { csrf: string };
+  const headSession = {
+    headers: {
+      origin,
+      "x-csrf-token": headIdentity.csrf,
+      cookie: headLogin.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+  };
+  const optedIn = await invitations.setRequestNotifications(
+    { householdId: id, enabled: true, confirmed: true },
+    headSession,
+  );
+  assert.equal(optedIn.enabled, true);
+  assert.equal(optedIn.email, "head@example.invalid");
+  const changedChallenge = await fetch(`${baseUrl}/auth/challenge`, {
+    method: "POST",
+    headers: { origin },
+  });
+  const changedNonce = ((await changedChallenge.json()) as { nonce: string })
+    .nonce;
+  const changedLogin = await fetch(`${baseUrl}/auth/development`, {
+    method: "POST",
+    headers: {
+      origin,
+      "content-type": "application/json",
+      cookie: changedChallenge.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+    body: JSON.stringify({
+      nonce: changedNonce,
+      credential: "development-owner",
+      development_email: "new-head@example.invalid",
+    }),
+  });
+  assert.equal(changedLogin.status, 200);
+  const changedIdentity = (await changedLogin.json()) as { csrf: string };
+  const changedSession = {
+    headers: {
+      origin,
+      "x-csrf-token": changedIdentity.csrf,
+      cookie: changedLogin.headers
+        .getSetCookie()
+        .map((s) => s.split(";")[0])
+        .join("; "),
+    },
+  };
+  const pausedSettings = await invitations.getRequestNotifications(
+    { id },
+    changedSession,
+  );
+  assert.equal(pausedSettings.confirmationRequired, true);
+  assert.equal(pausedSettings.email, "new-head@example.invalid");
+  const reconfirmed = await invitations.setRequestNotifications(
+    { householdId: id, enabled: true, confirmed: true },
+    changedSession,
+  );
+  assert.equal(reconfirmed.confirmationRequired, false);
   const bytesBeforeLink = (await admin.getOverview({}, owner)).households.find(
     (h) => h.id === id,
   )!.usage!.bytes;

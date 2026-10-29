@@ -393,6 +393,23 @@ impl Auth {
         );
         Ok(response)
     }
+    async fn record_verified_email(
+        &self,
+        subject: &str,
+        address: Option<&str>,
+    ) -> Result<(), AuthError> {
+        let email = match address {
+            Some(value) => crate::invitations::email(value).map_err(|_| forbidden())?,
+            None => String::new(),
+        };
+        self.db
+            .query::<serde_json::Value>(
+                "UPDATE pilot_accounts SET google_verified_email=? WHERE subject=? AND approved=1",
+                &[email, subject.into()],
+            )
+            .await?;
+        Ok(())
+    }
 }
 
 pub async fn configuration(
@@ -485,7 +502,17 @@ pub async fn login(
             )
             .await;
     }
-    auth.issue_session(&claims.sub).await
+    let response = auth.issue_session(&claims.sub).await?;
+    auth.record_verified_email(
+        &claims.sub,
+        if claims.email_verified {
+            claims.email.as_deref()
+        } else {
+            None
+        },
+    )
+    .await?;
+    Ok(response)
 }
 #[cfg(feature = "dev-auth")]
 pub async fn development_login(
@@ -540,7 +567,11 @@ pub async fn development_login(
             )
             .await;
     }
-    auth.issue_session(subject).await
+    let response = auth.issue_session(subject).await?;
+    if let Some(email) = login.development_email.as_deref() {
+        auth.record_verified_email(subject, Some(email)).await?;
+    }
+    Ok(response)
 }
 pub async fn current_session(
     State(auth): State<SharedAuth>,
