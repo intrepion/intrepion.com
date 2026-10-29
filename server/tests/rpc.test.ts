@@ -3715,7 +3715,17 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     owner,
   );
   const linkAction = { operationId: crypto.randomUUID(), householdId: id };
+  const bytesBeforeLink = (await admin.getOverview({}, owner)).households.find(
+    (h) => h.id === id,
+  )!.usage!.bytes;
   const requestLink = await invitations.createRequestLink(linkAction, owner);
+  assert.ok(
+    (await admin.getOverview({}, owner)).households.find((h) => h.id === id)!
+      .usage!.bytes > bytesBeforeLink,
+  );
+  const bytesAfterLink = (await admin.getOverview({}, owner)).households.find(
+    (h) => h.id === id,
+  )!.usage!.bytes;
   assert.match(requestLink.token, /^[a-f0-9]{64}$/);
   assert.equal(
     (await invitations.createRequestLink(linkAction, owner)).id,
@@ -3783,6 +3793,10 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     requester,
   );
   assert.equal(requested.status, "pending");
+  assert.ok(
+    (await admin.getOverview({}, owner)).households.find((h) => h.id === id)!
+      .usage!.bytes > bytesAfterLink,
+  );
   const lookupChallenge = await fetch(`${baseUrl}/auth/challenge`, {
     method: "POST",
     headers: { origin },

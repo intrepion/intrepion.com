@@ -491,8 +491,27 @@ impl EmailInvitationService for Invitations {
             requested_at: i64,
             link_id: String,
         }
+        #[derive(Deserialize)]
+        struct LinkScope {
+            household_id: String,
+        }
+        let scope = self
+            .0
+            .db
+            .query::<LinkScope>(
+                "SELECT household_id FROM household_request_links WHERE id=?",
+                std::slice::from_ref(&session.link_id),
+            )
+            .await?
+            .pop()
+            .ok_or_else(unavailable)?;
         let now = auth::now();
-        let statements = vec![
+        let mut statements = vec![
+            capacity::snapshot(
+                &format!("household:{}", scope.household_id),
+                &session.user_sub,
+                "",
+            ),
             Statement::new(
                 "UPDATE household_invitation_requests SET status='expired',closed_at=expires_at WHERE status='pending' AND expires_at<=?",
                 vec![now.to_string()],
@@ -533,6 +552,10 @@ impl EmailInvitationService for Invitations {
                 vec![session.user_sub.clone(), r.operation_id.into()],
             ),
         ];
+        let result_query = statements.pop().expect("request result query");
+        statements.extend(capacity::content_checks());
+        statements.push(Statement::new("DELETE FROM invariant_guards", vec![]));
+        statements.push(result_query);
         let result = self.0.db.batch(&statements).await?;
         let row: RequestRow = serde_json::from_value(
             result
@@ -679,9 +702,17 @@ impl EmailInvitationService for Invitations {
         let existing = read().await?;
         if existing.is_empty() {
             let expires = (auth::now() + 7 * 86400).to_string();
-            self.0.db.batch(&[
+            let mut statements = vec![capacity::snapshot(
+                &format!("household:{}", r.household_id),
+                &session.user_sub,
+                "",
+            )];
+            statements.push(
                 Statement::new("INSERT INTO household_request_links(id,household_id,created_by,token_hash,expires_at) SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=? AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1) ON CONFLICT(id) DO NOTHING", vec![r.operation_id.into(),r.household_id.into(),session.user_sub.clone(),token_hash,expires,r.household_id.into(),session.user_sub.clone()]),
-            ]).await?;
+            );
+            statements.extend(capacity::content_checks());
+            statements.push(Statement::new("DELETE FROM invariant_guards", vec![]));
+            self.0.db.batch(&statements).await?;
         }
         let row = read().await?.pop().ok_or_else(unavailable)?;
         if row.household_id != r.household_id

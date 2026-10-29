@@ -155,6 +155,7 @@ async function upgrade(db) {
     ["trigger", "revoke_links_departed_head", "0029_request_link_lifecycle"],
     ["table", "request_lookup_sessions", "0030_request_lookup"],
     ["table", "household_request_withdrawals", "0031_request_withdrawals"],
+    ["index", "request_storage_marker", "0032_request_storage"],
   ])
     if (!exists(type, anchor))
       db.exec(
@@ -195,6 +196,7 @@ async function upgrade(db) {
     "0029_request_link_lifecycle.sql",
     "0030_request_lookup.sql",
     "0031_request_withdrawals.sql",
+    "0032_request_storage.sql",
   ];
   db.exec(
     "CREATE TABLE IF NOT EXISTS d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
