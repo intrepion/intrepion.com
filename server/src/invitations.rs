@@ -979,8 +979,19 @@ impl EmailInvitationService for Invitations {
         Households(self.0.clone())
             .require_head(r.id, &session.user_sub)
             .await?;
-        let rows=self.0.db.query::<InvitationRow>("SELECT id,household_id,recipient_email,status,delivery_status,expires_at,revision,generation,created_by FROM email_invitations WHERE household_id=? ORDER BY created_at DESC,id LIMIT 100",&[r.id.into()]).await?;
+        if !r.after_id.is_empty() && !valid_id(r.after_id) {
+            return Err(ConnectError::invalid_argument("Invalid page cursor."));
+        }
+        let mut rows=self.0.db.query::<InvitationRow>("SELECT id,household_id,recipient_email,status,delivery_status,expires_at,revision,generation,created_by FROM email_invitations WHERE household_id=? AND id>? ORDER BY id LIMIT 11",&[r.id.into(),r.after_id.into()]).await?;
+        let more = rows.len() > 10;
+        rows.truncate(10);
+        let next_after_id = if more {
+            rows.last().map_or_else(String::new, |row| row.id.clone())
+        } else {
+            String::new()
+        };
         Response::ok(EmailInvitationPage {
+            next_after_id,
             invitations: rows.into_iter().map(|r| self.public(r)).collect(),
             ..Default::default()
         })

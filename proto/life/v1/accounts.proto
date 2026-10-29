@@ -151,7 +151,7 @@ message EmailInvitation {
  int64 expires_at = 5;
  uint64 revision = 6;
 }
-message EmailInvitationPage { repeated EmailInvitation invitations = 1; }
+message EmailInvitationPage { repeated EmailInvitation invitations = 1; string next_after_id = 2; }
 message GrowthChange {
  string operation_id = 1;
  uint64 expected_revision = 2;

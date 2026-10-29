@@ -6375,6 +6375,39 @@ test("active request links and pending requests remain accessible across pages",
     ).size,
     11,
   );
+  for (const request of [...firstRequests.requests, ...secondRequests.requests])
+    await invites.approveInvitationRequest(
+      {
+        householdId: id,
+        requestId: request.id,
+        operationId: crypto.randomUUID(),
+        confirmed: true,
+      },
+      owner,
+    );
+  const firstInvitations = await invites.listInvitations({ id }, owner);
+  assert.equal(firstInvitations.invitations.length, 10);
+  assert.ok(firstInvitations.nextAfterId);
+  const secondInvitations = await invites.listInvitations(
+    { id, afterId: firstInvitations.nextAfterId },
+    owner,
+  );
+  assert.equal(secondInvitations.invitations.length, 1);
+  for (const invitation of [
+    ...firstInvitations.invitations,
+    ...secondInvitations.invitations,
+  ])
+    await invites.changeInvitation(
+      {
+        householdId: id,
+        invitationId: invitation.id,
+        expectedRevision: invitation.revision,
+        action: EmailInvitationAction.REVOKE,
+        operationId: crypto.randomUUID(),
+        confirmed: true,
+      },
+      owner,
+    );
 });
 
 test("an interrupted final email attempt leaves the handoff gate closed after restart", async () => {

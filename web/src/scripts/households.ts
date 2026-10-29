@@ -71,6 +71,7 @@ export class Households {
   private invitationToken = "";
   private malformedInvitation = false;
   private emailInvitations: EmailInvitation[] = [];
+  private emailInvitationsCursor = "";
   private invitationRequests: InvitationRequest[] = [];
   private requestNotifications?: RequestNotificationSettings;
   private requestLinks: RequestLinkSummary[] = [];
@@ -783,6 +784,10 @@ export class Households {
           );
       this.root.append(card);
     }
+    if (this.emailInvitationsCursor)
+      this.root.append(
+        button("Show more invitations", () => void this.loadMoreInvitations()),
+      );
     if (!this.emailInvitations.length)
       this.root.append(element("p", "No invitations yet."));
     if (detail.pendingContentErasure) {
@@ -1383,13 +1388,14 @@ export class Households {
       { householdId: this.api.space },
       { timeoutMs: 90000 },
     );
-    if (this.overview?.normalAccounts)
-      this.emailInvitations = (
-        await this.api.invitations.listInvitations(
-          { id: this.api.space },
-          { timeoutMs: 90000 },
-        )
-      ).invitations;
+    if (this.overview?.normalAccounts) {
+      const invitationsPage = await this.api.invitations.listInvitations(
+        { id: this.api.space },
+        { timeoutMs: 90000 },
+      );
+      this.emailInvitations = invitationsPage.invitations;
+      this.emailInvitationsCursor = invitationsPage.nextAfterId;
+    }
     if (this.overview?.normalAccounts) {
       const requestsPage = await this.api.invitations.listInvitationRequests(
         { id: this.api.space },
@@ -1412,6 +1418,22 @@ export class Households {
     this.activity = page.entries;
     this.activityCursor = page.nextBeforeSequence;
     this.renderHousehold();
+  }
+  private async loadMoreInvitations() {
+    this.hooks.busy(true);
+    try {
+      const page = await this.api.invitations.listInvitations(
+        { id: this.api.space, afterId: this.emailInvitationsCursor },
+        { timeoutMs: 90000 },
+      );
+      this.emailInvitations.push(...page.invitations);
+      this.emailInvitationsCursor = page.nextAfterId;
+      this.renderHousehold();
+    } catch (error) {
+      this.problem(error);
+    } finally {
+      this.hooks.busy(false);
+    }
   }
   private async loadMoreLinks() {
     this.hooks.busy(true);
