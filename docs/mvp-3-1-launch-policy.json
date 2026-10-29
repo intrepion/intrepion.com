@@ -1,6 +1,7 @@
 {
-  "status": "owner-approved-not-yet-applied",
+  "status": "owner-approved-and-applied",
   "approved_on_utc": "2026-10-29",
+  "verified_applied_on_utc": "2026-10-29",
   "personal_soft": { "items": 800, "shopping": 80, "templates": 80, "runs": 800, "bytes": 838860, "households": 8 },
   "personal_hard": { "items": 1000, "shopping": 100, "templates": 100, "runs": 1000, "bytes": 1048576, "households": 10 },
   "household_soft": { "items": 800, "shopping": 80, "templates": 80, "runs": 800, "bytes": 838860, "households": 8 },
