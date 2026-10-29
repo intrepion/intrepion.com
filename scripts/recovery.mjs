@@ -146,6 +146,7 @@ async function upgrade(db) {
     ["trigger", "record_account_admission", "0024_protected_account_admission"],
     ["table", "household_request_links", "0025_request_links"],
     ["table", "household_request_decisions", "0026_request_decisions"],
+    ["table", "email_attempt_reservations", "0027_request_approval"],
   ])
     if (!exists(type, anchor))
       db.exec(
@@ -181,6 +182,7 @@ async function upgrade(db) {
     "0024_protected_account_admission.sql",
     "0025_request_links.sql",
     "0026_request_decisions.sql",
+    "0027_request_approval.sql",
   ];
   db.exec(
     "CREATE TABLE IF NOT EXISTS d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",

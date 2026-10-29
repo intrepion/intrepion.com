@@ -106,12 +106,13 @@ impl Invitations {
         };
         // Re-evaluate recipient, issuer, membership, suspension, expiry and growth in
         // the same transaction as account/membership admission and durable receipt.
-        let eligible = "EXISTS(SELECT 1 FROM email_invitations i JOIN households h ON h.id=i.household_id JOIN household_heads m ON m.household_id=h.id AND m.subject=i.created_by JOIN pilot_accounts a ON a.subject=m.subject JOIN invitation_growth g ON g.id=1 JOIN site_safety_policy p ON p.id=1 WHERE i.id=? AND i.generation=? AND i.recipient_email=? AND i.status='pending' AND i.expires_at>unixepoch() AND h.status='active' AND m.active=1 AND a.approved=1 AND g.paused=0 AND p.enabled=1 AND NOT EXISTS(SELECT 1 FROM protected_account_access x WHERE x.subject_hash=? AND x.active=0))";
+        let eligible = "EXISTS(SELECT 1 FROM email_invitations i JOIN households h ON h.id=i.household_id JOIN household_heads m ON m.household_id=h.id AND m.subject=i.created_by JOIN pilot_accounts a ON a.subject=m.subject JOIN invitation_growth g ON g.id=1 JOIN site_safety_policy p ON p.id=1 WHERE i.id=? AND i.generation=? AND i.recipient_email=? AND (i.recipient_sub='' OR i.recipient_sub=?) AND i.status='pending' AND i.expires_at>unixepoch() AND h.status='active' AND m.active=1 AND a.approved=1 AND g.paused=0 AND p.enabled=1 AND NOT EXISTS(SELECT 1 FROM protected_account_access x WHERE x.subject_hash=? AND x.active=0))";
         let guard_values = || {
             vec![
                 o.invitation_id.clone(),
                 o.generation.to_string(),
                 o.email.clone(),
+                o.user_sub.clone(),
                 crate::security::subject_hash(&o.user_sub),
             ]
         };

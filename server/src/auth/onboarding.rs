@@ -71,9 +71,12 @@ impl Auth {
             generation: u64,
             status: String,
             recipient_email: String,
+            recipient_sub: String,
         }
-        let invite=self.db.query::<Invite>("SELECT i.id,i.generation,i.status,i.recipient_email FROM email_invitations i JOIN households h ON h.id=i.household_id WHERE i.token_hash=? AND i.expires_at>? AND h.status='active' AND NOT EXISTS(SELECT 1 FROM pilot_accounts a WHERE a.subject=? AND a.approved=0) AND NOT EXISTS(SELECT 1 FROM protected_account_access p WHERE p.subject_hash=? AND p.active=0) AND ((i.status='pending' AND EXISTS(SELECT 1 FROM household_heads m JOIN pilot_accounts a ON a.subject=m.subject WHERE m.household_id=i.household_id AND m.subject=i.created_by AND m.active=1 AND a.approved=1)) OR (i.status='accepted' AND i.accepted_by=? AND EXISTS(SELECT 1 FROM household_heads m WHERE m.household_id=i.household_id AND m.subject=? AND m.active=1)))",&[hash(token),now().to_string(),subject.into(),crate::security::subject_hash(subject),subject.into(),subject.into()]).await?.pop().ok_or_else(unavailable)?;
-        if invite.recipient_email != address {
+        let invite=self.db.query::<Invite>("SELECT i.id,i.generation,i.status,i.recipient_email,i.recipient_sub FROM email_invitations i JOIN households h ON h.id=i.household_id WHERE i.token_hash=? AND i.expires_at>? AND h.status='active' AND NOT EXISTS(SELECT 1 FROM pilot_accounts a WHERE a.subject=? AND a.approved=0) AND NOT EXISTS(SELECT 1 FROM protected_account_access p WHERE p.subject_hash=? AND p.active=0) AND ((i.status='pending' AND EXISTS(SELECT 1 FROM household_heads m JOIN pilot_accounts a ON a.subject=m.subject WHERE m.household_id=i.household_id AND m.subject=i.created_by AND m.active=1 AND a.approved=1)) OR (i.status='accepted' AND i.accepted_by=? AND EXISTS(SELECT 1 FROM household_heads m WHERE m.household_id=i.household_id AND m.subject=? AND m.active=1)))",&[hash(token),now().to_string(),subject.into(),crate::security::subject_hash(subject),subject.into(),subject.into()]).await?.pop().ok_or_else(unavailable)?;
+        if invite.recipient_email != address
+            || (!invite.recipient_sub.is_empty() && invite.recipient_sub != subject)
+        {
             return Err(forbidden());
         }
         if invite.status == "accepted" {

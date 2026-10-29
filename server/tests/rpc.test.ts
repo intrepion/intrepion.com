@@ -3856,7 +3856,7 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
         .join("; "),
     },
   };
-  await invitations.submitInvitationRequest(
+  const approvedRequest = await invitations.submitInvitationRequest(
     { operationId: crypto.randomUUID(), confirmed: true },
     nextRequester,
   );
@@ -3864,6 +3864,82 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     (await invitations.listInvitationRequests({ id }, owner)).requests.length,
     1,
   );
+  const approval = {
+    operationId: crypto.randomUUID(),
+    householdId: id,
+    requestId: approvedRequest.id,
+    confirmed: true,
+  };
+  await assert.rejects(
+    invitations.approveInvitationRequest(approval, other),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.PermissionDenied,
+  );
+  const issued = await invitations.approveInvitationRequest(approval, owner);
+  assert.equal(issued.recipientEmail, "alex@example.invalid");
+  assert.equal(
+    (await invitations.approveInvitationRequest(approval, owner)).id,
+    issued.id,
+  );
+  await assert.rejects(
+    invitations.declineInvitationRequest(
+      { ...approval, operationId: crypto.randomUUID() },
+      owner,
+    ),
+    (e: unknown) =>
+      e instanceof ConnectError && e.code === Code.FailedPrecondition,
+  );
+  const emailOps = createClient(
+    EmailOperationsService,
+    createConnectTransport({ baseUrl }),
+  );
+  await emailOps.processQueue(
+    {},
+    { headers: { authorization: `Bearer ${"ef".repeat(32)}` } },
+  );
+  const messages = (await (
+    await fetch("http://127.0.0.1:8793/messages", {
+      headers: { authorization: "Bearer local-email-only" },
+    })
+  ).json()) as { messages: { recipient: string; text: string }[] };
+  const receivedRequestMail = messages.messages.find(
+    (m) => m.recipient === "alex@example.invalid",
+  );
+  assert.ok(receivedRequestMail);
+  const approvedToken = receivedRequestMail.text.match(
+    /#invite=([a-f0-9]{64})/,
+  )?.[1];
+  assert.ok(approvedToken);
+  assert.equal(
+    (
+      await invitationLogin(
+        approvedToken,
+        "wrong-google-subject",
+        "alex@example.invalid",
+      )
+    ).status,
+    403,
+  );
+  const correctLogin = await invitationLogin(
+    approvedToken,
+    "another-requester",
+    "alex@example.invalid",
+  );
+  assert.equal(correctLogin.status, 200);
+  const onboarding = (await correctLogin.json()) as { csrf: string };
+  const onboardHeaders = {
+    origin,
+    "x-csrf-token": onboarding.csrf,
+    cookie: correctLogin.headers
+      .getSetCookie()
+      .map((s) => s.split(";")[0])
+      .join("; "),
+  };
+  const joined = await invitations.acceptInvitation(
+    { operationId: crypto.randomUUID(), displayName: "Alex", confirmed: true },
+    { headers: onboardHeaders },
+  );
+  assert.equal(joined.householdId, id);
   await assert.rejects(
     invitations.listInvitationRequests({ id }, other),
     (e: unknown) =>
@@ -3909,7 +3985,7 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
   assert.equal((await invitations.changeInvitation(change, owner)).id, sent.id);
   assert.equal(
     (await invitations.listInvitations({ id }, owner)).invitations.length,
-    1,
+    2,
   );
   await assert.rejects(
     invitations.listInvitations({ id }, other),
@@ -3944,6 +4020,11 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     owner,
   );
   assert.equal(revoked.status, "revoked");
+  // The scenario exercises several sign-ins; isolate the in-memory login limiter
+  // so unrelated tests do not depend on how many checks this scenario makes.
+  await stop(server);
+  server = start("target/debug/intrepion-server", [], { env: localEnv });
+  await ready(`${baseUrl}/health/live`);
 });
 
 test("private email operations deliver the recipient link and count attempts without exposing it to heads", async () => {

@@ -101,6 +101,7 @@ service EmailInvitationService {
   rpc SubmitInvitationRequest(InvitationRequestSubmit) returns (InvitationRequest);
   rpc ListInvitationRequests(HouseholdKey) returns (InvitationRequestPage);
   rpc DeclineInvitationRequest(InvitationRequestDecision) returns (Empty);
+  rpc ApproveInvitationRequest(InvitationRequestDecision) returns (EmailInvitation);
   rpc ListInvitations(HouseholdKey) returns (EmailInvitationPage);
   rpc GetOnboarding(Empty) returns (OnboardingPreview);
   rpc AcceptInvitation(InvitationAcceptance) returns (AccountSession);

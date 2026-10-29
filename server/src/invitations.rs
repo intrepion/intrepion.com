@@ -180,7 +180,7 @@ impl Invitations {
                     let token =
                         self.token(&id, old.generation.checked_add(1).ok_or_else(unavailable)?)?;
                     let token_hash = format!("{:x}", Sha256::digest(token.as_bytes()));
-                    statements.push(Statement::new(&format!("UPDATE email_invitations SET token_hash=?,generation=generation+1,expires_at=?,revision=revision+1,delivery_status='queued',attempts=0,claim_id='',claim_until=0,next_attempt_at=0,last_operation=? WHERE id=? AND revision=? AND status='pending' AND {authority} AND {open_growth}"),vec![token_hash,(auth::now()+7*86400).to_string(),r.operation_id.clone(),id.clone(),r.expected_revision.to_string(),r.household_id.clone(),actor.into()]));
+                    statements.push(Statement::new(&format!("UPDATE email_invitations SET token_hash=?,generation=generation+1,expires_at=?,revision=revision+1,delivery_status='queued',attempts=0,claim_id='',claim_until=0,next_attempt_at=0,last_operation=? WHERE id=? AND revision=? AND status='pending' AND (consent_until=0 OR consent_until>?) AND {authority} AND {open_growth}"),vec![token_hash,(auth::now()+7*86400).to_string(),r.operation_id.clone(),id.clone(),r.expected_revision.to_string(),auth::now().to_string(),r.household_id.clone(),actor.into()]));
                 } else {
                     statements.push(Statement::new(&format!("UPDATE email_invitations SET status='revoked',delivery_status='canceled',revision=revision+1,last_operation=? WHERE id=? AND revision=? AND status='pending' AND {authority}"),vec![r.operation_id.clone(),id.clone(),r.expected_revision.to_string(),r.household_id.clone(),actor.into()]));
                 }
@@ -229,6 +229,132 @@ impl Invitations {
 }
 #[allow(refining_impl_trait)]
 impl EmailInvitationService for Invitations {
+    async fn approve_invitation_request(
+        &self,
+        ctx: RequestContext,
+        r: ServiceRequest<'_, InvitationRequestDecision>,
+    ) -> ServiceResult<EmailInvitation> {
+        let session = self.0.authorize_rpc(&ctx).await?;
+        if !r.confirmed
+            || !valid_id(r.operation_id)
+            || !valid_id(r.household_id)
+            || !valid_id(r.request_id)
+        {
+            return Err(ConnectError::invalid_argument(
+                "Confirm the request decision.",
+            ));
+        }
+        Households(self.0.clone())
+            .require_head(r.household_id, &session.user_sub)
+            .await?;
+        if !capacity::normal_accounts(&self.0.db).await? || self.0.config.mail.is_none() {
+            return Err(unavailable());
+        }
+        #[derive(Deserialize)]
+        struct Decision {
+            request_id: String,
+            household_id: String,
+            action: String,
+        }
+        if let Some(old)=self.0.db.query::<Decision>("SELECT request_id,household_id,action FROM household_request_decisions WHERE actor_sub=? AND operation_id=?",&[session.user_sub.clone(),r.operation_id.into()]).await?.pop() {
+            if old.request_id!=r.request_id || old.household_id!=r.household_id || old.action!="approve" { return Err(ConnectError::already_exists("Action ID already belongs to another decision.")); }
+            return Response::ok(self.public(self.row(r.request_id).await?));
+        }
+        let token = self.token(r.request_id, 1)?;
+        let token_hash = format!("{:x}", Sha256::digest(token.as_bytes()));
+        let now = auth::now();
+        let authority = "EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=? AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1)";
+        let statements = vec![
+            capacity::snapshot(
+                &format!("household:{}", r.household_id),
+                &session.user_sub,
+                "",
+            ),
+            Statement::new(
+                "INSERT INTO email_monthly_attempts(month) VALUES(strftime('%Y-%m','now')) ON CONFLICT(month) DO NOTHING",
+                vec![],
+            ),
+            Statement::new(
+                &format!(
+                    "INSERT INTO email_invitations(id,household_id,recipient_email,token_hash,expires_at,created_by,last_operation,request_id,recipient_sub,consent_until) SELECT q.id,q.household_id,q.email,?,?,?,?,q.id,q.user_sub,q.requested_at+2592000 FROM household_invitation_requests q WHERE q.id=? AND q.household_id=? AND q.status='pending' AND q.expires_at>? AND {authority} AND EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND EXISTS(SELECT 1 FROM site_safety_policy WHERE id=1 AND enabled=1) AND (SELECT attempted FROM email_monthly_attempts WHERE month=strftime('%Y-%m','now'))+(SELECT count(*) FROM email_attempt_reservations WHERE month=strftime('%Y-%m','now'))<10000 AND NOT EXISTS(SELECT 1 FROM household_request_decisions WHERE actor_sub=? AND operation_id=?)"
+                ),
+                vec![
+                    token_hash,
+                    (now + 7 * 86400).to_string(),
+                    session.user_sub.clone(),
+                    r.operation_id.into(),
+                    r.request_id.into(),
+                    r.household_id.into(),
+                    now.to_string(),
+                    r.household_id.into(),
+                    session.user_sub.clone(),
+                    session.user_sub.clone(),
+                    r.operation_id.into(),
+                ],
+            ),
+            Statement::new(
+                "INSERT INTO email_attempt_reservations(invitation_id,month) SELECT id,strftime('%Y-%m','now') FROM email_invitations WHERE id=? AND last_operation=? AND request_id=?",
+                vec![
+                    r.request_id.into(),
+                    r.operation_id.into(),
+                    r.request_id.into(),
+                ],
+            ),
+            Statement::new(
+                "UPDATE household_invitation_requests SET status='approved',last_decision=? WHERE id=? AND household_id=? AND status='pending' AND EXISTS(SELECT 1 FROM email_invitations WHERE id=? AND request_id=? AND last_operation=?)",
+                vec![
+                    r.operation_id.into(),
+                    r.request_id.into(),
+                    r.household_id.into(),
+                    r.request_id.into(),
+                    r.request_id.into(),
+                    r.operation_id.into(),
+                ],
+            ),
+            Statement::new(
+                "INSERT INTO household_request_decisions(actor_sub,operation_id,request_id,household_id,action) SELECT ?,?,id,household_id,'approve' FROM household_invitation_requests WHERE id=? AND household_id=? AND status='approved' AND last_decision=? ON CONFLICT(actor_sub,operation_id) DO NOTHING",
+                vec![
+                    session.user_sub.clone(),
+                    r.operation_id.into(),
+                    r.request_id.into(),
+                    r.household_id.into(),
+                    r.operation_id.into(),
+                ],
+            ),
+            Statement::new(
+                "INSERT INTO household_activity(household_id,actor_sub,action) SELECT household_id,?,'Approved a household invitation request' FROM household_invitation_requests WHERE id=? AND status='approved' AND last_decision=?",
+                vec![
+                    session.user_sub.clone(),
+                    r.request_id.into(),
+                    r.operation_id.into(),
+                ],
+            ),
+            Statement::new(
+                "INSERT INTO invariant_guards(valid) SELECT EXISTS(SELECT 1 FROM household_request_decisions WHERE actor_sub=? AND operation_id=? AND request_id=? AND household_id=? AND action='approve')",
+                vec![
+                    session.user_sub.clone(),
+                    r.operation_id.into(),
+                    r.request_id.into(),
+                    r.household_id.into(),
+                ],
+            ),
+        ];
+        let mut statements = statements;
+        statements.extend(capacity::content_checks());
+        statements.push(Statement::new("DELETE FROM invariant_guards", vec![]));
+        self.0.db.batch(&statements).await.map_err(|e| {
+            if matches!(
+                e.code,
+                connectrpc::ErrorCode::Unavailable | connectrpc::ErrorCode::ResourceExhausted
+            ) {
+                e
+            } else {
+                unavailable()
+            }
+        })?;
+        self.0.mail_wake.notify_one();
+        Response::ok(self.public(self.row(r.request_id).await?))
+    }
     async fn decline_invitation_request(
         &self,
         ctx: RequestContext,
