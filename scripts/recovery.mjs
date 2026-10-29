@@ -161,6 +161,12 @@ async function upgrade(db) {
       "household_request_notification_settings",
       "0033_request_notification_preferences",
     ],
+    [
+      "table",
+      "household_request_notifications",
+      "0034_request_notification_queue",
+    ],
+    ["index", "request_notification_retention", "0035_notification_storage"],
   ])
     if (!exists(type, anchor))
       db.exec(
@@ -203,6 +209,8 @@ async function upgrade(db) {
     "0031_request_withdrawals.sql",
     "0032_request_storage.sql",
     "0033_request_notification_preferences.sql",
+    "0034_request_notification_queue.sql",
+    "0035_notification_storage.sql",
   ];
   db.exec(
     "CREATE TABLE IF NOT EXISTS d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
@@ -412,7 +420,7 @@ function replay(
     retainedPublicIdentities,
   );
   db.exec(
-    "DELETE FROM sessions; DELETE FROM login_challenges; DELETE FROM onboarding_sessions; DELETE FROM request_sessions; DELETE FROM request_lookup_sessions; UPDATE household_request_notification_settings SET enabled=0; UPDATE household_request_links SET revoked=1; UPDATE household_invitation_requests SET status='canceled',closed_at=unixepoch() WHERE status='pending'; UPDATE email_invitations SET status='revoked',delivery_status='canceled',claim_id='',claim_until=0,revision=revision+1 WHERE status='pending'; UPDATE household_invitations SET status='revoked' WHERE status='pending'; UPDATE invitation_growth SET paused=1,revision=revision+1 WHERE id=1; UPDATE security_replay_control SET replaying=0 WHERE id=1;",
+    "DELETE FROM sessions; DELETE FROM login_challenges; DELETE FROM onboarding_sessions; DELETE FROM request_sessions; DELETE FROM request_lookup_sessions; UPDATE household_request_notification_settings SET enabled=0; UPDATE household_request_notifications SET status='canceled',claim_id='',claim_until=0 WHERE status IN('queued','sending','uncertain'); UPDATE household_request_links SET revoked=1; UPDATE household_invitation_requests SET status='canceled',closed_at=unixepoch() WHERE status='pending'; UPDATE email_invitations SET status='revoked',delivery_status='canceled',claim_id='',claim_until=0,revision=revision+1 WHERE status='pending'; UPDATE household_invitations SET status='revoked' WHERE status='pending'; UPDATE invitation_growth SET paused=1,revision=revision+1 WHERE id=1; UPDATE security_replay_control SET replaying=0 WHERE id=1;",
   );
 }
 function replaySecurity(db, records, retainedPublicIdentities) {

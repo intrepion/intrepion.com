@@ -321,7 +321,7 @@ test("recovering an MVP 1 archive upgrades retained tasks and the migration ledg
       );
       assert.equal(
         restored.prepare("SELECT count(*) n FROM d1_migrations").get().n,
-        33,
+        35,
       );
       assert.equal(restored.prepare("SELECT count(*) n FROM tasks").get().n, 0);
     } finally {
@@ -802,6 +802,9 @@ test("encrypted recovery preserves later account suspensions and head removals a
       INSERT INTO household_invitation_requests(id,household_id,link_id,user_sub,email,display_name,status,consent_version,requested_at,expires_at,closed_at) VALUES('${id(927)}','${id(901)}','${id(926)}','old-requester','old@example.invalid','Old requester','declined','v1',unixepoch()-40*86400,unixepoch()-33*86400,unixepoch()-31*86400);
       INSERT INTO household_request_operations(user_sub,operation_id,link_id,request_id) VALUES('old-requester','${id(928)}','${id(926)}','${id(927)}');
       INSERT INTO household_request_decisions(actor_sub,operation_id,request_id,household_id,action) VALUES('restore-owner','${id(929)}','${id(927)}','${id(901)}','decline');
+      INSERT INTO household_invitation_requests(id,household_id,link_id,user_sub,email,display_name,status,consent_version,requested_at,expires_at) VALUES('${id(945)}','${id(901)}','${id(926)}','waiting-requester','waiting@example.invalid','Waiting','pending','v1',unixepoch(),unixepoch()+86400);
+      INSERT INTO household_request_notification_settings(household_id,head_sub,enabled,confirmed_email) VALUES('${id(901)}','restore-owner',1,'head@example.invalid');
+      INSERT INTO household_request_notifications(id,request_id,household_id,head_sub,recipient_email) VALUES('${id(946)}','${id(945)}','${id(901)}','restore-owner','head@example.invalid');
       INSERT OR REPLACE INTO email_monthly_attempts(month,attempted) VALUES(strftime('%Y-%m','now'),9999);
     `),
     ]);
@@ -825,6 +828,22 @@ test("encrypted recovery preserves later account suspensions and head removals a
     const pendingDb = new DatabaseSync(":memory:");
     try {
       pendingDb.exec(recoveredPending.toString());
+      assert.equal(
+        pendingDb
+          .prepare(
+            "SELECT enabled FROM household_request_notification_settings WHERE household_id=? AND head_sub='restore-owner'",
+          )
+          .get(id(901)).enabled,
+        0,
+      );
+      assert.equal(
+        pendingDb
+          .prepare(
+            "SELECT status FROM household_request_notifications WHERE id=?",
+          )
+          .get(id(946)).status,
+        "canceled",
+      );
       assert.equal(
         pendingDb
           .prepare("SELECT revoked FROM household_request_links WHERE id=?")
@@ -953,6 +972,8 @@ test("encrypted recovery preserves later account suspensions and head removals a
         "household_invitation_requests",
         "household_request_operations",
         "household_request_decisions",
+        "household_request_notifications",
+        "household_request_notification_settings",
         "email_invitations",
         "email_send_attempts",
         "email_feedback_receipts",

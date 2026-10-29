@@ -3890,6 +3890,14 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     requester,
   );
   assert.equal(requested.status, "pending");
+  const notifyOps = createClient(
+    EmailOperationsService,
+    createConnectTransport({ baseUrl }),
+  );
+  await notifyOps.processQueue(
+    {},
+    { headers: { authorization: `Bearer ${"ef".repeat(32)}` } },
+  );
   assert.ok(
     (await admin.getOverview({}, owner)).households.find((h) => h.id === id)!
       .usage!.bytes > bytesAfterLink,
@@ -3974,6 +3982,29 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
     { operationId: crypto.randomUUID(), confirmed: true },
     withdrawRequestSession,
   );
+  await invitations.setRequestNotifications(
+    { householdId: id, enabled: false, confirmed: true },
+    changedSession,
+  );
+  await notifyOps.processQueue(
+    {},
+    { headers: { authorization: `Bearer ${"ef".repeat(32)}` } },
+  );
+  const afterOptOut = (await (
+    await fetch("http://127.0.0.1:8793/messages", {
+      headers: { authorization: "Bearer local-email-only" },
+    })
+  ).json()) as { messages: { recipient: string }[] };
+  assert.equal(
+    afterOptOut.messages.filter(
+      (m) => m.recipient === "new-head@example.invalid",
+    ).length,
+    1,
+  );
+  await invitations.setRequestNotifications(
+    { householdId: id, enabled: true, confirmed: true },
+    changedSession,
+  );
   const freshChallenge = await fetch(`${baseUrl}/auth/challenge`, {
     method: "POST",
     headers: { origin },
@@ -4054,6 +4085,59 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
   assert.equal(
     (await invitations.listInvitationRequests({ id }, owner)).requests.length,
     1,
+  );
+  await notifyOps.processQueue(
+    {},
+    { headers: { authorization: `Bearer ${"ef".repeat(32)}` } },
+  );
+  const notificationInbox = (await (
+    await fetch("http://127.0.0.1:8793/messages", {
+      headers: { authorization: "Bearer local-email-only" },
+    })
+  ).json()) as {
+    messages: {
+      id: string;
+      recipient: string;
+      text: string;
+      tags: { Name: string; Value: string }[];
+    }[];
+  };
+  const notices = notificationInbox.messages.filter(
+    (m) => m.recipient === "new-head@example.invalid",
+  );
+  assert.equal(notices.length, 1);
+  assert.ok(notices[0]!.text.includes("Email invitation household"));
+  assert.equal(notices[0]!.text.includes("Jordan"), false);
+  assert.equal(notices[0]!.text.includes("jordan@example.invalid"), false);
+  const noticeEvent = {
+    eventType: "Delivery",
+    mail: {
+      messageId: notices[0]!.id,
+      destination: [notices[0]!.recipient],
+      tags: Object.fromEntries(
+        notices[0]!.tags.map((tag) => [tag.Name, [tag.Value]]),
+      ),
+    },
+  };
+  const noticeEnvelope = await signedFeedback(noticeEvent);
+  const postNoticeFeedback = (body: unknown) =>
+    fetch(`${baseUrl}/email/feedback`, {
+      method: "POST",
+      headers: { "content-type": "text/plain; charset=UTF-8" },
+      body: JSON.stringify(body),
+    });
+  assert.equal(
+    (await postNoticeFeedback({ ...noticeEnvelope, Signature: "AA==" })).status,
+    403,
+  );
+  assert.equal((await postNoticeFeedback(noticeEnvelope)).status, 204);
+  assert.equal((await postNoticeFeedback(noticeEnvelope)).status, 204);
+  assert.ok(
+    (await admin.getEmailOperations({}, owner)).deliveries.some(
+      (d) =>
+        d.recipientEmail === "new-head@example.invalid" &&
+        d.outcome === "delivered",
+    ),
   );
   const decision = {
     operationId: crypto.randomUUID(),

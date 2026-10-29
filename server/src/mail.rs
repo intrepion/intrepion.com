@@ -110,6 +110,14 @@ struct Pending {
 struct Total {
     attempted: u64,
 }
+#[derive(Deserialize)]
+struct PendingNotification {
+    id: String,
+    household_id: String,
+    household_name: String,
+    recipient_email: String,
+    attempts: u64,
+}
 fn failure() -> ConnectError {
     ConnectError::unavailable("Email operations are temporarily unavailable.")
 }
@@ -204,6 +212,7 @@ impl Delivery {
     Statement::new("UPDATE email_invitations SET delivery_status=?,claim_id='',claim_until=0,next_attempt_at=? WHERE id=? AND generation=? AND claim_id=? AND status='pending' AND delivery_status='sending'",vec![outcome.into(),(now+if i.attempts==0{60}else{300}).to_string(),i.id,i.generation.to_string(),claim]),
    ]).await?;
         }
+        attempted += self.process_notifications(settings).await?;
         let monthly = self
             .0
             .db
@@ -220,6 +229,61 @@ impl Delivery {
             warning: monthly >= 8000,
             ..Default::default()
         })
+    }
+    async fn process_notifications(&self, settings: &Settings) -> Result<u64, ConnectError> {
+        let now = auth::now();
+        self.0.db.query::<serde_json::Value>("UPDATE household_request_notifications SET status='failed',claim_id='',claim_until=0 WHERE status='sending' AND attempts>=3 AND claim_until<=?",&[now.to_string()]).await?;
+        let eligible = "n.status IN('queued','uncertain','sending') AND n.attempts<3 AND n.claim_until<=CAST(? AS INTEGER) AND n.next_attempt_at<=CAST(? AS INTEGER) AND EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND EXISTS(SELECT 1 FROM household_invitation_requests q WHERE q.id=n.request_id AND q.status='pending' AND q.expires_at>CAST(? AS INTEGER)) AND EXISTS(SELECT 1 FROM households h JOIN household_heads m ON m.household_id=h.id JOIN pilot_accounts a ON a.subject=m.subject JOIN household_request_notification_settings s ON s.household_id=h.id AND s.head_sub=m.subject WHERE h.id=n.household_id AND h.status='active' AND m.subject=n.head_sub AND m.active=1 AND a.approved=1 AND s.enabled=1 AND s.confirmed_email=n.recipient_email AND a.google_verified_email=n.recipient_email) AND NOT EXISTS(SELECT 1 FROM email_suppressions x WHERE x.recipient_email=n.recipient_email)";
+        let pending=self.0.db.query::<PendingNotification>(&format!("SELECT n.id,n.household_id,h.name AS household_name,n.recipient_email,n.attempts FROM household_request_notifications n JOIN households h ON h.id=n.household_id WHERE {eligible} ORDER BY n.created_at,n.id LIMIT 3"),&[now.to_string(),now.to_string(),now.to_string()]).await?;
+        let mut attempted = 0;
+        for n in pending {
+            let now = auth::now();
+            let claim = auth::secret();
+            let attempt = super_id();
+            let claimed=self.0.db.batch(&[
+                Statement::new("INSERT INTO email_monthly_attempts(month) VALUES(strftime('%Y-%m','now')) ON CONFLICT(month) DO NOTHING",vec![]),
+                Statement::new(&format!("UPDATE household_request_notifications AS n SET claim_id=?,claim_until=?,attempts=attempts+1,status='sending' WHERE n.id=? AND {eligible} AND (SELECT attempted FROM email_monthly_attempts WHERE month=strftime('%Y-%m','now'))+(SELECT count(*) FROM email_attempt_reservations WHERE month=strftime('%Y-%m','now'))<10000"),vec![claim.clone(),(now+30).to_string(),n.id.clone(),now.to_string(),now.to_string(),now.to_string()]),
+                Statement::new("INSERT INTO email_send_attempts(id,invitation_id,generation,recipient_email,attempted_at) SELECT ?,id,1,recipient_email,? FROM household_request_notifications WHERE id=? AND claim_id=?",vec![attempt.clone(),now.to_string(),n.id.clone(),claim.clone()]),
+                Statement::new("UPDATE email_monthly_attempts SET attempted=attempted+1 WHERE month=strftime('%Y-%m','now') AND EXISTS(SELECT 1 FROM email_send_attempts WHERE id=?)",vec![attempt.clone()]),
+                Statement::new("SELECT id FROM email_send_attempts WHERE id=?",vec![attempt.clone()]),
+            ]).await?;
+            if claimed.last().is_none_or(|r| r.is_empty()) {
+                continue;
+            }
+            attempted += 1;
+            let review = format!("{}/#household={}", self.0.config.web_origin, n.household_id);
+            let settings_link = format!(
+                "{}/#household={}&notifications=1",
+                self.0.config.web_origin, n.household_id
+            );
+            let text = format!(
+                "A new invitation request is waiting for review in {}.\n\nReview in Intrepion: {}\n\nManage request notifications: {}\n\nFor help, contact {}.",
+                n.household_name, review, settings_link, settings.reply_to
+            );
+            let html = format!(
+                "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><body><h1>New household invitation request</h1><p>A request is waiting for review in {}.</p><p><a href=\"{}\">Review in Intrepion</a></p><p><a href=\"{}\">Manage request notifications</a></p></body></html>",
+                escape_html(&n.household_name),
+                escape_html(&review),
+                escape_html(&settings_link)
+            );
+            let payload = serde_json::json!({"FromEmailAddress":settings.from,"ReplyToAddresses":[settings.reply_to],"Destination":{"ToAddresses":[n.recipient_email]},"ConfigurationSetName":settings.configuration_set,"Content":{"Simple":{"Subject":{"Data":"New household invitation request","Charset":"UTF-8"},"Body":{"Text":{"Data":text,"Charset":"UTF-8"},"Html":{"Data":html,"Charset":"UTF-8"}}}},"EmailTags":[{"Name":"invitation_id","Value":n.id},{"Name":"attempt_id","Value":attempt}]});
+            let (outcome, message_id) = match self.submit(settings, &payload).await {
+                Ok(id) => ("submitted", id),
+                Err(temporary) => (
+                    if temporary && n.attempts + 1 < 3 {
+                        "uncertain"
+                    } else {
+                        "failed"
+                    },
+                    String::new(),
+                ),
+            };
+            self.0.db.batch(&[
+                Statement::new("UPDATE email_send_attempts SET outcome=CASE WHEN feedback_at=0 THEN ? ELSE outcome END,provider_message_id=CASE WHEN provider_message_id='' THEN ? ELSE provider_message_id END WHERE id=?",vec![outcome.into(),message_id,attempt]),
+                Statement::new("UPDATE household_request_notifications SET status=?,claim_id='',claim_until=0,next_attempt_at=? WHERE id=? AND claim_id=? AND status='sending'",vec![outcome.into(),(now+if n.attempts==0{60}else{300}).to_string(),n.id,claim]),
+            ]).await?;
+        }
+        Ok(attempted)
     }
     async fn submit(
         &self,
