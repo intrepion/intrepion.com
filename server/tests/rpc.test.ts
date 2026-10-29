@@ -3913,6 +3913,13 @@ test("emailed invitations expose delivery metadata without secrets and pause pre
       (e: unknown) =>
         e instanceof ConnectError && e.code === Code.FailedPrecondition,
     );
+    assert.ok(
+      (await admin.listAudit({}, owner)).entries.some((entry) =>
+        entry.action.includes(
+          `Invitation request-link safety limit reached for household ${id}.`,
+        ),
+      ),
+    );
   } finally {
     await stop(limitedServer);
   }

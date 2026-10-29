@@ -597,7 +597,7 @@ export class Households {
     if (this.message) this.root.append(element("p", this.message));
     this.root.append(
       button("Refresh household", () => void this.openHousehold()),
-      button("Create request link", () => void this.createRequestLink()),
+      button("Create request link", () => this.showRequestLinkForm()),
       button("Leave household", () => void this.leaveHousehold()),
       element("h2", "Heads"),
     );
@@ -800,12 +800,59 @@ export class Households {
     this.renderActivity();
     this.hooks.syncBusyControls();
   }
-  private async createRequestLink() {
+  private showRequestLinkForm() {
+    this.root.querySelector("[data-request-link-form]")?.remove();
+    const settings = this.requestNotifications;
+    const section = element("section");
+    section.dataset.requestLinkForm = "";
+    section.append(element("h2", "Create a request link"));
+    section.append(
+      element(
+        "p",
+        "Anyone with the link can request an invitation. You can revoke the link later.",
+      ),
+    );
+    let optIn: HTMLInputElement | undefined;
+    if (settings && !settings.enabled) {
+      const label = element("label");
+      optIn = element("input");
+      optIn.type = "checkbox";
+      label.append(
+        optIn,
+        document.createTextNode(
+          " Email me when someone requests an invitation",
+        ),
+      );
+      section.append(
+        label,
+        element(
+          "p",
+          "Notifications go to your verified Google email and can be turned off in Household settings.",
+        ),
+      );
+    }
+    section.append(
+      button(
+        "Create link",
+        () => void this.createRequestLink(Boolean(optIn?.checked)),
+      ),
+      button("Cancel", () => section.remove()),
+    );
+    this.root.prepend(section);
+    this.hooks.syncBusyControls();
+  }
+  private async createRequestLink(enableNotifications: boolean) {
     const household = this.details?.household;
     if (!household) return;
     this.requestLinkOperation ||= crypto.randomUUID();
     this.hooks.busy(true);
     try {
+      if (enableNotifications) {
+        await this.api.invitations.setRequestNotifications(
+          { householdId: household.id, enabled: true, confirmed: true },
+          { timeoutMs: 90000 },
+        );
+      }
       const link = await this.api.invitations.createRequestLink(
         { householdId: household.id, operationId: this.requestLinkOperation },
         { timeoutMs: 90000 },

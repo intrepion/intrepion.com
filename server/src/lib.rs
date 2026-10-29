@@ -153,9 +153,7 @@ async fn delivery_handoff(
     let guarded = request.method() == Method::POST
         && (matches!(
             path,
-            "/auth/google"
-                | "/auth/development"
-                | "/life.v1.HouseholdService/ChangeHousehold"
+            "/life.v1.HouseholdService/ChangeHousehold"
                 | "/life.v1.HouseholdMaintenanceService/EraseDueHouseholds"
                 | "/life.v1.AccountAdminService/SetAccountAccess"
                 | "/life.v1.AccountAdminService/ChangeGrowth"
@@ -166,12 +164,15 @@ async fn delivery_handoff(
                 | "/life.v1.EmailInvitationService/WithdrawInvitationRequest"
                 | "/life.v1.EmailInvitationService/SetRequestNotifications"
                 | "/life.v1.EmailInvitationService/AcceptInvitation"
+                | "/life.v1.EmailInvitationService/GetOnboarding"
                 | "/life.v1.EmailInvitationService/ChangeInvitation"
         ) || path.starts_with("/life.v1.PilotOperatorService/"));
     if !guarded {
         return next.run(request).await;
     }
-    let Ok(token) = delivery_gate::acquire(&auth.db).await else {
+    // Short waits avoid exposing ordinary contention with the queue worker as
+    // an error; a long handoff still returns unavailable without changing state.
+    let Ok(token) = delivery_gate::acquire_with_wait(&auth.db).await else {
         return (StatusCode::SERVICE_UNAVAILABLE, [(header::CONTENT_TYPE, "application/json")], r#"{"code":"unavailable","message":"An email action is in progress. Try again shortly."}"#).into_response();
     };
     let response = next.run(request).await;

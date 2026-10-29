@@ -503,15 +503,19 @@ pub async fn login(
             .await;
     }
     let response = auth.issue_session(&claims.sub).await?;
-    auth.record_verified_email(
-        &claims.sub,
-        if claims.email_verified {
-            claims.email.as_deref()
-        } else {
-            None
-        },
-    )
-    .await?;
+    let gate = crate::delivery_gate::acquire_with_wait(&auth.db).await?;
+    let recorded = auth
+        .record_verified_email(
+            &claims.sub,
+            if claims.email_verified {
+                claims.email.as_deref()
+            } else {
+                None
+            },
+        )
+        .await;
+    crate::delivery_gate::release(&auth.db, &gate).await?;
+    recorded?;
     Ok(response)
 }
 #[cfg(feature = "dev-auth")]
@@ -569,7 +573,10 @@ pub async fn development_login(
     }
     let response = auth.issue_session(subject).await?;
     if let Some(email) = login.development_email.as_deref() {
-        auth.record_verified_email(subject, Some(email)).await?;
+        let gate = crate::delivery_gate::acquire_with_wait(&auth.db).await?;
+        let recorded = auth.record_verified_email(subject, Some(email)).await;
+        crate::delivery_gate::release(&auth.db, &gate).await?;
+        recorded?;
     }
     Ok(response)
 }

@@ -5,6 +5,7 @@ async function requestAndApprove(page: Page, browser: Browser, email: string) {
   await page
     .getByRole("button", { name: "Create request link", exact: true })
     .click();
+  await page.getByRole("button", { name: "Create link", exact: true }).click();
   const link = await page
     .getByLabel("Request link", { exact: true })
     .inputValue();
@@ -74,18 +75,16 @@ test("a person requests and accepts a household invitation without a pilot accou
     .getByRole("button", { name: "Create household", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Turn notifications on", exact: true })
+    .getByRole("button", { name: "Create request link", exact: true })
     .click();
-  await page.getByRole("button", { name: "Turn on", exact: true }).click();
+  await page.getByLabel("Email me when someone requests an invitation").check();
+  await page.getByRole("button", { name: "Create link", exact: true }).click();
   await expect(
     page.getByText(
       "Notifications are on for development-owner@example.invalid.",
       { exact: true },
     ),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Create request link", exact: true })
-    .click();
   const link = await page
     .getByLabel("Request link", { exact: true })
     .inputValue();
@@ -311,7 +310,9 @@ test("a normal owner creates a household by name and sends an email without expo
   ).toBeVisible();
   await requestAndApprove(page, browser, "wife@example.invalid");
   await expect(
-    page.getByText("wife@example.invalid", { exact: true }),
+    page
+      .locator("#household-view")
+      .getByText("wife@example.invalid", { exact: true }),
   ).toBeVisible();
   await expect(page.getByLabel("Invitation link", { exact: true })).toHaveCount(
     0,

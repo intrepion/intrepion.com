@@ -655,6 +655,43 @@ impl EmailInvitationService for Invitations {
                 ],
             ),
             Statement::new(
+                "INSERT INTO site_audit(operation_id,actor_sub,action) SELECT 'request-guard:'||?,'system',? WHERE (SELECT count(*) FROM household_invitation_requests WHERE household_id=? AND status='pending' AND expires_at>?)>=CAST(? AS INTEGER) OR (SELECT count(*) FROM household_invitation_requests WHERE user_sub=? AND requested_at>?)>=CAST(? AS INTEGER) ON CONFLICT(operation_id) DO UPDATE SET occurred_at=unixepoch(),action=excluded.action",
+                vec![
+                    scope.household_id.clone(),
+                    format!(
+                        "Invitation request safety limit reached for household {}.",
+                        scope.household_id
+                    ),
+                    scope.household_id.clone(),
+                    now.to_string(),
+                    self.0.config.request_safety.pending_requests.to_string(),
+                    session.user_sub.clone(),
+                    now.saturating_sub(86400).to_string(),
+                    self.0
+                        .config
+                        .request_safety
+                        .requests_per_identity_day
+                        .to_string(),
+                ],
+            ),
+            Statement::new(
+                "INSERT INTO site_audit(operation_id,actor_sub,action) SELECT 'notice-guard:'||?,'system',? WHERE EXISTS(SELECT 1 FROM household_request_notification_settings s WHERE s.household_id=? AND s.enabled=1 AND (SELECT count(*) FROM household_request_notifications x WHERE x.head_sub=s.head_sub AND x.created_at>?)>=CAST(? AS INTEGER)) ON CONFLICT(operation_id) DO UPDATE SET occurred_at=unixepoch(),action=excluded.action",
+                vec![
+                    scope.household_id.clone(),
+                    format!(
+                        "Invitation notification safety limit reached for household {}.",
+                        scope.household_id
+                    ),
+                    scope.household_id.clone(),
+                    now.saturating_sub(86400).to_string(),
+                    self.0
+                        .config
+                        .request_safety
+                        .notices_per_head_day
+                        .to_string(),
+                ],
+            ),
+            Statement::new(
                 "INSERT INTO household_request_operations(user_sub,operation_id,link_id,request_id) SELECT ?,?,l.id,q.id FROM household_request_links l JOIN household_invitation_requests q ON q.household_id=l.household_id AND q.user_sub=? AND q.email=? AND q.status='pending' WHERE l.id=? AND l.revoked=0 AND l.expires_at>? AND EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) ON CONFLICT(user_sub,operation_id) DO NOTHING",
                 vec![
                     session.user_sub.clone(),
@@ -829,6 +866,10 @@ impl EmailInvitationService for Invitations {
             statements.push(
                 Statement::new("INSERT INTO household_request_links(id,household_id,created_by,token_hash,expires_at) SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM invitation_growth WHERE id=1 AND paused=0) AND EXISTS(SELECT 1 FROM household_heads m JOIN households h ON h.id=m.household_id JOIN pilot_accounts a ON a.subject=m.subject WHERE h.id=? AND h.status='active' AND m.subject=? AND m.active=1 AND a.approved=1) AND (SELECT count(*) FROM household_request_links WHERE household_id=? AND revoked=0 AND expires_at>?)<CAST(? AS INTEGER) AND (SELECT count(*) FROM household_request_links WHERE household_id=? AND created_at>?)<CAST(? AS INTEGER) ON CONFLICT(id) DO NOTHING", vec![r.operation_id.into(),r.household_id.into(),session.user_sub.clone(),token_hash,expires,r.household_id.into(),session.user_sub.clone(),r.household_id.into(),auth::now().to_string(),self.0.config.request_safety.active_links.to_string(),r.household_id.into(),auth::now().saturating_sub(86400).to_string(),self.0.config.request_safety.links_per_day.to_string()]),
             );
+            statements.push(Statement::new(
+                "INSERT INTO site_audit(operation_id,actor_sub,action) SELECT 'link-guard:'||?,'system',? WHERE (SELECT count(*) FROM household_request_links WHERE household_id=? AND revoked=0 AND expires_at>?)>=CAST(? AS INTEGER) OR (SELECT count(*) FROM household_request_links WHERE household_id=? AND created_at>?)>=CAST(? AS INTEGER) ON CONFLICT(operation_id) DO UPDATE SET occurred_at=unixepoch(),action=excluded.action",
+                vec![r.household_id.into(),format!("Invitation request-link safety limit reached for household {}.",r.household_id),r.household_id.into(),auth::now().to_string(),self.0.config.request_safety.active_links.to_string(),r.household_id.into(),auth::now().saturating_sub(86400).to_string(),self.0.config.request_safety.links_per_day.to_string()],
+            ));
             statements.extend(capacity::content_checks());
             statements.push(Statement::new("DELETE FROM invariant_guards", vec![]));
             self.0.db.batch(&statements).await?;

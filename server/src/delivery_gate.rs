@@ -17,6 +17,20 @@ pub(crate) async fn acquire(db: &Database) -> Result<String, ConnectError> {
     Ok(token)
 }
 
+pub(crate) async fn acquire_with_wait(db: &Database) -> Result<String, ConnectError> {
+    for attempt in 0..20 {
+        if let Ok(token) = acquire(db).await {
+            return Ok(token);
+        }
+        if attempt < 19 {
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        }
+    }
+    Err(ConnectError::unavailable(
+        "An email action is in progress. Try again shortly.",
+    ))
+}
+
 pub(crate) async fn release(db: &Database, token: &str) -> Result<(), ConnectError> {
     db.query::<serde_json::Value>(
         "UPDATE delivery_handoff_gate SET token='',expires_at=0 WHERE id=1 AND token=?",

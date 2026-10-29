@@ -134,7 +134,7 @@ impl Delivery {
         if self.0.config.customer_writes_frozen {
             return Ok(EmailQueueResult::default());
         }
-        let token = crate::delivery_gate::acquire(&self.0.db).await?;
+        let token = crate::delivery_gate::acquire_with_wait(&self.0.db).await?;
         let result = self.process_locked().await;
         crate::delivery_gate::release(&self.0.db, &token).await?;
         result
@@ -402,6 +402,11 @@ pub fn spawn_worker(auth: SharedAuth) -> Option<tokio::task::JoinHandle<()>> {
             tokio::select! {_=tick.tick()=>{},_=auth.mail_wake.notified()=>{}}
             if Delivery(auth.clone()).process().await.is_err() {
                 eprintln!("{{\"event\":\"email_queue\",\"ok\":false}}");
+                // A wake can arrive while a consent-changing request still
+                // holds the shared gate. Do not defer that queued mail for a
+                // full periodic interval merely because of this contention.
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                auth.mail_wake.notify_one();
             }
         }
     }))
