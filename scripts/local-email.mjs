@@ -156,7 +156,18 @@ createServer(async (request, response) => {
         headers: { "content-type": "text/plain" },
         body: JSON.stringify(envelope),
       });
-      if (callback.status !== 204) return reply(503);
+      if (callback.status === 503) {
+        // SNS retries a temporarily unavailable endpoint independently of the
+        // SES send response. Reproduce that ordering without deadlocking the
+        // local sender, which holds the shared handoff gate until reply.
+        setTimeout(() => {
+          void fetch("http://127.0.0.1:8788/email/feedback", {
+            method: "POST",
+            headers: { "content-type": "text/plain" },
+            body: JSON.stringify(envelope),
+          });
+        }, 500);
+      } else if (callback.status !== 204) return reply(503);
     }
     if (failure === "after") return reply(503);
     reply(200, { MessageId });

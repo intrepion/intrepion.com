@@ -6164,6 +6164,16 @@ test("uncertain delivery retries reuse the link and early signed feedback surviv
   );
   await provider("fault", { fail_next: "feedback" });
   assert.equal((await mail.processQueue({}, ops)).attempted, 1n);
+  const feedbackDeadline = Date.now() + 5000;
+  while (
+    !(await admin.getEmailOperations({}, owner)).suppressions.some(
+      (s) => s.recipientEmail === "early-feedback@example.invalid",
+    )
+  ) {
+    if (Date.now() > feedbackDeadline)
+      throw new Error("Retried feedback did not arrive");
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
   const visible = (
     await invites.listInvitations({ id }, owner)
   ).invitations.find((i) => i.id === early.id)!;
@@ -6262,7 +6272,7 @@ test("revocation waits for an already-started provider handoff", async () => {
   );
 });
 
-test("an interrupted final email attempt becomes terminal after its claim expires without another send", async () => {
+test("an interrupted final email attempt leaves the handoff gate closed after restart", async () => {
   const owner = await login();
   const admin = createClient(
     AccountAdminService,
@@ -6361,8 +6371,12 @@ test("an interrupted final email attempt becomes terminal after its claim expire
         await stop(instance);
         await sending;
       } else {
-        assert.equal((await futureMail.processQueue({}, ops)).attempted, 0n);
-        assert.equal((await status()).deliveryStatus, "uncertain");
+        await assert.rejects(
+          futureMail.processQueue({}, ops),
+          (e: unknown) =>
+            e instanceof ConnectError && e.code === Code.Unavailable,
+        );
+        assert.equal((await status()).deliveryStatus, "sending");
         assert.equal(
           (await provider("messages")).messages.filter(
             (m) => m.recipient === "interrupted@example.invalid",

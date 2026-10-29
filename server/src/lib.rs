@@ -142,17 +142,17 @@ pub fn app(auth: SharedAuth) -> Router {
 }
 
 // Serialize consent and authorization changes with provider handoffs across
-// server instances. Feedback remains independent so provider callbacks can
-// be recorded even while a handoff is in progress.
+// server instances. Suppression-changing feedback takes the same gate after
+// its signature and event are validated; other feedback remains independent.
 async fn delivery_handoff(
     State(auth): State<SharedAuth>,
     request: Request,
     next: Next,
 ) -> Response {
-    let path = request.uri().path();
+    let path = request.uri().path().to_owned();
     let guarded = request.method() == Method::POST
         && (matches!(
-            path,
+            path.as_str(),
             "/life.v1.HouseholdService/ChangeHousehold"
                 | "/life.v1.HouseholdMaintenanceService/EraseDueHouseholds"
                 | "/life.v1.AccountAdminService/SetAccountAccess"
@@ -169,6 +169,63 @@ async fn delivery_handoff(
         ) || path.starts_with("/life.v1.PilotOperatorService/"));
     if !guarded {
         return next.run(request).await;
+    }
+    // Do not let a client hold the global gate by slowly streaming a body.
+    // Buffer the bounded request before taking it, with a fixed read deadline.
+    let (parts, body) = request.into_parts();
+    let body = match tokio::time::timeout(
+        std::time::Duration::from_secs(5),
+        axum::body::to_bytes(body, 64 * 1024),
+    )
+    .await
+    {
+        Ok(Ok(body)) => body,
+        _ => return StatusCode::BAD_REQUEST.into_response(),
+    };
+    let request = Request::from_parts(parts, axum::body::Body::from(body));
+    let authorization = if path.ends_with("/WithdrawInvitationRequest") {
+        auth.request_lookup_session(request.headers(), true)
+            .await
+            .map(|_| ())
+    } else if path.ends_with("/AcceptInvitation") || path.ends_with("/GetOnboarding") {
+        auth.onboarding(request.headers(), true).await.map(|_| ())
+    } else if path.starts_with("/life.v1.PilotOperatorService/")
+        || path.ends_with("/EraseDueHouseholds")
+    {
+        use sha2::{Digest, Sha256};
+        let expected = if path.ends_with("/EraseDueHouseholds") {
+            auth.config.household_maintenance_token.as_deref()
+        } else {
+            auth.config.pilot_operator_token.as_deref()
+        };
+        let supplied = request
+            .headers()
+            .get(header::AUTHORIZATION)
+            .and_then(|h| h.to_str().ok())
+            .and_then(|s| s.strip_prefix("Bearer "));
+        if matches!((expected, supplied), (Some(a), Some(b)) if b.len() == 64 && Sha256::digest(a.as_bytes()) == Sha256::digest(b.as_bytes()))
+        {
+            Ok(())
+        } else {
+            Err(auth::AuthError(
+                StatusCode::UNAUTHORIZED,
+                "Authentication required.",
+            ))
+        }
+    } else {
+        auth.session(request.headers(), true).await.map(|_| ())
+    };
+    if let Err(error) = authorization {
+        let (status, code) = match error.0 {
+            StatusCode::FORBIDDEN => (StatusCode::FORBIDDEN, "permission_denied"),
+            StatusCode::UNAUTHORIZED => (StatusCode::UNAUTHORIZED, "unauthenticated"),
+            _ => (StatusCode::SERVICE_UNAVAILABLE, "unavailable"),
+        };
+        return (
+            status,
+            axum::Json(serde_json::json!({"code":code,"message":"Authentication required."})),
+        )
+            .into_response();
     }
     // Short waits avoid exposing ordinary contention with the queue worker as
     // an error; a long handoff still returns unavailable without changing state.

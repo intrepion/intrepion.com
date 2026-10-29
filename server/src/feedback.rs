@@ -364,7 +364,25 @@ pub(crate) async fn receive(
     }
     writes.push(Statement::new("INSERT INTO invariant_guards(valid) SELECT EXISTS(SELECT 1 FROM email_feedback_receipts WHERE id=? AND digest=?)",vec![verified.id,verified.digest]));
     writes.push(Statement::new("DELETE FROM invariant_guards", vec![]));
-    auth.db.batch(&writes).await.map_err(|_| temporary())?;
+    // Suppression must be ordered with handoffs across instances. A busy gate
+    // returns 503 so SNS retries instead of recording suppression in the gap
+    // between a claim and its provider request.
+    let gate = if suppression.is_some() {
+        Some(
+            crate::delivery_gate::acquire_with_wait(&auth.db)
+                .await
+                .map_err(|_| temporary())?,
+        )
+    } else {
+        None
+    };
+    let result = auth.db.batch(&writes).await.map_err(|_| temporary());
+    if let Some(token) = gate {
+        crate::delivery_gate::release(&auth.db, &token)
+            .await
+            .map_err(|_| temporary())?;
+    }
+    result?;
     Ok(StatusCode::NO_CONTENT)
 }
 async fn record_receipt(

@@ -174,3 +174,5 @@ For later rotations, create replacements with these exact capabilities and scope
 Invitation delivery and consent changes share a database gate across server instances. If a server stops during an action, the gate remains closed and affected actions report that an email action is in progress. It does not expire automatically: doing so could permit a late provider handoff after a withdrawal.
 
 To recover a stuck gate, first stop every application instance and queue processor, and confirm no provider request remains in flight. Only then, using the normal authenticated D1 administration procedure, run `UPDATE delivery_handoff_gate SET token='', expires_at=0 WHERE id=1`. Restart the application and check delivery and consent state before resuming the queue. Never clear the gate while any old instance may still be running. Database restore also clears the gate while revoking pending invitations and pausing growth.
+
+Once email operations are enabled, the hourly GitHub email-operations job fails and alerts the owner if a stuck gate prevents queue processing. This is not an immediate alert; investigate repeated unavailable responses sooner when they are noticed.
