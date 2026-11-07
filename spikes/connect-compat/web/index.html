@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ConnectRPC compatibility spike</title>
+    <style>
+      :root { color-scheme: light dark; font: 18px/1.5 system-ui, sans-serif; }
+      body { max-width: 42rem; margin: 8vh auto; padding: 1.5rem; }
+      h1 { line-height: 1.2; }
+      label { display: block; margin-top: 1rem; }
+      input, select, button { font: inherit; padding: .55rem; }
+      input { max-width: 100%; box-sizing: border-box; }
+      button { display: block; margin: 1.5rem 0; cursor: pointer; }
+      output { display: block; white-space: pre-wrap; padding: 1rem; border: 1px solid gray; border-radius: .4rem; }
+      output[data-state="error"] { border-color: #c44; }
+    </style>
+  </head>
+  <body>
+    <h1>ConnectRPC compatibility spike</h1>
+    <p>Dummy data only. This calls a local Rust/Axum service using the official generated Connect web client. No accounts or storage.</p>
+    <form id="ping-form">
+      <label for="client-name">Client name (blank tests validation)</label>
+      <input id="client-name" name="client-name" value="Web" autocomplete="off" />
+      <label for="format">Wire format</label>
+      <select id="format"><option value="binary">Protobuf binary</option><option value="json">Protobuf JSON</option></select>
+      <button id="send" type="submit">Send Ping</button>
+    </form>
+    <output id="result" aria-live="polite">Ready. Service: http://127.0.0.1:4100</output>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

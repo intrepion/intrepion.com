@@ -1,0 +1,21 @@
+/rust/target/
+/web/node_modules/
+/web/dist/
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/local.properties
+/ios/.build/
+/ios/.swiftpm/
+/.logs/
+/.tools/
+
+# Local native-test tooling, device state and transfer outputs
+/tools/
+/gradle-home/
+/downloads/
+/avd/
+/android-user/
+/emulator.log
+/adb-server.log
+*.tar.gz
