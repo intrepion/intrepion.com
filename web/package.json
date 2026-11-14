@@ -13,7 +13,7 @@
     "coverage": "node ../scripts/coverage.mjs"
   },
   "dependencies": {
-    "astro": "^7.0.0",
+    "astro": "^7.4.7",
     "@bufbuild/protobuf": "^2.0.0",
     "@connectrpc/connect": "^2.0.0",
     "@connectrpc/connect-web": "^2.0.0"
